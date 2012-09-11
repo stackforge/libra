@@ -1,3 +1,12 @@
+Description
+-----------
+
+A Python-based Gearman worker that handles work for the job queue named
+'lbaas-<IP>'. It receives JSON data describing a load balancer, and
+returns this same JSON object, but with status fields added to describe
+the state of the LB.
+
+
 Running Tests
 -------------
 
@@ -20,8 +29,16 @@ Installing the Worker
 Running the Worker
 ------------------
 
+Basic commands:
+
     # Getting help
     $ lbaas_worker -h
 
     # Start up with debugging output
     $ lbaas_worker --debug
+
+You can verify that the worker is running by using the sample Gearman
+client in the bin/ directory:
+
+    $ bin/client.py
+
