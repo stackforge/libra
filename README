@@ -1,0 +1,27 @@
+Running Tests
+-------------
+
+Tox is the best way to run the tests. Tox, if unavailable, can be installed
+via the Python pip command:
+
+   $ pip install tox
+
+Once it is installed, run the tests:
+
+   $ tox
+
+
+Installing the Worker
+---------------------
+
+    $ python setup.py install
+
+
+Running the Worker
+------------------
+
+    # Getting help
+    $ lbaas_worker -h
+
+    # Start up with debugging output
+    $ lbaas_worker --debug
