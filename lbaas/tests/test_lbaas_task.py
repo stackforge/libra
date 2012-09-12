@@ -35,4 +35,12 @@ class TestLBaaSTask(unittest.TestCase):
 
         job = FakeJob(data)
         r = lbaas_task(worker, job)
-        self.assertNotEqual(r, "None")
+
+        self.assertEqual(r["name"], data["name"])
+        self.assertEqual(len(r["nodes"]), 2) 
+        self.assertEqual(r["nodes"][0]["address"], data["nodes"][0]["address"])
+        self.assertEqual(r["nodes"][0]["port"], data["nodes"][0]["port"])
+        self.assertIn("status", r["nodes"][0])
+        self.assertEqual(r["nodes"][1]["address"], data["nodes"][1]["address"])
+        self.assertEqual(r["nodes"][1]["port"], data["nodes"][1]["port"])
+        self.assertIn("status", r["nodes"][1])
