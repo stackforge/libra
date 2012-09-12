@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-
 import json
 from gearman import GearmanWorker, DataEncoder
+
 
 class JSONDataEncoder(DataEncoder):
     """ Class to transform data that the worker either receives or sends. """

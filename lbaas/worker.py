@@ -1,10 +1,11 @@
-#!/usr/bin/env python
-
 import argparse
 import json
 import logging
 import socket
 from json_gearman import JSONGearmanWorker
+
+from lbaas.faults import BadRequest
+
 
 def lbaas_task(worker, job):
     """ Main Gearman worker task.  """
@@ -15,12 +16,22 @@ def lbaas_task(worker, job):
     lb_name = data['name']
     logging.info("LB name: %s" % lb_name)
 
+    if 'nodes' not in data:
+        return BadRequest("Missing 'nodes' element").to_json()
+
     for lb_node in data['nodes']:
         port, address, status = None, None, None
+
         if 'port' in lb_node:
             port = lb_node['port']
+        else:
+            return BadRequest("Missing 'port' element.").to_json()
+
         if 'address' in lb_node:
             address = lb_node['address']
+        else:
+            return BadRequest("Missing 'address' element.").to_json()
+
         if 'status' in lb_node:
             status = lb_node['status']
 
