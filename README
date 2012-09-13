@@ -29,16 +29,22 @@ Installing the Worker
 Running the Worker
 ------------------
 
+The worker can run in either daemon or non-daemon mode. Daemon mode requires
+escalated privileges so that it can behave like a proper daemon. Non-daemon
+mode (-d option) is useful for testing.
+
 Basic commands:
 
     # Getting help
     $ lbaas_worker -h
 
-    # Start up with debugging output
-    $ lbaas_worker --debug
+    # Start up as a daemon
+    $ sudo lbaas_worker
+
+    # Start up with debugging output in non-daemon mode
+    $ lbaas_worker --debug -d
 
 You can verify that the worker is running by using the sample Gearman
 client in the bin/ directory:
 
     $ bin/client.py
-
