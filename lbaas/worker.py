@@ -1,5 +1,7 @@
 import argparse
+import daemon
 import json
+import lockfile
 import logging
 import socket
 from json_gearman import JSONGearmanWorker
@@ -42,31 +44,64 @@ def lbaas_task(worker, job):
     return data
 
 
+class Server(object):
+    """
+    Encapsulates server activity so we can run it in either daemon or
+    non-daemon mode.
+    """
+
+    def __init__(self, logger):
+        self.logger = logger
+
+    def main(self):
+        self.logger.info("Getting IP")
+        my_ip = socket.gethostbyname(socket.gethostname())
+        task_name = "lbaas-%s" % my_ip
+        self.logger.debug("Registering task %s" % task_name)
+
+        worker = JSONGearmanWorker(['localhost:4730'])
+        worker.set_client_id(my_ip)
+        worker.register_task(task_name, lbaas_task)
+
+        try:
+            worker.work()
+        except KeyboardInterrupt:
+            self.logger.debug("Quitting")
+        except Exception as e:
+            self.logger.critical("Exception: %s, %s" % (e.__class__, e))
+
+
 def main():
+    """ Main Python entry point for the worker utility. """
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('--debug',
-                        help='enable debug output',
-                        action='store_true')
+    parser.add_argument('--debug', action='store_true',
+                        help='enable debug output')
+    parser.add_argument('-d', dest='nodaemon', action='store_true',
+                        help='do not run in daemon mode')
     args = parser.parse_args()
 
+    # Setup logging
+    logging.basicConfig(
+        format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s',
+        level=logging.INFO
+    )
+    logger = logging.getLogger('lbaas_worker')
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        logger.setLevel(level=logging.DEBUG)
+
+    server = Server(logger)
+
+    if args.nodaemon:
+        server.main()
     else:
-        logging.basicConfig(level=logging.INFO)
+        context = daemon.DaemonContext(
+            working_directory='/etc/haproxy',
+            umask=0o022,
+            pidfile=lockfile.FileLock('/var/run/lbaas_worker.pid')
+        )
 
-    my_ip = socket.gethostbyname(socket.gethostname())
-    task_name = "lbaas-%s" % my_ip
-    logging.debug("Registering task %s" % task_name)
-
-    worker = JSONGearmanWorker(['localhost:4730'])
-    worker.set_client_id(my_ip)
-    worker.register_task(task_name, lbaas_task)
-
-    try:
-        worker.work()
-    except KeyboardInterrupt:
-        logging.debug("Quitting")
-    except Exception as e:
-        logging.critical("Exception: %s, %s" % (e.__class__, e))
+        with context:
+            server.main()
 
     return 0

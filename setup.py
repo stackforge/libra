@@ -13,5 +13,5 @@ setuptools.setup(
             'lbaas_worker = lbaas.worker:main'
         ]
     },
-    install_requires=['gearman'],
+    install_requires=['gearman', 'python-daemon'],
 )
