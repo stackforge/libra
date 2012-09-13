@@ -12,7 +12,7 @@ setuptools.setup(
     test_suite='nose.collector',
     entry_points={
         'console_scripts': [
-            'lbaas_worker = lbaas.worker:main'
+            'lbaas_worker = lbaas_worker.worker:main'
         ]
     },
     install_requires=reqs,
