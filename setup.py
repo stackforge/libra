@@ -1,5 +1,7 @@
 import setuptools
 
+reqs = [line.strip() for line in open('tools/pip-requires')]
+
 setuptools.setup(
     name="lbaas_worker",
     description="Python LBaaS Gearman Worker",
@@ -13,5 +15,5 @@ setuptools.setup(
             'lbaas_worker = lbaas.worker:main'
         ]
     },
-    install_requires=['gearman', 'python-daemon'],
+    install_requires=reqs,
 )
