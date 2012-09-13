@@ -14,12 +14,14 @@
 
 import argparse
 import daemon
+import gearman.errors
 import json
 import lockfile
 import logging
 import socket
-from json_gearman import JSONGearmanWorker
+from time import sleep
 
+from lbaas_worker.json_gearman import JSONGearmanWorker
 from lbaas_worker.faults import BadRequest
 
 
@@ -64,25 +66,36 @@ class Server(object):
     non-daemon mode.
     """
 
-    def __init__(self, logger):
+    def __init__(self, logger, servers, reconnect_sleep):
         self.logger = logger
+        self.servers = servers
+        self.reconnect_sleep = reconnect_sleep
 
     def main(self):
-        self.logger.info("Getting IP")
         my_ip = socket.gethostbyname(socket.gethostname())
         task_name = "lbaas-%s" % my_ip
         self.logger.debug("Registering task %s" % task_name)
 
-        worker = JSONGearmanWorker(['localhost:4730'])
+        worker = JSONGearmanWorker(self.servers)
         worker.set_client_id(my_ip)
         worker.register_task(task_name, lbaas_task)
 
-        try:
-            worker.work()
-        except KeyboardInterrupt:
-            self.logger.debug("Quitting")
-        except Exception as e:
-            self.logger.critical("Exception: %s, %s" % (e.__class__, e))
+        retry = True
+
+        while (retry):
+            try:
+                worker.work()
+            except KeyboardInterrupt:
+                retry = False
+            except gearman.errors.ServerUnavailable:
+                self.logger.error("Job server(s) went away. Reconnecting.")
+                sleep(self.reconnect_sleep)
+                retry = True
+            except Exception as e:
+                self.logger.critical("Exception: %s, %s" % (e.__class__, e))
+                retry = False
+
+        self.logger.info("Shutting down")
 
 
 def main():
@@ -93,6 +106,8 @@ def main():
                         help='enable debug output')
     parser.add_argument('-d', dest='nodaemon', action='store_true',
                         help='do not run in daemon mode')
+    parser.add_argument('-s', dest='reconnect_sleep', type=int, default=60,
+                        help='seconds to sleep between job server reconnects')
     args = parser.parse_args()
 
     # Setup logging
@@ -104,7 +119,7 @@ def main():
     if args.debug:
         logger.setLevel(level=logging.DEBUG)
 
-    server = Server(logger)
+    server = Server(logger, ['localhost:4730'], args.reconnect_sleep)
 
     if args.nodaemon:
         server.main()
