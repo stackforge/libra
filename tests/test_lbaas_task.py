@@ -1,6 +1,6 @@
 import json
 import unittest
-from lbaas.worker import lbaas_task
+from lbaas_worker.worker import lbaas_task
 
 
 class FakeJob(object):
