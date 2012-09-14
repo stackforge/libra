@@ -14,6 +14,7 @@
 # under the License.
 
 import daemon
+import lockfile
 import signal
 import sys
 
@@ -78,7 +79,7 @@ def main():
         logfile = args.logfile
 
     logger = Logger(
-        args.logfile,
+        logfile,
         loglevel
     )
 

@@ -25,6 +25,7 @@ from libra.common.faults import BadRequest
 from libra.common.options import Options
 from libra.common.logger import Logger
 
+
 def lbaas_task(worker, job):
     """ Main Gearman worker task.  """
 
@@ -125,7 +126,7 @@ def main():
         logfile = args.logfile
 
     logger = Logger(
-        args.logfile,
+        logfile,
         loglevel
     )
 
