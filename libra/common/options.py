@@ -35,4 +35,4 @@ class Options(object):
 
     def _load_config(self):
         self.config = ConfigParser.ConfigParser()
-        config.readfp(self.args.config)
+        self.config.readfp(self.args.config)
