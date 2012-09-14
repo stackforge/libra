@@ -59,17 +59,27 @@ class Server(object):
 
 
 def main():
-    options = Options('Node Management Daemon')
+    options = Options('mgm', 'Node Management Daemon')
+
+    options.parser.add_argument(
+        '-o', '--nodes', default=10,
+        help='Number of spare nodes to keep in pool'
+    )
+    args = options.run()
+
+    if args.verbose:
+        loglevel = 'verbose'
+    elif args.debug:
+        loglevel = 'debug'
 
     logger = Logger(
-        options.config.get('mgm', 'logfile'),
-        options.config.get('mgm', 'loglevel')
+        args.logfile,
+        loglevel
     )
 
-    pid_fn = '/var/run/lbaas_mgm/lbaas_mgm.pid'
-    pid = daemon.pidlockfile.TimeoutPIDLockFile(pid_fn, 10)
+    pid = daemon.pidlockfile.TimeoutPIDLockFile(args.pid, 10)
 
-    server = Server(logger.logger, options.config.get('mgm', 'nodes'))
+    server = Server(logger.logger, args.nodes)
 
     if options.args.nodaemon:
         server.main()

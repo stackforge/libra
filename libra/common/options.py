@@ -12,27 +12,40 @@
 # License for the specific language governing permissions and limitations
 
 import argparse
-import ConfigParser
 
 
 class Options(object):
-    def __init__(self, title):
+    def __init__(self, shortname, title):
         self.title = title
-        self._parse_args()
-        self._load_config()
+        self._parse_args(shortname)
 
-    def _parse_args(self):
-        parser = argparse.ArgumentParser(
+    def _parse_args(self, shortname):
+        self.parser = argparse.ArgumentParser(
             description='Libra {title}'.format(title=self.title)
         )
-        parser.add_argument('config', help='configuration file', type=file)
-        parser.add_argument(
-            '-d', dest='nodaemon', action='store_true',
+        self.parser.add_argument(
+            '-n', '--nodaemon', action='store_true',
             help='do not run in daemon mode'
         )
+        self.parser.add_argument(
+            '-d', '--debug', action='store_true',
+            help='Log debugging output'
+        )
+        self.parser.add_argument(
+            '-v', '--verbose', action='store_true',
+            help='Log more verbose output'
+        )
+        self.parser.add_argument(
+            '-p', '--pid',
+            default='/var/run/libra/libra_{name}.pid'.format(name=shortname),
+            help='PID file to use'
+        )
+        self.parser.add_argument(
+            '-l', '--logfile',
+            default='/var/log/libra/libra_{name}.log'.format(name=shortname),
+            help='Log file to use'
+        )
 
-        self.args = parser.parse_args()
-
-    def _load_config(self):
-        self.config = ConfigParser.ConfigParser()
-        self.config.readfp(self.args.config)
+    def run(self):
+        args = self.parser.parse_args()
+        return vars(args)
