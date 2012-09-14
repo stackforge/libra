@@ -16,8 +16,8 @@
 import json
 import socket
 
-from json_gearman import JSONGearmanWorker
-from libra.mgm.faults import BadRequest
+from libra.common.json_gearman import JSONGearmanWorker
+from libra.common.faults import BadRequest
 
 
 class Listener(object):
