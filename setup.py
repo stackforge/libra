@@ -32,12 +32,13 @@ setuptools.setup(
     name="lbaas_worker",
     description="Python LBaaS Gearman Worker",
     version="1.0",
-    author="David Shrewsbury",
-    author_email="shrewsbury.dave@gmail.com",
+    author="David Shrewsbury <shrewsbury.dave@gmail.com>, \
+        Andrew Hutchings <andrew@linuxjedi.co.uk>",
     packages=setuptools.find_packages(exclude=["*.tests"]),
     entry_points={
         'console_scripts': [
-            'lbaas_worker = lbaas_worker.worker:main'
+            'lbaas_worker = lbaas_worker.worker:main',
+            'lbaas_pool_mgm = lbaas_mgm.mgm:main'
         ]
     },
     cmdclass={'test': PyTest},
