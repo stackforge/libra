@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import argparse
 import daemon
 import gearman.errors
 import json
@@ -23,6 +22,7 @@ from time import sleep
 
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.faults import BadRequest
+from libra.common.options import Options
 
 
 def lbaas_task(worker, job):
@@ -101,14 +101,12 @@ class Server(object):
 def main():
     """ Main Python entry point for the worker utility. """
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', action='store_true',
-                        help='enable debug output')
-    parser.add_argument('-d', dest='nodaemon', action='store_true',
-                        help='do not run in daemon mode')
-    parser.add_argument('-s', dest='reconnect_sleep', type=int, default=60,
-                        help='seconds to sleep between job server reconnects')
-    args = parser.parse_args()
+    options = Options('worker', 'Worker Daemon')
+    options.parser.add_argument(
+        '-s', dest='reconnect_sleep', type=int,
+        default=60, help='seconds to sleep between job server reconnects'
+    )
+    args = options.run()
 
     # Setup logging
     logging.basicConfig(
