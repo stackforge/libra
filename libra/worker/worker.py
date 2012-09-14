@@ -22,7 +22,7 @@ from time import sleep
 
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.faults import BadRequest
-from libra.common.options import Options
+from libra.common.options import Options, setup_logging
 from libra.common.logger import Logger
 
 
@@ -104,32 +104,12 @@ def main():
 
     options = Options('worker', 'Worker Daemon')
     options.parser.add_argument(
-        '-s', dest='reconnect_sleep', type=int,
+        '-s', dest='reconnect_sleep', type=int, metavar="TIME",
         default=60, help='seconds to sleep between job server reconnects'
     )
     args = options.run()
 
-    # Setup logging
-    logging.basicConfig(
-        format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO
-    )
-
-    if args.verbose:
-        loglevel = 'verbose'
-    elif args.debug:
-        loglevel = 'debug'
-
-    if args.nodaemon:
-        logfile = None
-    else:
-        logfile = args.logfile
-
-    logger = Logger(
-        logfile,
-        loglevel
-    )
-
+    logger = setup_logging('libra_worker', args)
     server = Server(logger, ['localhost:4730'], args.reconnect_sleep)
 
     if args.nodaemon:

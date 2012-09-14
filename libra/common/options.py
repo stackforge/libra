@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 
 import argparse
+import logging
 
 
 class Options(object):
@@ -28,7 +29,7 @@ class Options(object):
             help='do not run in daemon mode'
         )
         self.parser.add_argument(
-            '-d', '--debug', dest='nodaemon', action='store_true',
+            '-d', '--debug', dest='debug', action='store_true',
             help='Log debugging output'
         )
         self.parser.add_argument(
@@ -47,5 +48,29 @@ class Options(object):
         )
 
     def run(self):
-        args = self.parser.parse_args()
-        return vars(args)
+        return self.parser.parse_args()
+
+
+def setup_logging(name, args):
+    """
+    Shared routine for setting up logging. Depends on some common options
+    (nodaemon, logfile, debug, verbose) being set.
+    """
+
+    logfile = args.logfile
+    if args.nodaemon:
+        logfile = None
+
+    logging.basicConfig(
+        format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s',
+        filename=logfile
+    )
+
+    logger = logging.getLogger(name)
+
+    if args.debug:
+        logger.setLevel(level=logging.DEBUG)
+    elif args.verbose:
+        logger.setLevel(level=logging.INFO)
+
+    return logger
