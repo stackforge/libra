@@ -20,6 +20,8 @@ import signal
 import sys
 
 from libra.mgm.listener import Listener
+from libra.common.options import Options
+from libra.common.logger import Logger
 
 
 class Server(object):
@@ -59,28 +61,19 @@ class Server(object):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='LBaaS Node Management Daemon'
-    )
-    parser.add_argument('nodes', metavar='N', type=int,
-                        help='number of nodes to maintain')
-    parser.add_argument('-d', dest='nodaemon', action='store_true',
-                        help='do not run in daemon mode')
-    options = parser.parse_args()
+    options = Options('Node Management Daemon')
 
-    logging.basicConfig(
-        format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s',
-        filename='/var/log/lbaas/lbaas_mgm.log'
+    logger = Logger(
+        options.config.get('mgm', 'logfile'),
+        options.config.get('mgm', 'loglevel')
     )
-    logger = logging.getLogger('lbaas_mgm')
-    logger.setLevel(logging.INFO)
 
     pid_fn = '/var/run/lbaas_mgm/lbaas_mgm.pid'
     pid = daemon.pidlockfile.TimeoutPIDLockFile(pid_fn, 10)
 
-    server = Server(logger, options.nodes)
+    server = Server(logger.logger, options.config.get('mgm', 'nodes'))
 
-    if options.nodaemon:
+    if options.args.nodaemon:
         server.main()
     else:
         with daemon.DaemonContext(pidfile=pid):
