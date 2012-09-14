@@ -24,26 +24,26 @@ class Options(object):
             description='Libra {title}'.format(title=self.title)
         )
         self.parser.add_argument(
-            '-n', '--nodaemon', action='store_true',
+            '-n', '--nodaemon', dest='nodaemon', action='store_true',
             help='do not run in daemon mode'
         )
         self.parser.add_argument(
-            '-d', '--debug', action='store_true',
+            '-d', '--debug', dest='nodaemon', action='store_true',
             help='Log debugging output'
         )
         self.parser.add_argument(
-            '-v', '--verbose', action='store_true',
+            '-v', '--verbose', dest='verbose', action='store_true',
             help='Log more verbose output'
         )
         self.parser.add_argument(
-            '-p', '--pid',
+            '-p', '--pid', dest='pid',
             default='/var/run/libra/libra_{name}.pid'.format(name=shortname),
-            help='PID file to use'
+            help='PID file to use (ignored with --nodaemon)'
         )
         self.parser.add_argument(
-            '-l', '--logfile',
+            '-l', '--logfile', dest='logfile',
             default='/var/log/libra/libra_{name}.log'.format(name=shortname),
-            help='Log file to use'
+            help='Log file to use (ignored with --nodaemon)'
         )
 
     def run(self):
