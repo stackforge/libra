@@ -36,13 +36,13 @@ mode (-d option) is useful for testing.
 Basic commands:
 
     # Getting help
-    $ lbaas_worker -h
+    $ libra_worker -h
 
     # Start up as a daemon
-    $ sudo lbaas_worker
+    $ sudo libra_worker
 
     # Start up with debugging output in non-daemon mode
-    $ lbaas_worker --debug -d
+    $ libra_worker --debug -d
 
 You can verify that the worker is running by using the sample Gearman
 client in the bin/ directory:

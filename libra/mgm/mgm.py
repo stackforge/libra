@@ -19,7 +19,7 @@ import daemon
 import signal
 import sys
 
-from lbaas_mgm.listener import Listener
+from libra.mgm.listener import Listener
 
 
 class Server(object):

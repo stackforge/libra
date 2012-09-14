@@ -1,15 +1,15 @@
 import unittest
 import logging
 
-import tests.mock
+import mock
 
-from lbaas_mgm.listener import Listener
+from libra.mgm.listener import Listener
 
 
 class TestLBaaSMgmTask(unittest.TestCase):
     def setUp(self):
         self.logger = logging.getLogger('lbass_mgm_test')
-        self.lh = tests.mock.MockLoggingHandler()
+        self.lh = mock.MockLoggingHandler()
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(self.lh)
 
@@ -19,7 +19,7 @@ class TestLBaaSMgmTask(unittest.TestCase):
     def testTaskGet(self):
         listener = Listener(self.logger)
         data = {'command': 'get'}
-        job = tests.mock.FakeJob(data)
+        job = mock.FakeJob(data)
         result = listener.task(None, job)
         self.assertIn('Command: get', self.lh.messages['debug'])
         self.assertEqual(result['command'], data['command'])
@@ -27,7 +27,7 @@ class TestLBaaSMgmTask(unittest.TestCase):
     def testTaskBad(self):
         listener = Listener(self.logger)
         data = {'command': 'bad'}
-        job = tests.mock.FakeJob(data)
+        job = mock.FakeJob(data)
         result = listener.task(None, job)
         self.assertIn("badRequest", result)
         self.assertIn("validationErrors", result['badRequest'])

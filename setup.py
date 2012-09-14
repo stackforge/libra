@@ -45,7 +45,7 @@ except Exception:
 ci_cmdclass['test'] = PyTest
 
 setuptools.setup(
-    name="lbaas_devices",
+    name="libra",
     description="Python LBaaS Gearman Worker and Pool Manager",
     version="1.0",
     author="David Shrewsbury <shrewsbury.dave@gmail.com>, \
@@ -53,8 +53,8 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["*.tests"]),
     entry_points={
         'console_scripts': [
-            'lbaas_worker = lbaas_worker.worker:main',
-            'lbaas_pool_mgm = lbaas_mgm.mgm:main'
+            'libra_worker = libra.worker.worker:main',
+            'libra_pool_mgm = libra.mgm.mgm:main'
         ]
     },
     cmdclass=ci_cmdclass,

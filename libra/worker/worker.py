@@ -21,8 +21,8 @@ import logging
 import socket
 from time import sleep
 
-from lbaas_worker.json_gearman import JSONGearmanWorker
-from lbaas_worker.faults import BadRequest
+from libra.worker.json_gearman import JSONGearmanWorker
+from libra.worker.faults import BadRequest
 
 
 def lbaas_task(worker, job):
