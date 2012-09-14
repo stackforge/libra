@@ -27,10 +27,26 @@ class PyTest(TestCommand):
         import pytest
         pytest.main(self.test_args)
 
+ci_cmdclass = {}
+
+try:
+    from sphinx.setup_command import BuildDoc
+
+    class local_BuildDoc(BuildDoc):
+        def run(self):
+            for builder in ['html', 'man']:
+                self.builder = builder
+                self.finalize_options()
+                BuildDoc.run(self)
+    ci_cmdclass['build_sphinx'] = local_BuildDoc
+except Exception:
+    pass
+
+ci_cmdclass['test'] = PyTest
 
 setuptools.setup(
-    name="lbaas_worker",
-    description="Python LBaaS Gearman Worker",
+    name="lbaas_devices",
+    description="Python LBaaS Gearman Worker and Pool Manager",
     version="1.0",
     author="David Shrewsbury <shrewsbury.dave@gmail.com>, \
         Andrew Hutchings <andrew@linuxjedi.co.uk>",
@@ -41,7 +57,7 @@ setuptools.setup(
             'lbaas_pool_mgm = lbaas_mgm.mgm:main'
         ]
     },
-    cmdclass={'test': PyTest},
+    cmdclass=ci_cmdclass,
     tests_require=['pytest-pep8'],
     install_requires=['gearman', 'python-daemon'],
 )
