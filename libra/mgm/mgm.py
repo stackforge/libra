@@ -72,17 +72,27 @@ def main():
     elif args.debug:
         loglevel = 'debug'
 
+    if args.nodaemon:
+        logfile = None
+    else:
+        logfile = args.logfile
+
     logger = Logger(
         args.logfile,
         loglevel
     )
 
-    pid = daemon.pidlockfile.TimeoutPIDLockFile(args.pid, 10)
-
     server = Server(logger.logger, args.nodes)
 
-    if options.args.nodaemon:
+    if args.nodaemon:
         server.main()
     else:
-        with daemon.DaemonContext(pidfile=pid):
+        context = daemon.DaemonContext(
+            working_directory='/etc/haproxy',
+            umask=0o022,
+            pidfile=lockfile.FileLock(args.pid)
+        )
+        with context:
             server.main()
+
+    return 0

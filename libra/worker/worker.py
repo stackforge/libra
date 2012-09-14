@@ -23,7 +23,7 @@ from time import sleep
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.faults import BadRequest
 from libra.common.options import Options
-
+from libra.common.logger import Logger
 
 def lbaas_task(worker, job):
     """ Main Gearman worker task.  """
@@ -113,9 +113,21 @@ def main():
         format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO
     )
-    logger = logging.getLogger('lbaas_worker')
-    if args.debug:
-        logger.setLevel(level=logging.DEBUG)
+
+    if args.verbose:
+        loglevel = 'verbose'
+    elif args.debug:
+        loglevel = 'debug'
+
+    if args.nodaemon:
+        logfile = None
+    else:
+        logfile = args.logfile
+
+    logger = Logger(
+        args.logfile,
+        loglevel
+    )
 
     server = Server(logger, ['localhost:4730'], args.reconnect_sleep)
 
@@ -125,7 +137,7 @@ def main():
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
             umask=0o022,
-            pidfile=lockfile.FileLock('/var/run/lbaas_worker.pid')
+            pidfile=lockfile.FileLock(args.pid)
         )
 
         with context:
