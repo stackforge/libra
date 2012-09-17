@@ -19,8 +19,7 @@ import signal
 import sys
 
 from libra.mgm.listener import Listener
-from libra.common.options import Options
-from libra.common.logger import Logger
+from libra.common.options import Options, setup_logging
 
 
 class Server(object):
@@ -68,22 +67,8 @@ def main():
     )
     args = options.run()
 
-    if args.verbose:
-        loglevel = 'verbose'
-    elif args.debug:
-        loglevel = 'debug'
-
-    if args.nodaemon:
-        logfile = None
-    else:
-        logfile = args.logfile
-
-    logger = Logger(
-        logfile,
-        loglevel
-    )
-
-    server = Server(logger.logger, args.nodes)
+    logger = setup_logging('libra_mgm', args)
+    server = Server(logger, args.nodes)
 
     if args.nodaemon:
         server.main()
