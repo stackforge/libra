@@ -18,7 +18,6 @@ import lockfile
 import signal
 import sys
 
-from libra.mgm.listener import Listener
 from libra.common.options import Options, setup_logging
 
 
@@ -29,20 +28,12 @@ class Server(object):
 
     def main(self):
         self.logger.info(
-            'LBaaS Pool Manager started with {nodes} nodes'
+            'Libra Pool Manager started with {nodes} nodes'
             .format(nodes=self.nodes)
         )
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
-        listner = Listener(self.logger)
-        try:
-            listner.run()
-        except Exception as e:
-            self.logger.critical(
-                'Exception: {eclass}, {exception}'
-                .format(eclass=e.__class__, exception=e)
-            )
-            self.shutdown(True)
+
         self.shutdown(False)
 
     def exit_handler(self, signum, frame):
@@ -62,8 +53,8 @@ def main():
     options = Options('mgm', 'Node Management Daemon')
 
     options.parser.add_argument(
-        '-o', '--nodes', default=10,
-        help='Number of spare nodes to keep in pool'
+        'config', default='/etc/libra/mgm.ini',
+        help='Config file for management daemon'
     )
     args = options.run()
 
