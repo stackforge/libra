@@ -23,7 +23,6 @@ from time import sleep
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.faults import BadRequest
 from libra.common.options import Options, setup_logging
-from libra.common.logger import Logger
 
 
 def lbaas_task(worker, job):
