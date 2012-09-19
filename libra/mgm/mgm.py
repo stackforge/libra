@@ -17,20 +17,19 @@ import daemon
 import lockfile
 import signal
 import sys
-import ConfigParser
 
 from libra.common.options import Options, setup_logging
 
 
 class Server(object):
-    def __init__(self, logger, config):
+    def __init__(self, logger, nodes):
         self.logger = logger
-        self.config = config
+        self.nodes = nodes
 
     def main(self):
         self.logger.info(
             'Libra Pool Manager started with a float of {nodes} nodes'
-            .format(nodes=self.config.get('mgm', 'nodes'))
+            .format(nodes=self.nodes)
         )
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
@@ -52,18 +51,14 @@ class Server(object):
 
 def main():
     options = Options('mgm', 'Node Management Daemon')
-
-    options.parser.add_argument(
-        'config', default='/etc/libra/mgm.ini', type=file,
-        help='Config file for management daemon'
+    options.parser_add_argument(
+        '--nodes', type=int, default=1,
+        help='number of nodes'
     )
     args = options.run()
 
-    config = ConfigParser.ConfigParser()
-    config.readfp(args.config)
-
     logger = setup_logging('libra_mgm', args)
-    server = Server(logger, config)
+    server = Server(logger, args.nodes)
 
     if args.nodaemon:
         server.main()
