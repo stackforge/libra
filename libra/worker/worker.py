@@ -108,6 +108,8 @@ class Server(object):
         worker = CustomJSONGearmanWorker(self.servers)
         worker.set_client_id(my_ip)
         worker.register_task(task_name, lbaas_task)
+        worker.logger = self.logger
+        worker.driver = self.driver
 
         retry = True
 
