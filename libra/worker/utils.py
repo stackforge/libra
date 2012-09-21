@@ -21,7 +21,7 @@ def import_class(import_str):
     """ Returns a class from a string including module and class """
     mod_str, _sep, class_str = import_str.rpartition('.')
     try:
-        mod = importlib.import_module(mod_str, 'libra.worker.drivers')
+        mod = importlib.import_module(mod_str)
         return getattr(mod, class_str)
     except (ValueError, AttributeError):
         raise ImportError('Class %s cannot be found (%s)' %
