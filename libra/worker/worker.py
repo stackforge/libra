@@ -16,7 +16,6 @@ import daemon
 import gearman.errors
 import json
 import lockfile
-import logging
 import socket
 from time import sleep
 
@@ -28,17 +27,23 @@ from libra.common.options import Options, setup_logging
 def lbaas_task(worker, job):
     """ Main Gearman worker task.  """
 
+    NODE_OK = "ENABLED"
+    NODE_ERR = "DISABLED"
+
+    logger = worker.logger
+    driver = worker.driver
+
     # Turn string into JSON object
     data = json.loads(job.data)
 
     lb_name = data['name']
-    logging.info("LB name: %s" % lb_name)
+    logger.debug("LB name: %s" % lb_name)
 
     if 'nodes' not in data:
         return BadRequest("Missing 'nodes' element").to_json()
 
     for lb_node in data['nodes']:
-        port, address, status = None, None, None
+        port, address = None, None
 
         if 'port' in lb_node:
             port = lb_node['port']
@@ -50,14 +55,34 @@ def lbaas_task(worker, job):
         else:
             return BadRequest("Missing 'address' element.").to_json()
 
-        if 'status' in lb_node:
-            status = lb_node['status']
+        logger.debug("Server node: %s:%s" % (address, port))
 
-        logging.info("LB node: %s:%s - %s" % (address, port, status))
-        lb_node['status'] = 'ACTIVE'
+        try:
+            driver.add_server(address, port)
+        except NotImplementedError:
+            logger.info("Selected driver could not add server.")
+            lb_node['condition'] = NODE_ERR
+        except Exception as e:
+            logger.critical("Failure trying adding server: %s, %s" %
+                            (e.__class__, e))
+            lb_node['condition'] = NODE_ERR
+        else:
+            lb_node['condition'] = NODE_OK
 
-    # Return the same JSON object, but with status fields set.
+    try:
+        driver.activate()
+    except NotImplementedError:
+        logger.info("Selected driver could not activate changes.")
+        for lb_node in data['nodes']:
+            lb_node['condition'] = NODE_ERR
+
+    # Return the same JSON object, but with condition fields set.
     return data
+
+
+class CustomJSONGearmanWorker(JSONGearmanWorker):
+    logger = None
+    driver = None
 
 
 class Server(object):
@@ -66,8 +91,9 @@ class Server(object):
     non-daemon mode.
     """
 
-    def __init__(self, logger, servers, reconnect_sleep):
-        self.logger = logger
+    def __init__(self, servers, reconnect_sleep):
+        self.logger = None
+        self.driver = None
         self.servers = servers
         self.reconnect_sleep = reconnect_sleep
 
@@ -76,7 +102,7 @@ class Server(object):
         task_name = "lbaas-%s" % my_ip
         self.logger.debug("Registering task %s" % task_name)
 
-        worker = JSONGearmanWorker(self.servers)
+        worker = CustomJSONGearmanWorker(self.servers)
         worker.set_client_id(my_ip)
         worker.register_task(task_name, lbaas_task)
 
@@ -103,13 +129,22 @@ def main():
 
     options = Options('worker', 'Worker Daemon')
     options.parser.add_argument(
-        '-s', dest='reconnect_sleep', type=int, metavar="TIME",
+        '-s', dest='reconnect_sleep', type=int, metavar='TIME',
         default=60, help='seconds to sleep between job server reconnects'
+    )
+    options.parser.add_argument(
+        '--driver', dest='driver', default='haproxy.driver.HAProxyDriver',
+        help='Class name of device driver to use'
     )
     args = options.run()
 
     logger = setup_logging('libra_worker', args)
-    server = Server(logger, ['localhost:4730'], args.reconnect_sleep)
+    from libra.worker.drivers.haproxy.driver import HAProxyDriver
+    driver = HAProxyDriver()
+
+    server = Server(['localhost:4730'], args.reconnect_sleep)
+    server.logger = logger
+    server.driver = driver
 
     if args.nodaemon:
         server.main()

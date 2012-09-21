@@ -1,6 +1,13 @@
 import json
+import logging
 import unittest
+import mock
 from libra.worker.worker import lbaas_task
+from libra.worker.drivers.base import LoadBalancerDriver
+
+
+class FakeDriver(LoadBalancerDriver):
+    pass
 
 
 class FakeJob(object):
@@ -9,6 +16,12 @@ class FakeJob(object):
         data: JSON object to convert to a string
         """
         self.data = json.dumps(data)
+
+
+class FakeWorker(object):
+    def __init__(self):
+        self.logger = logging.getLogger('lbaas_worker_test')
+        self.driver = FakeDriver()
 
 
 class TestLBaaSTask(unittest.TestCase):
@@ -21,7 +34,7 @@ class TestLBaaSTask(unittest.TestCase):
     def testLBaaSTask(self):
         """ Test the lbaas_task() function """
 
-        worker = None
+        worker = FakeWorker()
         data = {
             "name": "a-new-loadbalancer",
             "nodes": [
@@ -43,15 +56,15 @@ class TestLBaaSTask(unittest.TestCase):
         self.assertEqual(len(r["nodes"]), 2)
         self.assertEqual(r["nodes"][0]["address"], data["nodes"][0]["address"])
         self.assertEqual(r["nodes"][0]["port"], data["nodes"][0]["port"])
-        self.assertIn("status", r["nodes"][0])
+        self.assertIn("condition", r["nodes"][0])
         self.assertEqual(r["nodes"][1]["address"], data["nodes"][1]["address"])
         self.assertEqual(r["nodes"][1]["port"], data["nodes"][1]["port"])
-        self.assertIn("status", r["nodes"][1])
+        self.assertIn("condition", r["nodes"][1])
 
     def testMissingNodes(self):
         """ Test invalid messages: missing nodes """
 
-        worker = None
+        worker = FakeWorker()
         data = {
             "name": "a-new-loadbalancer"
         }
@@ -63,7 +76,7 @@ class TestLBaaSTask(unittest.TestCase):
     def testMissingPort(self):
         """ Test invalid messages: missing port """
 
-        worker = None
+        worker = FakeWorker()
         data = {
             "name": "a-new-loadbalancer",
             "nodes": [
@@ -80,7 +93,7 @@ class TestLBaaSTask(unittest.TestCase):
     def testMissingAddress(self):
         """ Test invalid messages: missing address """
 
-        worker = None
+        worker = FakeWorker()
         data = {
             "name": "a-new-loadbalancer",
             "nodes": [
