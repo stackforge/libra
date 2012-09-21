@@ -53,13 +53,13 @@ class Options(object):
         self._arg_defaults = dict()
         self._parse_args()
 
-    def _get_defaults_from_config(self):
+    def _get_defaults_from_config(self, parser):
         """
         Use the config file to get the defaults. This should be called
         immediately after the option for the config file is defined, but
         before all other options are defined.
         """
-        args, remaining_args = self.parser.parse_known_args()
+        args, remaining_args = parser.parse_known_args()
 
         if args.config and os.path.exists(args.config):
             config = ConfigParser.SafeConfigParser()
@@ -87,17 +87,24 @@ class Options(object):
                     self._arg_defaults[k] = True
 
     def _parse_args(self):
+        # We use a temporary parser to get the config file and read those
+        # options in as defaults, then continue parsing the rest.
+        tmp_parser = argparse.ArgumentParser(add_help=False)
+        tmp_parser.add_argument(
+            '-c', '--config', dest='config', default='/etc/libra/libra.ini'
+        )
+        self._get_defaults_from_config(tmp_parser)
+
         self.parser = argparse.ArgumentParser(
             description='Libra {title}'.format(title=self.title)
         )
 
-        # NOTE: Must be the first argument defined
+        # Config repeated here just so it will show up in the automatically
+        # generated help from ArgumentParser.
         self.parser.add_argument(
             '-c', '--config', dest='config', default='/etc/libra/libra.ini',
             metavar='FILE', help='Configuration file'
         )
-
-        self._get_defaults_from_config()
 
         self.parser.add_argument(
             '-n', '--nodaemon', dest='nodaemon', action='store_true',
