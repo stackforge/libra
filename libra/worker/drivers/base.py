@@ -12,6 +12,12 @@
 # License for the specific language governing permissions and limitations
 
 
+# Mapping of --driver options to a class
+known_drivers = {
+    'haproxy': 'libra.worker.drivers.haproxy.driver.HAProxyDriver'
+}
+
+
 class LoadBalancerDriver(object):
     """
     Load balancer device driver base class.

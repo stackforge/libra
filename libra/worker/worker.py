@@ -22,6 +22,8 @@ from time import sleep
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.faults import BadRequest
 from libra.common.options import Options, setup_logging
+from libra.worker.drivers.base import known_drivers
+from libra.worker.utils import import_class
 
 
 def lbaas_task(worker, job):
@@ -81,6 +83,7 @@ def lbaas_task(worker, job):
 
 
 class CustomJSONGearmanWorker(JSONGearmanWorker):
+    """ Custom class we will use to pass arguments to the Gearman task. """
     logger = None
     driver = None
 
@@ -133,14 +136,22 @@ def main():
         default=60, help='seconds to sleep between job server reconnects'
     )
     options.parser.add_argument(
-        '--driver', dest='driver', default='haproxy.driver.HAProxyDriver',
-        help='Class name of device driver to use'
+        '--driver', dest='driver',
+        choices=known_drivers.keys(), default='haproxy',
+        help='Type of device to use'
     )
     args = options.run()
 
     logger = setup_logging('libra_worker', args)
-    from libra.worker.drivers.haproxy.driver import HAProxyDriver
-    driver = HAProxyDriver()
+
+    # Import the device driver we are going to use. This will be sent
+    # along to the Gearman task that will use it to communicate with
+    # the device.
+
+    logger.debug("Using driver %s=%s" % (args.driver,
+                                         known_drivers[args.driver]))
+    driver_class = import_class(known_drivers[args.driver])
+    driver = driver_class()
 
     server = Server(['localhost:4730'], args.reconnect_sleep)
     server.logger = logger
