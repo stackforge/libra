@@ -57,26 +57,32 @@ def lbaas_task(worker, job):
         else:
             return BadRequest("Missing 'address' element.").to_json()
 
-        logger.debug("Server node: %s:%s" % (address, port))
-
         try:
             driver.add_server(address, port)
         except NotImplementedError:
-            logger.info("Selected driver could not add server.")
+            logger.error("Selected driver could not add server.")
             lb_node['condition'] = NODE_ERR
         except Exception as e:
-            logger.critical("Failure trying adding server: %s, %s" %
-                            (e.__class__, e))
+            logger.error("Failure trying adding server: %s, %s" %
+                         (e.__class__, e))
             lb_node['condition'] = NODE_ERR
         else:
+            logger.debug("Added server: %s:%s" % (address, port))
             lb_node['condition'] = NODE_OK
 
     try:
         driver.activate()
     except NotImplementedError:
-        logger.info("Selected driver could not activate changes.")
+        logger.error("Selected driver could not activate changes.")
         for lb_node in data['nodes']:
             lb_node['condition'] = NODE_ERR
+    except Exception as e:
+        logger.error("Failure activating changes: %s, %s" %
+                     (e.__class__, e))
+        for lb_node in data['nodes']:
+            lb_node['condition'] = NODE_ERR
+
+    logger.info("Activated load balancer changes")
 
     # Return the same JSON object, but with condition fields set.
     return data
