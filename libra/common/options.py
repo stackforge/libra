@@ -103,7 +103,7 @@ class Options(object):
         # generated help from ArgumentParser.
         self.parser.add_argument(
             '-c', '--config', dest='config', default='/etc/libra/libra.ini',
-            metavar='FILE', help='Configuration file'
+            metavar='FILE', help='configuration file'
         )
 
         self.parser.add_argument(
@@ -112,11 +112,11 @@ class Options(object):
         )
         self.parser.add_argument(
             '-d', '--debug', dest='debug', action='store_true',
-            help='Log debugging output'
+            help='log debugging output'
         )
         self.parser.add_argument(
             '-v', '--verbose', dest='verbose', action='store_true',
-            help='Log more verbose output'
+            help='log more verbose output'
         )
         self.parser.add_argument(
             '-p', '--pid', dest='pid',
@@ -130,7 +130,7 @@ class Options(object):
             default='/var/log/libra/libra_{name}.log'.format(
                 name=self.shortname
             ),
-            help='Log file to use (ignored with --nodaemon)'
+            help='log file to use (ignored with --nodaemon)'
         )
 
     def run(self):

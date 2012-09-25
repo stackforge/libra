@@ -27,7 +27,13 @@ from libra.worker.utils import import_class
 
 
 def lbaas_task(worker, job):
-    """ Main Gearman worker task.  """
+    """
+    Main Gearman worker task.
+
+    This is the function executed by the Gearman worker for incoming requests
+    from the Gearman job server. It will be executed once per request. Data
+    comes in as a JSON object, and a JSON object is returned in response.
+    """
 
     NODE_OK = "ENABLED"
     NODE_ERR = "DISABLED"
@@ -146,7 +152,12 @@ def main():
     options.parser.add_argument(
         '--driver', dest='driver',
         choices=known_drivers.keys(), default='haproxy',
-        help='Type of device to use'
+        help='type of device to use'
+    )
+    options.parser.add_argument(
+        '--server', dest='server', action='append', metavar='HOST:PORT',
+        default=[],
+        help='add a Gearman job server to the connection list'
     )
     args = options.run()
 
@@ -156,12 +167,15 @@ def main():
     # along to the Gearman task that will use it to communicate with
     # the device.
 
-    logger.debug("Using driver %s=%s" % (args.driver,
-                                         known_drivers[args.driver]))
+    logger.debug("Selected driver: %s" % args.driver)
     driver_class = import_class(known_drivers[args.driver])
     driver = driver_class()
 
-    server = Server(['localhost:4730'], args.reconnect_sleep)
+    if not args.server:
+        args.server.append('localhost:4730')
+
+    logger.debug("Job server list: %s" % args.server)
+    server = Server(args.server, args.reconnect_sleep)
     server.logger = logger
     server.driver = driver
 
