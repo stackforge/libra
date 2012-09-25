@@ -163,6 +163,17 @@ def main():
 
     logger = setup_logging('libra_worker', args)
 
+    if not args.server:
+        # NOTE(shrews): Can't set a default in argparse method because the
+        # value is appended to the specified default.
+        args.server.append('localhost:4730')
+    elif not isinstance(args.server, list):
+        # NOTE(shrews): The Options object cannot intelligently handle
+        # creating a list from an option that may have multiple values.
+        # We convert it to the expected type here.
+        svr_list = args.server.split()
+        args.server = svr_list
+
     # Import the device driver we are going to use. This will be sent
     # along to the Gearman task that will use it to communicate with
     # the device.
@@ -170,9 +181,6 @@ def main():
     logger.debug("Selected driver: %s" % args.driver)
     driver_class = import_class(known_drivers[args.driver])
     driver = driver_class()
-
-    if not args.server:
-        args.server.append('localhost:4730')
 
     logger.debug("Job server list: %s" % args.server)
     server = Server(args.server, args.reconnect_sleep)
