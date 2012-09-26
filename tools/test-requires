@@ -1,1 +1,3 @@
 pytest-pep8
+mock
+httplib2

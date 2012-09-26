@@ -1,3 +1,4 @@
 gearman
 python-daemon
 requests
+python_novaclient

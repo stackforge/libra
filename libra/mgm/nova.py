@@ -29,5 +29,5 @@ class Node(object):
                 "imageId": image,
                 "flavourId": node_type,
                 }}
-        resp, body = self.api.post(url, body)
+        resp, body = self.nova.post(url, body)
         return body
