@@ -132,6 +132,14 @@ class Options(object):
             ),
             help='log file to use (ignored with --nodaemon)'
         )
+        self.parser.add_argument(
+            '--user', dest='user',
+            help='user to use for daemon mode'
+        )
+        self.parser.add_argument(
+            '--group', dest='group',
+            help='group to use for daemon mode'
+        )
 
     def run(self):
         # We have to set defaults from the config AFTER all add_argument()
