@@ -14,8 +14,10 @@
 
 import daemon
 import gearman.errors
+import grp
 import json
 import lockfile
+import pwd
 import socket
 from time import sleep
 
@@ -195,6 +197,18 @@ def main():
             umask=0o022,
             pidfile=lockfile.FileLock(args.pid)
         )
+        if args.user:
+            try:
+                context.uid = pwd.getpwnam(args.user).pw_uid
+            except KeyError:
+                logger.critical("Invalid user: %s" % args.user)
+                return 1
+        if args.group:
+            try:
+                context.gid = grp.getgrnam(args.group).gr_gid
+            except KeyError:
+                logger.critical("Invalid group: %s" % args.group)
+                return 1
 
         with context:
             server.main()
