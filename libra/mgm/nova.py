@@ -31,3 +31,6 @@ class Node(object):
                 }}
         resp, body = self.nova.post(url, body)
         return body
+
+    def status(self, node_id):
+        """ used to keep scanning to see if node is up """
