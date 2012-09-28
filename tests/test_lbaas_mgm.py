@@ -7,8 +7,12 @@ import mock_objects
 from libra.mgm.nova import Node
 
 fake_response = httplib2.Response({"status": 200})
+fake_bad_response = httplib2.Response({"status": 500})
+fake_del_response = httplib2.Response({"status": 204})
 fake_body = '{"hi": "there"}'
 mock_request = mock.Mock(return_value=(fake_response, fake_body))
+mock_bad_request = mock.Mock(return_value=(fake_bad_response, fake_body))
+mock_del_request = mock.Mock(return_value=(fake_del_response, fake_body))
 
 
 class TestLBaaSMgmTask(unittest.TestCase):
@@ -39,3 +43,17 @@ class TestLBaaSMgmNova(unittest.TestCase):
         def testCreateCall():
             data = self.api.create('4321', '123', '321')
             self.assertEqual(data, {"hi": "there"})
+
+    def testDeleteNodeFail(self):
+        @mock.patch.object(httplib2.Http, "request", mock_bad_request)
+        @mock.patch('time.time', mock.Mock(return_value=1234))
+        def testDeleteCall():
+            resp = self.api.delete('1234')
+            self.assertEqual(resp, 1)
+
+    def testDeleteNodeSucceed(self):
+        @mock.patch.object(httplib2.Http, "request", mock_del_request)
+        @mock.patch('time.time', mock.Mock(return_value=1234))
+        def testDeleteCall():
+            resp = self.api.delete('1234')
+            self.assertEqual(resp, 0)

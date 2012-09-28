@@ -23,6 +23,7 @@ class Node(object):
         )
 
     def create(self, node_id, image, node_type):
+        """ create a nova node """
         url = "/servers"
         body = {"server": {
                 "name": 'lbass_{0}'.format(node_id),
@@ -34,3 +35,15 @@ class Node(object):
 
     def status(self, node_id):
         """ used to keep scanning to see if node is up """
+        url = "/servers/{0}".format(node_id)
+        resp, body = self.nova.get(url)
+        return body['server']['status']
+
+    def delete(self, node_id):
+        """ delete a nova node, return 1 if fail, 0 if succeed """
+        url = "/servers/{0}".format(node_id)
+        resp, body = self.nova.delete(url)
+        if resp.status != 204:
+            return 1
+
+        return 0
