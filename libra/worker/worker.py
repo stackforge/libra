@@ -109,14 +109,31 @@ class Server(object):
     """
 
     def __init__(self, servers, reconnect_sleep):
-        self.logger = None
         self.driver = None
         self.servers = servers
         self.reconnect_sleep = reconnect_sleep
 
-    def main(self):
+    def main(self, logger=None, args=None):
+        """
+        Main method of the server.
+
+        `logger`
+            If given, will be used as the logging class. Otherwise, a new
+            logger will be retrieved.
+
+        `args`
+            Only needed when `logger` is None.
+        """
         my_ip = socket.gethostbyname(socket.gethostname())
         task_name = "lbaas-%s" % my_ip
+
+        if logger:
+            self.logger = logger
+        else:
+            # We need to setup logging here because if we are running
+            # as a daemon, then any open file handles will have been closed.
+            self.logger = setup_logging('libra_worker', args)
+
         self.logger.debug("Registering task %s" % task_name)
 
         worker = CustomJSONGearmanWorker(self.servers)
@@ -186,11 +203,10 @@ def main():
 
     logger.debug("Job server list: %s" % args.server)
     server = Server(args.server, args.reconnect_sleep)
-    server.logger = logger
     server.driver = driver
 
     if args.nodaemon:
-        server.main()
+        server.main(logger=logger)
     else:
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
@@ -211,6 +227,6 @@ def main():
                 return 1
 
         with context:
-            server.main()
+            server.main(args)
 
     return 0

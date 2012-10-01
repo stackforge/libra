@@ -13,7 +13,9 @@
 
 import argparse
 import logging
+import logging.handlers
 import os.path
+import sys
 import ConfigParser
 
 
@@ -133,6 +135,10 @@ class Options(object):
             help='log file to use (ignored with --nodaemon)'
         )
         self.parser.add_argument(
+            '--syslog', dest='syslog', action='store_true',
+            help='use syslog for logging output'
+        )
+        self.parser.add_argument(
             '--user', dest='user',
             help='user to use for daemon mode'
         )
@@ -160,12 +166,28 @@ def setup_logging(name, args):
     if args.nodaemon:
         logfile = None
 
-    logging.basicConfig(
-        format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s',
-        filename=logfile
+    # Timestamped formatter
+    ts_formatter = logging.Formatter(
+        '%(asctime)-6s: %(name)s - %(levelname)s - %(message)s'
     )
 
+    # No timestamp, used with syslog
+    simple_formatter = logging.Formatter(
+        '%(name)s - %(levelname)s - %(message)s'
+    )
+
+    if args.syslog:
+        handler = logging.handlers.SysLogHandler(facility="daemon")
+        handler.setFormatter(simple_formatter)
+    elif logfile:
+        handler = logging.FileHandler(logfile)
+        handler.setFormatter(ts_formatter)
+    else:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(ts_formatter)
+
     logger = logging.getLogger(name)
+    logger.addHandler(handler)
 
     if args.debug:
         logger.setLevel(level=logging.DEBUG)
