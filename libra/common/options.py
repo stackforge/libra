@@ -180,7 +180,7 @@ def setup_logging(name, args):
         '%(name)s - %(levelname)s - %(message)s'
     )
 
-    if args.syslog:
+    if args.syslog and not args.nodaemon:
         if args.syslog_socket:
             address = args.syslog_socket
         else:
