@@ -227,6 +227,6 @@ def main():
                 return 1
 
         with context:
-            server.main(args)
+            server.main(args=args)
 
     return 0

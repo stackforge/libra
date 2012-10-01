@@ -87,6 +87,6 @@ def main():
                 logger.critical("Invalid group: %s" % args.group)
                 return 1
         with context:
-            server.main(args)
+            server.main(args=args)
 
     return 0
