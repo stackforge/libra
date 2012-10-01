@@ -139,10 +139,6 @@ class Options(object):
             help='use syslog for logging output'
         )
         self.parser.add_argument(
-            '--syslog-socket', dest='syslog_socket',
-            help='socket to use for syslog connection if UDP not supported'
-        )
-        self.parser.add_argument(
             '--user', dest='user',
             help='user to use for daemon mode'
         )
@@ -181,12 +177,7 @@ def setup_logging(name, args):
     )
 
     if args.syslog:
-        if args.syslog_socket:
-            address = args.syslog_socket
-        else:
-            address = None
-        handler = logging.handlers.SysLogHandler(address=address,
-                                                 facility="daemon")
+        handler = logging.handlers.SysLogHandler(facility="daemon")
         handler.setFormatter(simple_formatter)
     elif logfile:
         handler = logging.FileHandler(logfile)
