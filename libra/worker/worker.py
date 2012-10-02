@@ -89,8 +89,8 @@ def lbaas_task(worker, job):
                      (e.__class__, e))
         for lb_node in data['nodes']:
             lb_node['condition'] = NODE_ERR
-
-    logger.info("Activated load balancer changes")
+    else:
+        logger.info("Activated load balancer changes")
 
     # Return the same JSON object, but with condition fields set.
     return data
