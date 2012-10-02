@@ -26,6 +26,20 @@ Installing the Worker
     $ python setup.py install
 
 
+Edit /etc/sudoers
+-----------------
+
+The worker needs to be able to run some commands as root without being
+prompted for a password. It is suggested that you run the worker as
+the `haproxy` user and `haproxy` group on Ubuntu systems. Then add the
+following line to /etc/sudoers:
+
+    %haproxy ALL = NOPASSWD: /usr/sbin/service, /bin/cp, /bin/mv
+
+The above lets everyone in the `haproxy` group run those three commands
+as root without being prompted for a password.
+
+
 Running the Worker
 ------------------
 
@@ -38,8 +52,9 @@ Basic commands:
     # Getting help
     $ libra_worker -h
 
-    # Start up as a daemon
-    $ sudo libra_worker
+    # Start up as a daemon running as the `haproxy` user and
+    # connecting to the local Gearman job server.
+    $ sudo libra_worker --user haproxy --group haproxy --server 127.0.0.1:4730
 
     # Start up with debugging output in non-daemon mode
     $ libra_worker --debug --nodaemon
@@ -48,3 +63,12 @@ You can verify that the worker is running by using the sample Gearman
 client in the bin/ directory:
 
     $ bin/client.py
+
+
+Configuration File
+------------------
+
+It can be easier to give options via a configuration file. See the sample
+configuration file etc/sample_libra.cfg for an example and further
+documentation. Use the -c/--config option to specify the configuration
+file to read.

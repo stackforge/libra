@@ -78,10 +78,8 @@ class HAProxyDriver(LoadBalancerDriver):
         fh.close()
         bkupcfg = self._config_file + '.BKUP'
 
-        # The user that the process is running as MUST have write access
-        # to the HAProxy configuration file.
-        copy_cmd = "/bin/cp %s %s" % (self._config_file, bkupcfg)
-        move_cmd = "/bin/mv %s %s" % (tmpfile, self._config_file)
+        copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file, bkupcfg)
+        move_cmd = "/usr/bin/sudo /bin/mv %s %s" % (tmpfile, self._config_file)
 
         try:
             subprocess.check_output(copy_cmd.split(), stderr=subprocess.STDOUT)
@@ -92,7 +90,6 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def _restart(self):
         """ Restart the HAProxy service on the local machine. """
-        # NOTE(shrews): This should be the only place we need sudo privs.
         cmd = '/usr/bin/sudo /usr/sbin/service haproxy restart'
         try:
             subprocess.check_output(cmd.split())
