@@ -135,14 +135,6 @@ class Options(object):
             help='log file to use (ignored with --nodaemon)'
         )
         self.parser.add_argument(
-            '--syslog', dest='syslog', action='store_true',
-            help='use syslog for logging output'
-        )
-        self.parser.add_argument(
-            '--syslog-socket', dest='syslog_socket',
-            help='socket to use for syslog connection if UDP not supported'
-        )
-        self.parser.add_argument(
             '--user', dest='user',
             help='user to use for daemon mode'
         )
@@ -175,20 +167,7 @@ def setup_logging(name, args):
         '%(asctime)-6s: %(name)s - %(levelname)s - %(message)s'
     )
 
-    # No timestamp, used with syslog
-    simple_formatter = logging.Formatter(
-        '%(name)s - %(levelname)s - %(message)s'
-    )
-
-    if args.syslog and not args.nodaemon:
-        if args.syslog_socket:
-            address = args.syslog_socket
-        else:
-            address = ('localhost', 514)
-        handler = logging.handlers.SysLogHandler(address=address,
-                                                 facility="daemon")
-        handler.setFormatter(simple_formatter)
-    elif logfile:
+    if logfile:
         handler = logging.FileHandler(logfile)
         handler.setFormatter(ts_formatter)
     else:

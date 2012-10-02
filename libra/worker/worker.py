@@ -108,32 +108,16 @@ class Server(object):
     non-daemon mode.
     """
 
-    def __init__(self, servers, reconnect_sleep):
+    def __init__(self, logger, servers, reconnect_sleep):
+        self.logger = logger
         self.driver = None
         self.servers = servers
         self.reconnect_sleep = reconnect_sleep
 
-    def main(self, logger=None, args=None):
-        """
-        Main method of the server.
-
-        `logger`
-            If given, will be used as the logging class. Otherwise, a new
-            logger will be retrieved.
-
-        `args`
-            Only needed when `logger` is None.
-        """
+    def main(self):
+        """ Main method of the server.  """
         my_ip = socket.gethostbyname(socket.gethostname())
         task_name = "lbaas-%s" % my_ip
-
-        if logger:
-            self.logger = logger
-        else:
-            # We need to setup logging here because if we are running
-            # as a daemon, then any open file handles will have been closed.
-            self.logger = setup_logging('libra_worker', args)
-
         self.logger.debug("Registering task %s" % task_name)
 
         worker = CustomJSONGearmanWorker(self.servers)
@@ -202,16 +186,17 @@ def main():
     driver = driver_class()
 
     logger.debug("Job server list: %s" % args.server)
-    server = Server(args.server, args.reconnect_sleep)
+    server = Server(logger, args.server, args.reconnect_sleep)
     server.driver = driver
 
     if args.nodaemon:
-        server.main(logger=logger)
+        server.main()
     else:
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
             umask=0o022,
-            pidfile=lockfile.FileLock(args.pid)
+            pidfile=lockfile.FileLock(args.pid),
+            files_preserve=[logger.handlers[0].stream]
         )
         if args.user:
             try:
@@ -227,6 +212,6 @@ def main():
                 return 1
 
         with context:
-            server.main(args=args)
+            server.main()
 
     return 0

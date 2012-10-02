@@ -24,15 +24,11 @@ from libra.common.options import Options, setup_logging
 
 
 class Server(object):
-    def __init__(self, nodes):
+    def __init__(self, logger, nodes):
+        self.logger = logger
         self.nodes = nodes
 
-    def main(self, logger=None, args=None):
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = setup_logging('libra_mgm', args)
-
+    def main(self):
         self.logger.info(
             'Libra Pool Manager started with a float of {nodes} nodes'
             .format(nodes=self.nodes)
@@ -64,15 +60,16 @@ def main():
     args = options.run()
 
     logger = setup_logging('libra_mgm', args)
-    server = Server(args.nodes)
+    server = Server(logger, args.nodes)
 
     if args.nodaemon:
-        server.main(logger=logger)
+        server.main()
     else:
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
             umask=0o022,
-            pidfile=lockfile.FileLock(args.pid)
+            pidfile=lockfile.FileLock(args.pid),
+            files_preserve=[logger.handlers[0].stream]
         )
         if args.user:
             try:
@@ -87,6 +84,6 @@ def main():
                 logger.critical("Invalid group: %s" % args.group)
                 return 1
         with context:
-            server.main(args=args)
+            server.main()
 
     return 0
