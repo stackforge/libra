@@ -20,10 +20,16 @@ Once it is installed, run the tests:
    $ tox
 
 
-Installing the Worker
----------------------
+Installing the Tools
+--------------------
 
-    $ python setup.py install
+You must have Python setuptools installed. On Ubuntu:
+
+    $ sudo apt-get install python-setuptools
+
+Now you may install the Libra toolset:
+
+    $ sudo python setup.py install
 
 
 Edit /etc/sudoers
