@@ -14,8 +14,8 @@
 # under the License.
 
 import daemon
+import daemon.pidfile
 import grp
-import lockfile
 import pwd
 import signal
 import sys
@@ -68,7 +68,7 @@ def main():
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
             umask=0o022,
-            pidfile=lockfile.FileLock(args.pid),
+            pidfile=daemon.pidfile.TimeoutPIDLockFile(args.pid),
             files_preserve=[logger.handlers[0].stream]
         )
         if args.user:

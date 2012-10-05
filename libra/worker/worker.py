@@ -13,10 +13,10 @@
 # under the License.
 
 import daemon
+import daemon.pidfile
 import gearman.errors
 import grp
 import json
-import lockfile
 import pwd
 import socket
 from time import sleep
@@ -195,7 +195,7 @@ def main():
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
             umask=0o022,
-            pidfile=lockfile.FileLock(args.pid),
+            pidfile=daemon.pidfile.TimeoutPIDLockFile(args.pid),
             files_preserve=[logger.handlers[0].stream]
         )
         if args.user:
