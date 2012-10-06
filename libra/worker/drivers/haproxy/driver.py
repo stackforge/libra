@@ -37,6 +37,9 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    maxconn 4096')
         output.append('    user haproxy')
         output.append('    group haproxy')
+        output.append(
+            '    stats socket /var/run/haproxy-stats.socket mode operator'
+        )
         output.append('defaults')
         output.append('    log global')
         output.append('    mode http')
@@ -87,6 +90,9 @@ class HAProxyDriver(LoadBalancerDriver):
         except subprocess.CalledProcessError as e:
             raise Exception("Failed to write configuration file: %s" %
                             e.output.rstrip('\n'))
+
+        # Reset server list
+        self._config['servers'] = []
 
     def _restart(self):
         """ Restart the HAProxy service on the local machine. """
