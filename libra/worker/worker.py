@@ -46,8 +46,7 @@ def lbaas_task(worker, job):
     # Turn string into JSON object
     data = json.loads(job.data)
 
-    lb_name = data['name']
-    logger.debug("LB name: %s" % lb_name)
+    logger.debug("Received JSON message: %s" % json.dumps(data, indent=4))
 
     if 'nodes' not in data:
         return BadRequest("Missing 'nodes' element").to_json()
