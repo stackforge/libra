@@ -38,7 +38,7 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    user haproxy')
         output.append('    group haproxy')
         output.append(
-            '    stats socket /var/run/libra/haproxy-stats.socket mode operator'
+            '    stats socket /var/run/haproxy-stats.socket mode operator'
         )
         output.append('defaults')
         output.append('    log global')
