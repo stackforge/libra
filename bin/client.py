@@ -56,7 +56,10 @@ def main():
                    ]
 }
 """
-    request = client.submit_job(task, data)
+
+    # Worker class expects the data as a JSON object, not string
+    json_data = json.loads(data)
+    request = client.submit_job(task, json_data)
     check_request_status(request)
 
 if __name__ == "__main__":

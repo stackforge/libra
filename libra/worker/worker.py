@@ -43,9 +43,7 @@ def lbaas_task(worker, job):
     logger = worker.logger
     driver = worker.driver
 
-    # Turn string into JSON object
-    data = json.loads(job.data)
-
+    logger.debug("Entered worker task")
     logger.debug("Received JSON message: %s" % json.dumps(data, indent=4))
 
     if 'nodes' not in data:
