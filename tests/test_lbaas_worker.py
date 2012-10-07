@@ -15,7 +15,7 @@ class FakeJob(object):
         """
         data: JSON object to convert to a string
         """
-        self.data = json.dumps(data)
+        self.data = data
 
 
 class FakeWorker(object):

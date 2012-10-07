@@ -42,6 +42,7 @@ def lbaas_task(worker, job):
 
     logger = worker.logger
     driver = worker.driver
+    data = job.data
 
     logger.debug("Entered worker task")
     logger.debug("Received JSON message: %s" % json.dumps(data, indent=4))
