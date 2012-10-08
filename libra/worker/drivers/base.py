@@ -41,3 +41,15 @@ class LoadBalancerDriver(object):
     def activate(self):
         """ Activate any changes made. """
         raise NotImplementedError()
+
+    def suspend(self):
+        """ Suspend the load balancer. """
+        raise NotImplementedError()
+
+    def enable(self):
+        """ Enable a suspended load balancer. """
+        raise NotImplementedError()
+
+    def delete(self):
+        """ Delete a load balancer. """
+        raise NotImplementedError()

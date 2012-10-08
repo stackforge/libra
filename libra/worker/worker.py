@@ -22,8 +22,8 @@ import socket
 from time import sleep
 
 from libra.common.json_gearman import JSONGearmanWorker
-from libra.common.faults import BadRequest
 from libra.common.options import Options, setup_logging
+from libra.worker.controller import LBaaSController
 from libra.worker.drivers.base import known_drivers
 from libra.worker.utils import import_class
 
@@ -36,62 +36,17 @@ def lbaas_task(worker, job):
     from the Gearman job server. It will be executed once per request. Data
     comes in as a JSON object, and a JSON object is returned in response.
     """
-
-    NODE_OK = "ENABLED"
-    NODE_ERR = "DISABLED"
-
     logger = worker.logger
     driver = worker.driver
-    data = job.data
 
     logger.debug("Entered worker task")
-    logger.debug("Received JSON message: %s" % json.dumps(data, indent=4))
+    logger.debug("Received JSON message: %s" % json.dumps(job.data, indent=4))
 
-    if 'nodes' not in data:
-        return BadRequest("Missing 'nodes' element").to_json()
+    controller = LBaaSController(logger, driver, job.data)
+    response = controller.run()
 
-    for lb_node in data['nodes']:
-        port, address = None, None
-
-        if 'port' in lb_node:
-            port = lb_node['port']
-        else:
-            return BadRequest("Missing 'port' element.").to_json()
-
-        if 'address' in lb_node:
-            address = lb_node['address']
-        else:
-            return BadRequest("Missing 'address' element.").to_json()
-
-        try:
-            driver.add_server(address, port)
-        except NotImplementedError:
-            logger.error("Selected driver could not add server.")
-            lb_node['condition'] = NODE_ERR
-        except Exception as e:
-            logger.error("Failure trying adding server: %s, %s" %
-                         (e.__class__, e))
-            lb_node['condition'] = NODE_ERR
-        else:
-            logger.debug("Added server: %s:%s" % (address, port))
-            lb_node['condition'] = NODE_OK
-
-    try:
-        driver.activate()
-    except NotImplementedError:
-        logger.error("Selected driver could not activate changes.")
-        for lb_node in data['nodes']:
-            lb_node['condition'] = NODE_ERR
-    except Exception as e:
-        logger.error("Failure activating changes: %s, %s" %
-                     (e.__class__, e))
-        for lb_node in data['nodes']:
-            lb_node['condition'] = NODE_ERR
-    else:
-        logger.info("Activated load balancer changes")
-
-    # Return the same JSON object, but with condition fields set.
-    return data
+    logger.debug("Return JSON message: %s" % json.dumps(response, indent=4))
+    return response
 
 
 class CustomJSONGearmanWorker(JSONGearmanWorker):
