@@ -83,6 +83,28 @@ class TestLBaaSTask(unittest.TestCase):
         self.assertIn("hpcs_response", r)
         self.assertEqual("FAIL", r["hpcs_response"])
 
+    def testInvalidAction(self):
+        """ Test invalid messages: invalid hpcs_action """
+        worker = FakeWorker()
+        data = {
+            "action": "invalid",
+            "name": "a-new-loadbalancer",
+            "nodes": [
+                {
+                    "address": "10.1.1.1",
+                    "port": "80"
+                },
+                {
+                    "address": "10.1.1.2",
+                    "port": "81"
+                }
+            ]
+        }
+        job = FakeJob(data)
+        r = lbaas_task(worker, job)
+        self.assertIn("hpcs_response", r)
+        self.assertEqual("FAIL", r["hpcs_response"])
+
     def testMissingNodes(self):
         """ Test invalid messages: missing nodes """
 
