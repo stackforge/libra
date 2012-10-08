@@ -89,10 +89,10 @@ class LBaaSController(object):
                 lb_node['condition'] = self.NODE_OK
 
         try:
-            self.driver.activate()
+            self.driver.create()
         except NotImplementedError:
             self.logger.error(
-                "Selected driver does not support activating changes."
+                "Selected driver does not support CREATE action."
             )
             for lb_node in self.msg['nodes']:
                 lb_node['condition'] = self.NODE_ERR

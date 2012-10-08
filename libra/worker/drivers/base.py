@@ -38,8 +38,8 @@ class LoadBalancerDriver(object):
         """ Add a server for which we will proxy. """
         raise NotImplementedError()
 
-    def activate(self):
-        """ Activate any changes made. """
+    def create(self):
+        """ Create the load balancer. """
         raise NotImplementedError()
 
     def suspend(self):

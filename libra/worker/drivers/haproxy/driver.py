@@ -116,6 +116,6 @@ class HAProxyDriver(LoadBalancerDriver):
             self._config['servers'] = []
         self._config['servers'].append((host, port))
 
-    def activate(self):
+    def create(self):
         self._write_config()
         self._restart()
