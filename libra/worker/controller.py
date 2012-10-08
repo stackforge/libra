@@ -98,8 +98,7 @@ class LBaaSController(object):
                 lb_node['condition'] = self.NODE_ERR
             self.msg['hpcs_response'] = self.RESPONSE_FAILURE
         except Exception as e:
-            self.logger.error("Failure activating changes: %s, %s" %
-                              (e.__class__, e))
+            self.logger.error("CREATE failed: %s, %s" % (e.__class__, e))
             for lb_node in self.msg['nodes']:
                 lb_node['condition'] = self.NODE_ERR
             self.msg['hpcs_response'] = self.RESPONSE_FAILURE
@@ -125,6 +124,9 @@ class LBaaSController(object):
                 "Selected driver does not support SUSPEND action."
             )
             self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+        except Exception as e:
+            self.logger.error("SUSPEND failed: %s, %s" % (e.__class__, e))
+            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
         else:
             self.msg['hpcs_response'] = self.RESPONSE_SUCCESS
         return self.msg
@@ -138,6 +140,9 @@ class LBaaSController(object):
                 "Selected driver does not support ENABLE action."
             )
             self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+        except Exception as e:
+            self.logger.error("ENABLE failed: %s, %s" % (e.__class__, e))
+            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
         else:
             self.msg['hpcs_response'] = self.RESPONSE_SUCCESS
         return self.msg
@@ -150,6 +155,9 @@ class LBaaSController(object):
             self.logger.error(
                 "Selected driver does not support DELETE action."
             )
+            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+        except Exception as e:
+            self.logger.error("DELETE failed: %s, %s" % (e.__class__, e))
             self.msg['hpcs_response'] = self.RESPONSE_FAILURE
         else:
             self.msg['hpcs_response'] = self.RESPONSE_SUCCESS
