@@ -25,6 +25,7 @@ class HAProxyDriver(LoadBalancerDriver):
         self._backup_config = self._config_file + '.BKUP'
         self._config = dict()
         self.bind('0.0.0.0', 80)
+        self.set_protocol('HTTP')
 
     def _config_to_string(self):
         """
@@ -44,7 +45,7 @@ class HAProxyDriver(LoadBalancerDriver):
         )
         output.append('defaults')
         output.append('    log global')
-        output.append('    mode http')
+        output.append('    mode %s' % self._config['mode'])
         output.append('    option httplog')
         output.append('    option dontlognull')
         output.append('    option redispatch')
@@ -153,6 +154,12 @@ class HAProxyDriver(LoadBalancerDriver):
         if 'servers' not in self._config:
             self._config['servers'] = []
         self._config['servers'].append((host, port))
+
+    def set_protocol(self, protocol):
+        proto = protocol.lower()
+        if proto not in ('tcp', 'http', 'health'):
+            raise Exception("Invalid protocol: %s" % protocol)
+        self._config['mode'] = proto
 
     def create(self):
         self._write_config()

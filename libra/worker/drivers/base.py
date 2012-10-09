@@ -38,6 +38,10 @@ class LoadBalancerDriver(object):
         """ Add a server for which we will proxy. """
         raise NotImplementedError()
 
+    def set_protocol(self, protocol):
+        """ Set the protocol of the instance. """
+        raise NotImplementedError()
+
     def create(self):
         """ Create the load balancer. """
         raise NotImplementedError()

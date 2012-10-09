@@ -21,6 +21,8 @@ class LBaaSController(object):
     NODE_ERR = "DISABLED"
     RESPONSE_FAILURE = "FAIL"
     RESPONSE_SUCCESS = "PASS"
+    ACTION_FIELD = 'hpcs_action'
+    RESPONSE_FIELD = 'hpcs_response'
 
     def __init__(self, logger, driver, json_msg):
         self.logger = logger
@@ -34,12 +36,12 @@ class LBaaSController(object):
         Process the JSON message and return a JSON response.
         """
 
-        if 'hpcs_action' not in self.msg:
-            self.logger.error("Missing HPCS_ACTION value")
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+        if self.ACTION_FIELD not in self.msg:
+            self.logger.error("Missing `%s` value" % self.ACTION_FIELD)
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        action = self.msg['hpcs_action'].upper()
+        action = self.msg[self.ACTION_FIELD].upper()
         self.logger.debug("Requested action: %s" % action)
         if action == 'CREATE':
             return self._action_create()
@@ -52,14 +54,30 @@ class LBaaSController(object):
         elif action == 'DELETE':
             return self._action_delete()
         else:
-            self.logger.error("Invalid HPCS_ACTION value: %s" % action)
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.logger.error("Invalid `%s` value: %s" %
+                              (self.ACTION_FIELD, action))
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
     def _action_create(self):
         """ Create a Load Balancer. """
         if 'nodes' not in self.msg:
             return BadRequest("Missing 'nodes' element").to_json()
+
+        if 'protocol' in self.msg:
+            try:
+                self.driver.set_protocol(self.msg['protocol'])
+            except NotImplementedError:
+                self.logger.error(
+                    "Selected driver does not support setting protocol."
+                )
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
+            except Exception as e:
+                self.logger.error("Failure trying to set protocol: %s, %s" %
+                                  (e.__class__, e))
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
 
         for lb_node in self.msg['nodes']:
             port, address = None, None
@@ -97,15 +115,15 @@ class LBaaSController(object):
             )
             for lb_node in self.msg['nodes']:
                 lb_node['condition'] = self.NODE_ERR
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
             self.logger.error("CREATE failed: %s, %s" % (e.__class__, e))
             for lb_node in self.msg['nodes']:
                 lb_node['condition'] = self.NODE_ERR
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
             self.logger.info("Activated load balancer changes")
-            self.msg['hpcs_response'] = self.RESPONSE_SUCCESS
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
 
         return self.msg
 
@@ -124,12 +142,12 @@ class LBaaSController(object):
             self.logger.error(
                 "Selected driver does not support SUSPEND action."
             )
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
             self.logger.error("SUSPEND failed: %s, %s" % (e.__class__, e))
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
-            self.msg['hpcs_response'] = self.RESPONSE_SUCCESS
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
 
     def _action_enable(self):
@@ -140,12 +158,12 @@ class LBaaSController(object):
             self.logger.error(
                 "Selected driver does not support ENABLE action."
             )
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
             self.logger.error("ENABLE failed: %s, %s" % (e.__class__, e))
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
-            self.msg['hpcs_response'] = self.RESPONSE_SUCCESS
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
 
     def _action_delete(self):
@@ -156,10 +174,10 @@ class LBaaSController(object):
             self.logger.error(
                 "Selected driver does not support DELETE action."
             )
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
             self.logger.error("DELETE failed: %s, %s" % (e.__class__, e))
-            self.msg['hpcs_response'] = self.RESPONSE_FAILURE
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
-            self.msg['hpcs_response'] = self.RESPONSE_SUCCESS
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
