@@ -23,6 +23,9 @@ class HAProxyDriver(LoadBalancerDriver):
     def __init__(self):
         self._config_file = '/etc/haproxy/haproxy.cfg'
         self._backup_config = self._config_file + '.BKUP'
+        self._init_config()
+
+    def _init_config(self):
         self._config = dict()
         self.bind('0.0.0.0', 80)
         self.set_protocol('HTTP')
@@ -102,9 +105,6 @@ class HAProxyDriver(LoadBalancerDriver):
             raise Exception("Failed to write configuration file: %s" %
                             e.output.rstrip('\n'))
 
-        # Reset server list
-        self._config['servers'] = []
-
     def _restart(self):
         """ Restart the HAProxy service on the local machine. """
         cmd = '/usr/bin/sudo /usr/sbin/service haproxy restart'
@@ -145,6 +145,9 @@ class HAProxyDriver(LoadBalancerDriver):
     ####################
     # Driver API Methods
     ####################
+
+    def init(self):
+        self._init_config()
 
     def bind(self, address, port):
         self._config['bind_address'] = address

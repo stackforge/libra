@@ -61,6 +61,15 @@ class LBaaSController(object):
 
     def _action_create(self):
         """ Create a Load Balancer. """
+        try:
+            self.driver.init()
+        except NotImplementedError:
+            pass
+        except Exception as e:
+            self.logger.error("Selected driver failed initialization.")
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            return self.msg
+
         if 'nodes' not in self.msg:
             return BadRequest("Missing 'nodes' element").to_json()
 

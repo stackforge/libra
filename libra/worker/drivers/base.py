@@ -30,6 +30,10 @@ class LoadBalancerDriver(object):
     via these API calls until the activate() method is called.
     """
 
+    def init(self):
+        """ Allows the driver to do any initialization for a new config. """
+        raise NotImplementedError()
+
     def bind(self, address, port):
         """ Set proxy listening interface and port. """
         raise NotImplementedError()
