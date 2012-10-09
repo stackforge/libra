@@ -21,6 +21,7 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def __init__(self):
         self._config_file = '/etc/haproxy/haproxy.cfg'
+        self._backup_config = self._config_file + '.BKUP'
         self._config = dict()
         self.bind('0.0.0.0', 80)
 
@@ -79,9 +80,9 @@ class HAProxyDriver(LoadBalancerDriver):
         fh = open(tmpfile, 'w')
         fh.write(config_str)
         fh.close()
-        bkupcfg = self._config_file + '.BKUP'
 
-        copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file, bkupcfg)
+        copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file,
+                                                    self._backup_config)
         move_cmd = "/usr/bin/sudo /bin/mv %s %s" % (tmpfile, self._config_file)
 
         try:
@@ -121,6 +122,16 @@ class HAProxyDriver(LoadBalancerDriver):
             raise Exception("Failed to start HAProxy service: %s" %
                             e.output.rstrip('\n'))
 
+    def _delete_configs(self):
+        """ Delete current and backup configs on the local machine. """
+        cmd = '/usr/bin/sudo /bin/rm -f %s %s' % (self._config_file,
+                                                  self._backup_config)
+        try:
+            subprocess.check_output(cmd.split())
+        except subprocess.CalledProcessError as e:
+            raise Exception("Failed to delete HAProxy config files: %s" %
+                            e.output.rstrip('\n'))
+
     ####################
     # Driver API Methods
     ####################
@@ -143,3 +154,7 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def enable(self):
         self._start()
+
+    def delete(self):
+        self._delete_configs()
+        self._stop()
