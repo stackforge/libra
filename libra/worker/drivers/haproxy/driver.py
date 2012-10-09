@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
 import subprocess
 
 from libra.worker.drivers.base import LoadBalancerDriver
@@ -81,12 +82,20 @@ class HAProxyDriver(LoadBalancerDriver):
         fh.write(config_str)
         fh.close()
 
-        copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file,
-                                                    self._backup_config)
-        move_cmd = "/usr/bin/sudo /bin/mv %s %s" % (tmpfile, self._config_file)
+        # Copy any existing configuration file to a backup.
+        if os.path.exists(self._config_file):
+            copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file,
+                                                        self._backup_config)
+            try:
+                subprocess.check_output(copy_cmd.split(),
+                                        stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                raise Exception("Failed to copy configuration file: %s" %
+                                e.output.rstrip('\n'))
 
+        # Move the temporary config file to production version.
+        move_cmd = "/usr/bin/sudo /bin/mv %s %s" % (tmpfile, self._config_file)
         try:
-            subprocess.check_output(copy_cmd.split(), stderr=subprocess.STDOUT)
             subprocess.check_output(move_cmd.split(), stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             raise Exception("Failed to write configuration file: %s" %
@@ -156,5 +165,5 @@ class HAProxyDriver(LoadBalancerDriver):
         self._start()
 
     def delete(self):
-        self._delete_configs()
         self._stop()
+        self._delete_configs()
