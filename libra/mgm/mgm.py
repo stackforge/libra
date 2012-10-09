@@ -19,14 +19,15 @@ import grp
 import pwd
 import signal
 import sys
+import time
 
 from libra.common.options import Options, setup_logging
 
 
 class Server(object):
-    def __init__(self, logger, nodes):
+    def __init__(self, logger, args):
         self.logger = logger
-        self.nodes = nodes
+        self.args = args
 
     def main(self):
         self.logger.info(
@@ -35,6 +36,13 @@ class Server(object):
         )
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
+
+        while 1:
+            self.logger.info(
+                'Sleeping for {minutes} minutes'
+                .format(minutes=self.args.interval)
+            )
+            time.sleep(self.args.interval)
 
         self.shutdown(False)
 
@@ -57,10 +65,14 @@ def main():
         '--nodes', type=int, default=1,
         help='number of nodes'
     )
+    options.parser.add_argument(
+        '--interval', type=int, default=5,
+        help='how often to poll API server (in minutes)'
+    )
     args = options.run()
 
     logger = setup_logging('libra_mgm', args)
-    server = Server(logger, args.nodes)
+    server = Server(logger, args)
 
     if args.nodaemon:
         server.main()
