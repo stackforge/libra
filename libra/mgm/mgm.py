@@ -19,7 +19,7 @@ import pwd
 import signal
 import time
 import sys
-from threading import Timer
+import threading
 
 from libra.common.options import Options, setup_logging
 
@@ -48,6 +48,7 @@ class Server(object):
             'and node check for {check} minutes'
             .format(check=self.args.check_interval)
         )
+        self.rlock = threading.RLock()
         self.sync_nodes()
         self.check_nodes()
         while True:
@@ -55,16 +56,19 @@ class Server(object):
 
     def check_nodes(self):
         """ check if known nodes are used """
-        self.logger.info('Checking if new nodes are needed')
-        self.ct = Timer(60 * int(self.args.check_interval),
-                        self.check_nodes, ())
-        self.ct.start()
+        with self.rlock:
+            self.logger.info('Checking if new nodes are needed')
+            self.ct = threading.Timer(60 * int(self.args.check_interval),
+                                      self.check_nodes, ())
+            self.ct.start()
 
     def sync_nodes(self):
         """ sync list of known nodes """
-        self.logger.info('Syncing internal nodes list')
-        self.st = Timer(60 * int(self.args.sync_interval), self.sync_nodes, ())
-        self.st.start()
+        with self.rlock:
+            self.logger.info('Syncing internal nodes list')
+            self.st = threading.Timer(60 * int(self.args.sync_interval),
+                                      self.sync_nodes, ())
+            self.st.start()
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
