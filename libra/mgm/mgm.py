@@ -17,9 +17,9 @@ import daemon.pidfile
 import grp
 import pwd
 import signal
-import sys
 import time
-import sched
+import sys
+from threading import Timer
 
 from libra.common.options import Options, setup_logging
 
@@ -28,17 +28,18 @@ class Server(object):
     def __init__(self, logger, args):
         self.logger = logger
         self.args = args
+        self.st = None
+        self.ct = None
 
     def main(self):
         self.logger.info(
             'Libra Pool Manager started with a float of {nodes} nodes'
-            .format(nodes=self.nodes)
+            .format(nodes=self.args.nodes)
         )
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
 
         # make initial sync and then run scheduler
-        sc = sched.scheduler(time.time, time.sleep)
         self.logger.info(
             'Scheduling node sync for {sync} minutes'
             .format(sync=self.args.sync_interval)
@@ -47,25 +48,35 @@ class Server(object):
             'and node check for {check} minutes'
             .format(check=self.args.check_interval)
         )
-        self.sync_nodes(sc)
-        self.check_nodes(sc)
-        sc.run()
+        self.sync_nodes()
+        self.check_nodes()
+        while True:
+            time.sleep(1)
 
-    def check_nodes(self, sc):
+    def check_nodes(self):
         """ check if known nodes are used """
         self.logger.info('Checking if new nodes are needed')
-        sc.enter(60 * self.args.check_interval, 2, self.check_nodes, (sc, ))
+        self.ct = Timer(60 * int(self.args.check_interval),
+                        self.check_nodes, ())
+        self.ct.start()
 
-    def sync_nodes(self, sc):
+    def sync_nodes(self):
         """ sync list of known nodes """
         self.logger.info('Syncing internal nodes list')
-        sc.enter(60 * self.args.sync_interval, 1, self.sync_nodes, (sc, ))
+        self.st = Timer(60 * int(self.args.sync_interval), self.sync_nodes, ())
+        self.st.start()
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        self.shutdown(False)
 
     def shutdown(self, error):
+        if self.st:
+            self.st.cancel()
+        if self.ct:
+            self.ct.cancel()
+
         if not error:
             self.logger.info('Safely shutting down')
             sys.exit(0)
