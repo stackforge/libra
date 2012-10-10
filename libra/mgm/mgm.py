@@ -19,6 +19,7 @@ import pwd
 import signal
 import sys
 import time
+import sched
 
 from libra.common.options import Options, setup_logging
 
@@ -36,14 +37,29 @@ class Server(object):
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
 
-        while 1:
-            self.logger.info(
-                'Sleeping for {minutes} minutes'
-                .format(minutes=self.args.interval)
-            )
-            time.sleep(self.args.interval)
+        # make initial sync and then run scheduler
+        sc = sched.scheduler(time.time, time.sleep)
+        self.logger.info(
+            'Scheduling node sync for {sync} minutes'
+            .format(sync=self.args.sync_interval)
+        )
+        self.logger.info(
+            'and node check for {check} minutes'
+            .format(check=self.args.check_interval)
+        )
+        self.sync_nodes(sc)
+        self.check_nodes(sc)
+        sc.run()
 
-        self.shutdown(False)
+    def check_nodes(self, sc):
+        """ check if known nodes are used """
+        self.logger.info('Checking if new nodes are needed')
+        sc.enter(60 * self.args.check_interval, 2, self.check_nodes, (sc, ))
+
+    def sync_nodes(self, sc):
+        """ sync list of known nodes """
+        self.logger.info('Syncing internal nodes list')
+        sc.enter(60 * self.args.sync_interval, 1, self.sync_nodes, (sc, ))
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
