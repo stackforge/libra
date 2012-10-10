@@ -46,3 +46,12 @@ class TestHAProxyDriver(unittest.TestCase):
         self.assertEqual(len(servers), 2)
         self.assertEqual(servers[0], ('1.2.3.4', 7777))
         self.assertEqual(servers[1], ('5.6.7.8', 8888))
+
+    def testSetAlgorithm(self):
+        """ Test the HAProxy set_algorithm() method """
+        self.driver.set_algorithm(self.driver.ROUNDROBIN)
+        self.assertEqual(self.driver._config['algorithm'], 'roundrobin')
+        self.driver.set_algorithm(self.driver.LEASTCONN)
+        self.assertEqual(self.driver._config['algorithm'], 'leastconn')
+        with self.assertRaises(Exception):
+            self.driver.set_protocol(99)
