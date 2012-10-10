@@ -34,15 +34,11 @@ class LoadBalancerDriver(object):
         """ Allows the driver to do any initialization for a new config. """
         raise NotImplementedError()
 
-    def bind(self, address, port):
-        """ Set proxy listening interface and port. """
-        raise NotImplementedError()
-
     def add_server(self, host, port):
         """ Add a server for which we will proxy. """
         raise NotImplementedError()
 
-    def set_protocol(self, protocol):
+    def set_protocol(self, protocol, port):
         """ Set the protocol of the instance. """
         raise NotImplementedError()
 
