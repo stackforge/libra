@@ -12,12 +12,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import uuid
+import time
+
 from novaclient import client
 
 
 class Node(object):
     def __init__(self, username, password, tenant, auth_url, region, keyname,
-                 secgroup):
+                 secgroup, image, node_type):
         self.nova = client.HTTPClient(
             username,
             password,
@@ -28,15 +31,52 @@ class Node(object):
         )
         self.keyname = keyname
         self.secgroup = secgroup
+        self.image = image
+        self.node_type = node_type
 
-    def create(self, node_id, image, node_type):
+    def build(self):
+        """ create a node, test it is running """
+        node_id = uuid.uuid1()
+        try:
+            body = self._create(node_id)
+        except:
+            return False, 'Error creating node {nid}'.format(nid=node_id)
+
+        server_id = body['server']['id']
+        # try for 40 * 3 seconds
+        waits = 40
+        while waits > 0:
+            time.sleep(3)
+            status = self._status(server_id)
+            if status == 'ACTIVE':
+                return True, body
+            waits = waits - 1
+
+        return (False,
+                'Timeout creating node, uuid: {nid}, server ID: {sid}'
+                .format(nid=node_id, sid=server_id)
+                )
+
+    def delete(self, node_id):
+        """ delete a node """
+        try:
+            resp = self._delete(node_id)
+        except:
+            return False
+
+        if resp['status'] != '204':
+            return False
+
+        return True
+
+    def _create(self, node_id):
         """ create a nova node """
         url = "/servers"
         body = {"server": {
-                "name": 'lbass_{0}'.format(node_id),
-                "imageRef": image,
+                "name": 'libra_{0}'.format(node_id),
+                "imageRef": self.image,
                 "key_name": self.keyname,
-                "flavorRef": node_type,
+                "flavorRef": self.node_type,
                 "max_count": 1,
                 "min_count": 1,
                 "networks": [],
@@ -45,17 +85,15 @@ class Node(object):
         resp, body = self.nova.post(url, body=body)
         return body
 
-    def status(self, node_id):
+    def _status(self, node_id):
         """ used to keep scanning to see if node is up """
         url = "/servers/{0}".format(node_id)
         resp, body = self.nova.get(url)
         return body['server']['status']
 
-    def delete(self, node_id):
-        """ delete a nova node, return 1 if fail, 0 if succeed """
+    def _delete(self, node_id):
+        """ delete a nova node, return 204 succeed """
         url = "/servers/{0}".format(node_id)
         resp, body = self.nova.delete(url)
-        if resp.status != 204:
-            return 1
 
-        return 0
+        return resp

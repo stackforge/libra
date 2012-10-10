@@ -30,7 +30,7 @@ class TestLBaaSMgmNova(unittest.TestCase):
     def setUp(self):
         self.api = Node(
             "username", "password", "auth_test", "tenant1", "region1",
-            "default", "default"
+            "default", "default", '1234', '100'
         )
         self.api.nova.management_url = "http://example.com"
         self.api.nova.auth_token = "token"
