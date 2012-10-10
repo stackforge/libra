@@ -17,20 +17,33 @@ from novaclient import client
 
 
 class Node(object):
-    def __init__(self, username, password, tenant, auth_url, region):
+    def __init__(self, username, password, tenant, auth_url, region, keyname,
+                 secgroup):
         self.nova = client.HTTPClient(
-            username, password, tenant, auth_url, region, 'compute'
+            username,
+            password,
+            tenant,
+            auth_url,
+            region_name=region,
+            service_type='compute'
         )
+        self.keyname = keyname
+        self.secgroup = secgroup
 
     def create(self, node_id, image, node_type):
         """ create a nova node """
         url = "/servers"
         body = {"server": {
                 "name": 'lbass_{0}'.format(node_id),
-                "imageId": image,
-                "flavourId": node_type,
+                "imageRef": image,
+                "key_name": self.keyname,
+                "flavorRef": node_type,
+                "max_count": 1,
+                "min_count": 1,
+                "networks": [],
+                "security_groups": [{"name": self.secgroup}]
                 }}
-        resp, body = self.nova.post(url, body)
+        resp, body = self.nova.post(url, body=body)
         return body
 
     def status(self, node_id):
