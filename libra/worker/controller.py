@@ -74,8 +74,11 @@ class LBaaSController(object):
             return BadRequest("Missing 'nodes' element").to_json()
 
         if 'protocol' in self.msg:
+            port = None
+            if 'port' in self.msg:
+                port = self.msg['port']
             try:
-                self.driver.set_protocol(self.msg['protocol'])
+                self.driver.set_protocol(self.msg['protocol'], port)
             except NotImplementedError:
                 self.logger.error(
                     "Selected driver does not support setting protocol."

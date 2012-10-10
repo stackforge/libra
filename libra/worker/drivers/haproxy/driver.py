@@ -27,8 +27,11 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def _init_config(self):
         self._config = dict()
-        self.bind('0.0.0.0', 80)
-        self.set_protocol('HTTP')
+        self.set_protocol('HTTP', 80)
+
+    def _bind(self, address, port):
+        self._config['bind_address'] = address
+        self._config['bind_port'] = port
 
     def _config_to_string(self):
         """
@@ -149,20 +152,24 @@ class HAProxyDriver(LoadBalancerDriver):
     def init(self):
         self._init_config()
 
-    def bind(self, address, port):
-        self._config['bind_address'] = address
-        self._config['bind_port'] = port
-
     def add_server(self, host, port):
         if 'servers' not in self._config:
             self._config['servers'] = []
         self._config['servers'].append((host, port))
 
-    def set_protocol(self, protocol):
+    def set_protocol(self, protocol, port=None):
         proto = protocol.lower()
         if proto not in ('tcp', 'http', 'health'):
             raise Exception("Invalid protocol: %s" % protocol)
         self._config['mode'] = proto
+
+        if port is None:
+            if proto == 'tcp':
+                raise Exception('Port is required for TCP protocol.')
+            elif proto == 'http':
+                self._bind('0.0.0.0', 80)
+        else:
+            self._bind('0.0.0.0', port)
 
     def create(self):
         self._write_config()

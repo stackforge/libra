@@ -9,13 +9,33 @@ class TestHAProxyDriver(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testBind(self):
-        """ Test the HAProxy bind() method """
-        bind_address = '9.8.7.6'
-        bind_port = 9999
-        self.driver.bind(bind_address, bind_port)
-        self.assertEqual(self.driver._config['bind_address'], bind_address)
-        self.assertEqual(self.driver._config['bind_port'], bind_port)
+    def testInit(self):
+        """ Test the HAProxy init() method """
+        self.driver.init()
+        self.assertIsInstance(self.driver._config, dict)
+        self.assertEqual(self.driver._config['mode'], 'http')
+        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
+        self.assertEqual(self.driver._config['bind_port'], 80)
+
+    def testSetProtocol(self):
+        """ Test the HAProxy set_protocol() method """
+        self.driver.set_protocol('http', None)
+        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
+        self.assertEqual(self.driver._config['bind_port'], 80)
+        self.assertEqual(self.driver._config['mode'], 'http')
+
+        self.driver.set_protocol('http', 8080)
+        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
+        self.assertEqual(self.driver._config['bind_port'], 8080)
+        self.assertEqual(self.driver._config['mode'], 'http')
+
+        self.driver.set_protocol('tcp', 443)
+        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
+        self.assertEqual(self.driver._config['bind_port'], 443)
+        self.assertEqual(self.driver._config['mode'], 'tcp')
+
+        with self.assertRaises(Exception):
+            self.driver.set_protocol('tcp', None)
 
     def testAddServer(self):
         """ Test the HAProxy add_server() method """
