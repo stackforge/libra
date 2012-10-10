@@ -13,6 +13,7 @@
 # under the License.
 
 from libra.common.faults import BadRequest
+from libra.worker.drivers.base import LoadBalancerDriver
 
 
 class LBaaSController(object):
@@ -88,6 +89,26 @@ class LBaaSController(object):
             except Exception as e:
                 self.logger.error("Failure trying to set protocol: %s, %s" %
                                   (e.__class__, e))
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
+
+        if 'algorithm' in self.msg:
+            algo = self.msg['algorithm'].upper()
+            if algo == 'ROUND_ROBIN':
+                algo = LoadBalancerDriver.ROUNDROBIN
+            elif algo == 'LEAST_CONNECTIONS':
+                algo = LoadBalancerDriver.LEASTCONN
+
+            try:
+                self.driver.set_algorithm(algo)
+            except NotImplementedError:
+                self.logger.error(
+                    "Selected driver does not support setting algorithm."
+                )
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
+            except Exception as e:
+                self.logger.error("Selected driver failed setting algorithm.")
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
 

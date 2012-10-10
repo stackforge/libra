@@ -28,6 +28,7 @@ class HAProxyDriver(LoadBalancerDriver):
     def _init_config(self):
         self._config = dict()
         self.set_protocol('HTTP', 80)
+        self.set_algorithm(self.ROUNDROBIN)
 
     def _bind(self, address, port):
         self._config['bind_address'] = address
@@ -60,7 +61,7 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    timeout connect 5000ms')
         output.append('    timeout client 50000ms')
         output.append('    timeout server 5000ms')
-        output.append('    balance roundrobin')
+        output.append('    balance %s' % self._config['algorithm'])
         output.append('    cookie SERVERID rewrite')
         output.append('frontend http-in')
         output.append('    bind %s:%s' % (self._config['bind_address'],
@@ -170,6 +171,14 @@ class HAProxyDriver(LoadBalancerDriver):
                 self._bind('0.0.0.0', 80)
         else:
             self._bind('0.0.0.0', port)
+
+    def set_algorithm(self, algo):
+        if algo == self.ROUNDROBIN:
+            self._config['algorithm'] = 'roundrobin'
+        elif algo == self.LEASTCONN:
+            self._config['algorithm'] = 'leastconn'
+        else:
+            raise Exception('Invalid algorithm')
 
     def create(self):
         self._write_config()

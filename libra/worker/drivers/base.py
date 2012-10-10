@@ -30,6 +30,10 @@ class LoadBalancerDriver(object):
     via these API calls until the activate() method is called.
     """
 
+    # Load balancer algorithms
+    ROUNDROBIN = 1
+    LEASTCONN = 2
+
     def init(self):
         """ Allows the driver to do any initialization for a new config. """
         raise NotImplementedError()
@@ -40,6 +44,10 @@ class LoadBalancerDriver(object):
 
     def set_protocol(self, protocol, port):
         """ Set the protocol of the instance. """
+        raise NotImplementedError()
+
+    def set_algorithm(self, algo):
+        """ Set the algorithm used by the load balancer. """
         raise NotImplementedError()
 
     def create(self):
