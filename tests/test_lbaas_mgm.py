@@ -46,6 +46,13 @@ class TestLBaaSMgmNova(unittest.TestCase):
                 self.assertTrue(resp)
                 self.assertEqual(data['server']['id'], 417773)
 
+    def testCreateNodeFail(self):
+        with mock.patch.object(httplib2.Http, "request", mock_bad_request):
+            with mock.patch('time.time', mock.Mock(return_value=1234)):
+                resp, data = self.api.build()
+                self.assertFalse(resp)
+                self.assertRegexpMatches(data, 'Error creating')
+
     def testDeleteNodeFail(self):
         with mock.patch.object(httplib2.Http, "request", mock_bad_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
