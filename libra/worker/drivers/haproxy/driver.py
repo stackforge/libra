@@ -110,15 +110,6 @@ class HAProxyDriver(LoadBalancerDriver):
             raise Exception("Failed to write configuration file: %s" %
                             e.output.rstrip('\n'))
 
-    def _restart(self):
-        """ Restart the HAProxy service on the local machine. """
-        cmd = '/usr/bin/sudo /usr/sbin/service haproxy restart'
-        try:
-            subprocess.check_output(cmd.split())
-        except subprocess.CalledProcessError as e:
-            raise Exception("Failed to restart HAProxy service: %s" %
-                            e.output.rstrip('\n'))
-
     def _stop(self):
         """ Stop the HAProxy service on the local machine. """
         cmd = '/usr/bin/sudo /usr/sbin/service haproxy stop'
@@ -189,7 +180,8 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def create(self):
         self._write_config()
-        self._restart()
+        self._stop()
+        self._start()
 
     def suspend(self):
         self._stop()
