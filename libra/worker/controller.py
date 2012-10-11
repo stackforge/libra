@@ -43,7 +43,7 @@ class LBaaSController(object):
             return self.msg
 
         action = self.msg[self.ACTION_FIELD].upper()
-        self.logger.debug("Requested action: %s" % action)
+        self.logger.info("Requested action: %s" % action)
         if action == 'CREATE':
             return self._action_create()
         elif action == 'UPDATE':

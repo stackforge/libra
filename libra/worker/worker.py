@@ -71,7 +71,7 @@ class Server(object):
         """ Main method of the server.  """
         my_ip = socket.gethostbyname(socket.gethostname())
         task_name = "lbaas-%s" % my_ip
-        self.logger.debug("Registering task %s" % task_name)
+        self.logger.info("Registering task %s" % task_name)
 
         worker = CustomJSONGearmanWorker(self.servers)
         worker.set_client_id(my_ip)
@@ -134,11 +134,11 @@ def main():
     # along to the Gearman task that will use it to communicate with
     # the device.
 
-    logger.debug("Selected driver: %s" % args.driver)
+    logger.info("Selected driver: %s" % args.driver)
     driver_class = import_class(known_drivers[args.driver])
     driver = driver_class()
 
-    logger.debug("Job server list: %s" % args.server)
+    logger.info("Job server list: %s" % args.server)
     server = Server(logger, args.server, args.reconnect_sleep)
     server.driver = driver
 
