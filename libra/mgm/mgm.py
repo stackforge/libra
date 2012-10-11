@@ -96,8 +96,12 @@ def main():
         help='number of nodes'
     )
     options.parser.add_argument(
-        '--interval', type=int, default=5,
-        help='how often to poll API server (in minutes)'
+        '--check_interval', type=int, default=5,
+        help='how often to check if new nodes are needed (in minutes)'
+    )
+    options.parser.add_argument(
+        '--sync_interval', type=int, default=60,
+        help='how often to sync node lost (in minutes)'
     )
     args = options.run()
 
