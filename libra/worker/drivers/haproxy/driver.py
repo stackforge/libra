@@ -21,6 +21,7 @@ from libra.worker.drivers.base import LoadBalancerDriver
 class HAProxyDriver(LoadBalancerDriver):
 
     def __init__(self):
+        self._haproxy_pid = '/var/run/haproxy.pid'
         self._config_file = '/etc/haproxy/haproxy.cfg'
         self._backup_config = self._config_file + '.BKUP'
         self._init_config()
@@ -126,6 +127,9 @@ class HAProxyDriver(LoadBalancerDriver):
         except subprocess.CalledProcessError as e:
             raise Exception("Failed to stop HAProxy service: %s" %
                             e.output.rstrip('\n'))
+        if os.path.exists(self._haproxy_pid):
+            raise Exception("%s still exists. Stop failed." %
+                            self._haproxy_pid)
 
     def _start(self):
         """ Start the HAProxy service on the local machine. """
@@ -135,6 +139,9 @@ class HAProxyDriver(LoadBalancerDriver):
         except subprocess.CalledProcessError as e:
             raise Exception("Failed to start HAProxy service: %s" %
                             e.output.rstrip('\n'))
+        if not os.path.exists(self._haproxy_pid):
+            raise Exception("%s does not exist. Start failed." %
+                            self._haproxy_pid)
 
     def _delete_configs(self):
         """ Delete current and backup configs on the local machine. """
