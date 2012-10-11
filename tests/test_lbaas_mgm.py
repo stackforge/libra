@@ -2,17 +2,18 @@ import unittest
 import logging
 import mock
 import httplib2
+import json
 
 import mock_objects
 from libra.mgm.nova import Node
 
-fake_response = httplib2.Response({"status": 200})
-fake_bad_response = httplib2.Response({"status": 500})
-fake_del_response = httplib2.Response({"status": 204})
-fake_body = '{"hi": "there"}'
+fake_response = httplib2.Response({"status": '200'})
+fake_bad_response = httplib2.Response({"status": '500'})
+fake_del_response = httplib2.Response({"status": '204'})
+fake_body = json.dumps({u'server': {u'status': u'ACTIVE', u'updated': u'2012-10-10T11:55:55Z', u'hostId': u'', u'user_id': u'18290556240782', u'name': u'lbass_0', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/v1.1/58012755801586/servers/417773', u'rel': u'self'}, {u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/servers/417773', u'rel': u'bookmark'}], u'created': u'2012-10-10T11:55:55Z', u'tenant_id': u'58012755801586', u'image': {u'id': u'8419', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/images/8419', u'rel': u'bookmark'}]}, u'adminPass': u'u2LKPA73msRTxDMC', u'uuid': u'14984389-8cc5-4780-be64-2d31ace662ad', u'accessIPv4': u'', u'metadata': {}, u'accessIPv6': u'', u'key_name': u'default', u'flavor': {u'id': u'100', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/flavors/100', u'rel': u'bookmark'}]}, u'config_drive': u'', u'id': 417773, u'security_groups': [{u'name': u'default', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/v1.1/58012755801586/os-security-groups/4008', u'rel': u'bookmark'}], u'id': 4008}], u'addresses': {}}})
 mock_request = mock.Mock(return_value=(fake_response, fake_body))
-mock_bad_request = mock.Mock(return_value=(fake_bad_response, fake_body))
-mock_del_request = mock.Mock(return_value=(fake_del_response, fake_body))
+mock_bad_request = mock.Mock(return_value=(fake_bad_response, ""))
+mock_del_request = mock.Mock(return_value=(fake_del_response, ""))
 
 
 class TestLBaaSMgmTask(unittest.TestCase):
@@ -39,22 +40,20 @@ class TestLBaaSMgmNova(unittest.TestCase):
         pass
 
     def testCreateNode(self):
-        @mock.patch.object(httplib2.Http, "request", mock_request)
-        @mock.patch('time.time', mock.Mock(return_value=1234))
-        def testCreateCall():
-            data = self.api.create('4321', '123', '321')
-            self.assertEqual(data, {"hi": "there"})
+        with mock.patch.object(httplib2.Http, "request", mock_request):
+            with mock.patch('time.time', mock.Mock(return_value=1234)):
+                resp, data = self.api.build()
+                self.assertTrue(resp)
+                self.assertEqual(data['server']['id'], 417773)
 
     def testDeleteNodeFail(self):
-        @mock.patch.object(httplib2.Http, "request", mock_bad_request)
-        @mock.patch('time.time', mock.Mock(return_value=1234))
-        def testDeleteCall():
-            resp = self.api.delete('1234')
-            self.assertEqual(resp, 1)
+        with mock.patch.object(httplib2.Http, "request", mock_bad_request):
+            with mock.patch('time.time', mock.Mock(return_value=1234)):
+                resp = self.api.delete('1234')
+                self.assertFalse(resp)
 
     def testDeleteNodeSucceed(self):
-        @mock.patch.object(httplib2.Http, "request", mock_del_request)
-        @mock.patch('time.time', mock.Mock(return_value=1234))
-        def testDeleteCall():
-            resp = self.api.delete('1234')
-            self.assertEqual(resp, 0)
+        with mock.patch.object(httplib2.Http, "request", mock_del_request):
+            with mock.patch('time.time', mock.Mock(return_value=1234)):
+                resp = self.api.delete('1234')
+                self.assertTrue(resp)
