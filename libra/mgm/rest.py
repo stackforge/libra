@@ -30,6 +30,10 @@ class APIClient(object):
         )
         return r.json
 
+    def get_metrics(self):
+        r = requests.get('{url}/devices/metrics'.format(url=self.url))
+        return r.json
+
     def get_node(self, node_id):
         r = requests.get(
             '{url}/devices/{nid}'.format(url=self.url, nid=node_id)
