@@ -73,6 +73,27 @@ def main():
     subparsers.add_parser(
         'list', help='list load balancers'
     )
+    subparsers.add_parser(
+        'delete', help='delete a load balancer'
+    )
+    subparsers.add_parser(
+        'create', help='create a load balancer'
+    )
+    subparsers.add_parser(
+        'modify', help='modify a load balancer'
+    )
+    subparsers.add_parser(
+        'node-list', help='list nodes in a load balancer'
+    )
+    subparsers.add_parser(
+        'node-delete', help='delete node from a load balancer'
+    )
+    subparsers.add_parser(
+        'node-add', help='add node to a load balancer'
+    )
+    subparsers.add_parser(
+        'node-modify', help='modify node in a load balancer'
+    )
 
     args = options.parse_args()
 
