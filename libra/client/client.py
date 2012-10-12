@@ -12,8 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import argparse
 from novaclient import client
-from libra.common.options import Options
 
 
 class LibraAPI(object):
@@ -41,33 +41,35 @@ class LibraAPI(object):
 
 
 def main():
-    options = Options('client', 'Libra command line client')
-    options.parser.add_argument(
+    options = argparse.ArgumentParser('Libra command line client')
+    options.add_argument(
         '--os_auth_url',
         help='Authentication URL'
     )
-    options.parser.add_argument(
+    options.add_argument(
         '--os_username',
-        help='Authentication URL'
+        help='Authentication username'
     )
-    options.parser.add_argument(
+    options.add_argument(
         '--os_password',
-        help='Authentication URL'
+        help='Authentication password'
     )
-    options.parser.add_argument(
+    options.add_argument(
         '--os_tenant_name',
-        help='Authentication URL'
+        help='Authentication tenant'
     )
-    options.parser.add_argument(
+    options.add_argument(
         '--os_region_name',
-        help='Authentication URL'
+        help='Authentication region'
     )
-    subparsers = options.parser.add_subparsers(dest='command')
+    subparsers = options.add_subparsers(
+        metavar='<subcommand>', dest='command'
+    )
     subparsers.add_parser(
         'list', help='list load balancers'
     )
 
-    args = options.run()
+    args = options.parse_args()
 
     api = LibraAPI(args.os_username, args.os_password, args.os_tenant_name,
                    args.os_auth_url, args.os_region_name)
