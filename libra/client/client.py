@@ -97,6 +97,9 @@ def main():
     subparsers.add_parser(
         'node-modify', help='modify node in a load balancer'
     )
+    subparsers.add_parser(
+        'node-status', help='get status of a node in a load balancer'
+    )
 
     args = options.parse_args()
 
