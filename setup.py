@@ -54,7 +54,8 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'libra_worker = libra.worker.worker:main',
-            'libra_pool_mgm = libra.mgm.mgm:main'
+            'libra_pool_mgm = libra.mgm.mgm:main',
+            'libra_client = libra.client.client:main',
         ]
     },
     cmdclass=ci_cmdclass,
