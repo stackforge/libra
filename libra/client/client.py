@@ -83,6 +83,9 @@ def main():
         'modify', help='modify a load balancer'
     )
     subparsers.add_parser(
+        'status', help='get status of a load balancer'
+    )
+    subparsers.add_parser(
         'node-list', help='list nodes in a load balancer'
     )
     subparsers.add_parser(
