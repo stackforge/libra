@@ -44,22 +44,27 @@ def main():
     options = argparse.ArgumentParser('Libra command line client')
     options.add_argument(
         '--os_auth_url',
+        metavar='<auth-url>',
         help='Authentication URL'
     )
     options.add_argument(
         '--os_username',
+        metavar='<auth-user-name>',
         help='Authentication username'
     )
     options.add_argument(
         '--os_password',
+        metavar='<auth-password>',
         help='Authentication password'
     )
     options.add_argument(
         '--os_tenant_name',
+        metavar='<auth-tenant-name>',
         help='Authentication tenant'
     )
     options.add_argument(
         '--os_region_name',
+        metavar='<region-name>',
         help='Authentication region'
     )
     subparsers = options.add_subparsers(
