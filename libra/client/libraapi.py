@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import prettytable
 from novaclient import client
 
 
@@ -26,14 +27,26 @@ class LibraAPI(object):
             service_type='libra'
         )
 
-    def get(self, url, **kwargs):
+    def list_lb(self):
+        resp, body = self._get('/loadbalaners')
+        columns = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm', 'Status',
+                   'Created', 'Updated']
+        self._render(columns, body, 'loadbalancers')
+
+    def _render(self, columns, data, row_item):
+        table = prettytable.PrettyTable(columns)
+        for item in data[row_item]:
+            table.add_row(item)
+        print table
+
+    def _get(self, url, **kwargs):
         return self.nova.get(url, **kwargs)
 
-    def post(self, url, **kwargs):
+    def _post(self, url, **kwargs):
         return self.nova.post(url, **kwargs)
 
-    def put(self, url, **kwargs):
+    def _put(self, url, **kwargs):
         return self.nova.put(url, **kwargs)
 
-    def delete(self, url, **kwargs):
+    def _delete(self, url, **kwargs):
         return self.nova.delete(url, **kwargs)

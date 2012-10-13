@@ -24,6 +24,6 @@ def main():
                    args.os_auth_url, args.os_region_name)
 
     if args.command == 'list':
-        api.get('/devices')
+        api.list_lb()
 
     return 0
