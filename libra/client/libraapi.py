@@ -31,7 +31,7 @@ class LibraAPI(object):
         resp, body = self._get('/loadbalaners')
         columns = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm', 'Status',
                    'Created', 'Updated']
-        self._render(columns, body, 'loadbalancers')
+        self._render(columns, body, 'loadBalancers')
 
     def _render(self, columns, data, row_item):
         table = prettytable.PrettyTable(columns)
