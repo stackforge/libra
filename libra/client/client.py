@@ -26,4 +26,7 @@ def main():
     if args.command == 'list':
         api.list_lb()
 
+    if args.command == 'status':
+        api.get_lb(args.lbid)
+
     return 0

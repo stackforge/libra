@@ -60,9 +60,10 @@ class ClientOptions(object):
         subparsers.add_parser(
             'modify', help='modify a load balancer'
         )
-        subparsers.add_parser(
+        sp = subparsers.add_parser(
             'status', help='get status of a load balancer'
         )
+        sp.add_argument('lbid', help='Load Balancer ID')
         subparsers.add_parser(
             'node-list', help='list nodes in a load balancer'
         )
@@ -80,4 +81,5 @@ class ClientOptions(object):
         )
 
     def run(self):
+        self._generate()
         return self.options.parse_args()

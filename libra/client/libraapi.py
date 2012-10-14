@@ -29,18 +29,39 @@ class LibraAPI(object):
 
     def list_lb(self):
         resp, body = self._get('/loadbalaners')
-        columns = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm', 'Status',
-                   'Created', 'Updated']
-        self._render(columns, body['loadBalancers'])
+        column_names = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm',
+                        'Status', 'Created', 'Updated']
+        columns = ['name', 'id', 'protocol', 'port', 'algorithm', 'status',
+                   'created', 'updated']
+        self._render_list(column_names, columns, body['loadBalancers'])
 
-    def _render(self, columns, data):
-        table = prettytable.PrettyTable(columns)
+    def get_lb(self, lbid):
+        resp, body = self._get('/loadbalancers/{0}'.format(lbid))
+        column_names = ['ID', 'Name', 'Protocol', 'Port', 'Algorithm',
+                        'Status', 'Created', 'Updated', 'IPs', 'Nodes',
+                        'Persistence Type', 'Connection Throttle']
+        columns = ['id', 'name', 'protocol', 'port', 'algorithm', 'status',
+                   'created', 'updated', 'virtualIps', 'nodes',
+                   'sessionPersistence', 'connectionThrottle']
+        self._render_dict(column_names, columns, body)
+
+    def _render_list(self, column_names, columns, data):
+        table = prettytable.PrettyTable(column_names)
         for item in data:
             row = []
             for column in columns:
-                rdata = item[column.lower()]
+                rdata = item[column]
                 row.append(rdata)
             table.add_row(row)
+        print table
+
+    def _render_dict(self, column_names, columns, data):
+        table = prettytable.PrettyTable(column_names)
+        row = []
+        for column in columns:
+            rdata = data[column]
+            row.append(rdata)
+        table.add_row(row)
         print table
 
     def _get(self, url, **kwargs):
