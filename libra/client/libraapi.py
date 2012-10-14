@@ -31,12 +31,16 @@ class LibraAPI(object):
         resp, body = self._get('/loadbalaners')
         columns = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm', 'Status',
                    'Created', 'Updated']
-        self._render(columns, body, 'loadBalancers')
+        self._render(columns, body['loadBalancers'])
 
-    def _render(self, columns, data, row_item):
+    def _render(self, columns, data):
         table = prettytable.PrettyTable(columns)
-        for item in data[row_item]:
-            table.add_row(item)
+        for item in data:
+            row = []
+            for column in columns:
+                rdata = item[column.lower()]
+                row.append(rdata)
+            table.add_row(row)
         print table
 
     def _get(self, url, **kwargs):
