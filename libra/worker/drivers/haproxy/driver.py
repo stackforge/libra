@@ -12,18 +12,19 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import os
-import subprocess
-
+from libra.common.utils import import_class
 from libra.worker.drivers.base import LoadBalancerDriver
+from libra.worker.drivers.haproxy.services_base import ServicesBase
 
 
 class HAProxyDriver(LoadBalancerDriver):
 
-    def __init__(self):
-        self._haproxy_pid = '/var/run/haproxy.pid'
-        self._config_file = '/etc/haproxy/haproxy.cfg'
-        self._backup_config = self._config_file + '.BKUP'
+    def __init__(self, ossvc='ubuntu_services.UbuntuServices'):
+        ossvc_driver = import_class('libra.worker.drivers.haproxy.' + ossvc)
+        self.ossvc = ossvc_driver()
+        if not isinstance(self.ossvc, ServicesBase):
+            raise Exception('Class is not derived from ServicesBase: %s' %
+                            ossvc.__class__)
         self._init_config()
 
     def _init_config(self):
@@ -77,73 +78,6 @@ class HAProxyDriver(LoadBalancerDriver):
 
         return '\n'.join(output) + '\n'
 
-    def _write_config(self):
-        """
-        Generate the new config and replace the current config file.
-
-        We'll first write out a new config to a temporary file, backup
-        the production config file, then rename the temporary config to the
-        production config.
-        """
-        config_str = self._config_to_string()
-        tmpfile = '/tmp/haproxy.cfg'
-        fh = open(tmpfile, 'w')
-        fh.write(config_str)
-        fh.close()
-
-        # Copy any existing configuration file to a backup.
-        if os.path.exists(self._config_file):
-            copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file,
-                                                        self._backup_config)
-            try:
-                subprocess.check_output(copy_cmd.split(),
-                                        stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError as e:
-                raise Exception("Failed to copy configuration file: %s" %
-                                e.output.rstrip('\n'))
-
-        # Move the temporary config file to production version.
-        move_cmd = "/usr/bin/sudo /bin/mv %s %s" % (tmpfile, self._config_file)
-        try:
-            subprocess.check_output(move_cmd.split(), stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            raise Exception("Failed to write configuration file: %s" %
-                            e.output.rstrip('\n'))
-
-    def _stop(self):
-        """ Stop the HAProxy service on the local machine. """
-        cmd = '/usr/bin/sudo /usr/sbin/service haproxy stop'
-        try:
-            subprocess.check_output(cmd.split())
-        except subprocess.CalledProcessError as e:
-            raise Exception("Failed to stop HAProxy service: %s" %
-                            e.output.rstrip('\n'))
-        if os.path.exists(self._haproxy_pid):
-            raise Exception("%s still exists. Stop failed." %
-                            self._haproxy_pid)
-
-    def _start(self):
-        """ Start the HAProxy service on the local machine. """
-        cmd = '/usr/bin/sudo /usr/sbin/service haproxy start'
-        try:
-            subprocess.check_output(cmd.split())
-        except subprocess.CalledProcessError as e:
-            raise Exception("Failed to start HAProxy service: %s" %
-                            e.output.rstrip('\n'))
-        if not os.path.exists(self._haproxy_pid):
-            raise Exception("%s does not exist. Start failed." %
-                            self._haproxy_pid)
-
-    def _delete_configs(self):
-        """ Delete current and backup configs on the local machine. """
-        cmd = '/usr/bin/sudo /bin/rm -f %s %s' % (self._config_file,
-                                                  self._backup_config)
-        try:
-            subprocess.check_output(cmd.split())
-        except subprocess.CalledProcessError as e:
-            raise Exception("Failed to delete HAProxy config files: %s" %
-                            e.output.rstrip('\n'))
-
     ####################
     # Driver API Methods
     ####################
@@ -179,16 +113,16 @@ class HAProxyDriver(LoadBalancerDriver):
             raise Exception('Invalid algorithm')
 
     def create(self):
-        self._write_config()
-        self._stop()
-        self._start()
+        self.ossvc.write_config()
+        self.ossvc.service_stop()
+        self.ossvc.service_start()
 
     def suspend(self):
-        self._stop()
+        self.ossvc.service_stop()
 
     def enable(self):
-        self._start()
+        self.ossvc.service_start()
 
     def delete(self):
-        self._stop()
-        self._delete_configs()
+        self.ossvc.service_stop()
+        self.ossvc.remove_configs()
