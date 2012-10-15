@@ -4,7 +4,7 @@ from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 class TestHAProxyDriver(unittest.TestCase):
     def setUp(self):
-        self.driver = HAProxyDriver()
+        self.driver = HAProxyDriver('mock_objects.FakeOSServices')
 
     def tearDown(self):
         pass

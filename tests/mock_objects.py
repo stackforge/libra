@@ -1,6 +1,8 @@
 import json
 import logging
 
+from libra.worker.drivers.haproxy.services_base import ServicesBase
+
 
 class FakeJob(object):
     def __init__(self, data):
@@ -8,6 +10,23 @@ class FakeJob(object):
         data: JSON object to convert to a string
         """
         self.data = json.dumps(data)
+
+
+class FakeOSServices(ServicesBase):
+    def service_stop(self):
+        pass
+
+    def service_start(self):
+        pass
+
+    def service_restart(self):
+        pass
+
+    def write_config(self):
+        pass
+
+    def remove_configs(self):
+        pass
 
 
 class MockLoggingHandler(logging.Handler):
@@ -28,3 +47,5 @@ class MockLoggingHandler(logging.Handler):
             'error': [],
             'critical': [],
         }
+
+

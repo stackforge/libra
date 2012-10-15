@@ -19,8 +19,11 @@ from libra.worker.drivers.haproxy.services_base import ServicesBase
 
 class HAProxyDriver(LoadBalancerDriver):
 
-    def __init__(self, ossvc='ubuntu_services.UbuntuServices'):
-        ossvc_driver = import_class('libra.worker.drivers.haproxy.' + ossvc)
+    def __init__(
+        self,
+        ossvc='libra.worker.drivers.haproxy.ubuntu_services.UbuntuServices'
+    ):
+        ossvc_driver = import_class(ossvc)
         self.ossvc = ossvc_driver()
         if not isinstance(self.ossvc, ServicesBase):
             raise Exception('Class is not derived from ServicesBase: %s' %
