@@ -26,6 +26,7 @@ from libra.common.options import Options, setup_logging
 from libra.common.utils import import_class
 from libra.worker.controller import LBaaSController
 from libra.worker.drivers.base import known_drivers
+from libra.worker.drivers.haproxy.services_base import haproxy_services
 
 
 def lbaas_task(worker, job):
@@ -115,6 +116,11 @@ def main():
         default=[],
         help='add a Gearman job server to the connection list'
     )
+    options.parser.add_argument(
+        '--haproxy-service', dest='haproxy_service',
+        choices=haproxy_services.keys(), default='ubuntu',
+        help='os services to use with HAProxy driver (when used)'
+    )
     args = options.run()
 
     logger = setup_logging('libra_worker', args)
@@ -136,7 +142,11 @@ def main():
 
     logger.info("Selected driver: %s" % args.driver)
     driver_class = import_class(known_drivers[args.driver])
-    driver = driver_class()
+
+    if args.driver == 'haproxy':
+        driver = driver_class(args.haproxy_service)
+    else:
+        driver = driver_class()
 
     logger.info("Job server list: %s" % args.server)
     server = Server(logger, args.server, args.reconnect_sleep)

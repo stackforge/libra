@@ -13,6 +13,12 @@
 # under the License.
 
 
+# Mapping of --haproxy-services options to a class
+haproxy_services = {
+    'ubuntu': 'libra.worker.drivers.haproxy.ubuntu_services.UbuntuServices'
+}
+
+
 class ServicesBase:
     """
     Operating system services needed by the HAProxy driver.
