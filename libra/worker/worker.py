@@ -23,9 +23,9 @@ from time import sleep
 
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.options import Options, setup_logging
+from libra.common.utils import import_class
 from libra.worker.controller import LBaaSController
 from libra.worker.drivers.base import known_drivers
-from libra.worker.utils import import_class
 
 
 def lbaas_task(worker, job):
