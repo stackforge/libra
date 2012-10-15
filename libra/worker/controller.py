@@ -98,6 +98,10 @@ class LBaaSController(object):
                 algo = LoadBalancerDriver.ROUNDROBIN
             elif algo == 'LEAST_CONNECTIONS':
                 algo = LoadBalancerDriver.LEASTCONN
+            else:
+                self.logger.error("Invalid algorithm: %s" % algo)
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
 
             try:
                 self.driver.set_algorithm(algo)

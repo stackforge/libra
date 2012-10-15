@@ -29,6 +29,23 @@ class FakeOSServices(ServicesBase):
         pass
 
 
+class FakeFaultingOSServices(ServicesBase):
+    def service_stop(self):
+        raise Exception("fault")
+
+    def service_start(self):
+        raise Exception("fault")
+
+    def service_restart(self):
+        raise Exception("fault")
+
+    def write_config(self):
+        raise Exception("fault")
+
+    def remove_configs(self):
+        raise Exception("fault")
+
+
 class MockLoggingHandler(logging.Handler):
     """Mock logging handler to check for expected logs."""
 
