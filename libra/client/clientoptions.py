@@ -54,9 +54,19 @@ class ClientOptions(object):
         subparsers.add_parser(
             'delete', help='delete a load balancer'
         )
-        subparsers.add_parser(
+        sp = subparsers.add_parser(
             'create', help='create a load balancer'
         )
+        sp.add_argument('--name', help='name for the load balancer')
+        sp.add_argument('--port', help='port for the load balancer')
+        sp.add_argument('--protocol',
+                        help='protocol for the load balancer (TCP or HTTP)',
+                        choices=['HTTP', 'TCP'])
+        sp.add_argument('--nodes',
+                        help='a node for the load balancer in ip:port format',
+                        action='append')
+        sp.add_argument('--vip',
+                        help='the virtual IP to attach the load balancer to')
         subparsers.add_parser(
             'modify', help='modify a load balancer'
         )
