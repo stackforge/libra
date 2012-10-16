@@ -4,10 +4,13 @@ Libra Client
 Synopsis
 --------
 
+:program:`libra_client.py` [:ref:`OPTIONS <libra_client-options>`] [:ref:`COMMAND <libra_client-commands>`]
+
 Description
 -----------
 
-:program:`libra_client.py` [:ref:`OPTIONS <libra_client-options>`] [:ref:`COMMAND <libra_client-commands>`]
+:program:`libra_client.py` is a utility designed to communicate with Atlas API
+based Load Balancer as a Service systems.
 
 .. _libra_client-options:
 
@@ -48,7 +51,7 @@ Client Commands
 ======= ==================
 Command Required Parameter
 ======= ==================
-list
+list    None
 create  loadbalancerID
 modify  loadbalancerID
 status  loadbalancerID
@@ -96,7 +99,7 @@ Update a load balancer's configuration
 
    A new algorithm for the load balancer
 
-.. program:: libra_clien.py list
+.. program:: libra_client.py list
 
 list
 ^^^^
