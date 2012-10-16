@@ -23,26 +23,31 @@ class ClientOptions(object):
         self.options.add_argument(
             '--os_auth_url',
             metavar='<auth-url>',
+            required=True,
             help='Authentication URL'
         )
         self.options.add_argument(
             '--os_username',
             metavar='<auth-user-name>',
+            required=True,
             help='Authentication username'
         )
         self.options.add_argument(
             '--os_password',
             metavar='<auth-password>',
+            required=True,
             help='Authentication password'
         )
         self.options.add_argument(
             '--os_tenant_name',
             metavar='<auth-tenant-name>',
+            required=True,
             help='Authentication tenant'
         )
         self.options.add_argument(
             '--os_region_name',
             metavar='<region-name>',
+            required=True,
             help='Authentication region'
         )
         subparsers = self.options.add_subparsers(
@@ -57,20 +62,22 @@ class ClientOptions(object):
         sp = subparsers.add_parser(
             'create', help='create a load balancer'
         )
-        sp.add_argument('--name', help='name for the load balancer')
-        sp.add_argument('--port', help='port for the load balancer')
+        sp.add_argument('--name', help='name for the load balancer',
+                        required=True)
+        sp.add_argument('--port', help='port for the load balancer',
+                        required=True)
         sp.add_argument('--protocol',
                         help='protocol for the load balancer (TCP or HTTP)',
-                        choices=['HTTP', 'TCP'])
+                        choices=['HTTP', 'TCP'], required=True)
         sp.add_argument('--node',
                         help='a node for the load balancer in ip:port format',
-                        action='append')
+                        action='append', required=True)
         sp.add_argument('--vip',
                         help='the virtual IP to attach the load balancer to')
         sp = subparsers.add_parser(
             'modify', help='modify a load balancer'
         )
-        sp.add_argument('lbid', help='load balancer ID')
+        sp.add_argument('lbid', help='load balancer ID', required=True)
         sp.add_argument('--name', help='new name for the load balancer')
         sp.add_argument('--algorithm',
                         help='new algorithm for the load balancer',
@@ -78,7 +85,7 @@ class ClientOptions(object):
         sp = subparsers.add_parser(
             'status', help='get status of a load balancer'
         )
-        sp.add_argument('lbid', help='load balancer ID')
+        sp.add_argument('lbid', help='load balancer ID', required=True)
         subparsers.add_parser(
             'node-list', help='list nodes in a load balancer'
         )

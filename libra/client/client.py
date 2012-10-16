@@ -25,8 +25,11 @@ def main():
 
     if args.command == 'list':
         api.list_lb()
-
-    if args.command == 'status':
+    elif args.command == 'status':
         api.get_lb(args.lbid)
+    elif args.command == 'modify':
+        api.modify_lb(args)
+    elif args.command == 'create':
+        api.create_lb(args)
 
     return 0
