@@ -5,3 +5,4 @@ Load Balancer as a Service Device Tools
    :maxdepth: 2
 
    client
+   worker/index
