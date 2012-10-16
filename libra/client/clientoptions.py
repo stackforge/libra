@@ -77,7 +77,7 @@ class ClientOptions(object):
         sp = subparsers.add_parser(
             'modify', help='modify a load balancer'
         )
-        sp.add_argument('lbid', help='load balancer ID', required=True)
+        sp.add_argument('lbid', help='load balancer ID')
         sp.add_argument('--name', help='new name for the load balancer')
         sp.add_argument('--algorithm',
                         help='new algorithm for the load balancer',
@@ -85,7 +85,7 @@ class ClientOptions(object):
         sp = subparsers.add_parser(
             'status', help='get status of a load balancer'
         )
-        sp.add_argument('lbid', help='load balancer ID', required=True)
+        sp.add_argument('lbid', help='load balancer ID')
         subparsers.add_parser(
             'node-list', help='list nodes in a load balancer'
         )
