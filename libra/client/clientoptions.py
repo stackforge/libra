@@ -56,9 +56,10 @@ class ClientOptions(object):
         subparsers.add_parser(
             'list', help='list load balancers'
         )
-        subparsers.add_parser(
+        sp = subparsers.add_parser(
             'delete', help='delete a load balancer'
         )
+        sp.add_argument('--id', help='load balancer ID', required=True)
         sp = subparsers.add_parser(
             'create', help='create a load balancer'
         )
@@ -77,7 +78,7 @@ class ClientOptions(object):
         sp = subparsers.add_parser(
             'modify', help='modify a load balancer'
         )
-        sp.add_argument('lbid', help='load balancer ID')
+        sp.add_argument('--id', help='load balancer ID', required=True)
         sp.add_argument('--name', help='new name for the load balancer')
         sp.add_argument('--algorithm',
                         help='new algorithm for the load balancer',
@@ -85,22 +86,37 @@ class ClientOptions(object):
         sp = subparsers.add_parser(
             'status', help='get status of a load balancer'
         )
-        sp.add_argument('lbid', help='load balancer ID')
-        subparsers.add_parser(
+        sp.add_argument('--id', help='load balancer ID', requied=True)
+        sp = subparsers.add_parser(
             'node-list', help='list nodes in a load balancer'
         )
-        subparsers.add_parser(
+        sp.add_argument('--id', help='load balancer ID', required=True)
+        sp = subparsers.add_parser(
             'node-delete', help='delete node from a load balancer'
         )
-        subparsers.add_parser(
+        sp.add_argument('--id', help='load balancer ID', required=True)
+        sp.add_argument('--nodeid',
+                        help='node ID to remove from load balancer',
+                        required=True)
+        sp = subparsers.add_parser(
             'node-add', help='add node to a load balancer'
         )
-        subparsers.add_parser(
+        sp.add_argument('--id', help='load balancer ID', required=True)
+        sp.add_argument('--node', help='node to add in ip:port form',
+                        required=True)
+        sp = subparsers.add_parser(
             'node-modify', help='modify node in a load balancer'
         )
-        subparsers.add_parser(
+        sp.add_argument('--id', help='load balancer ID', required=True)
+        sp.add_argument('--nodeid', help='node ID to modify', required=True)
+        sp.add_argument('--node', help='the new node address in ip:port form',
+                        required=True)
+        sp = subparsers.add_parser(
             'node-status', help='get status of a node in a load balancer'
         )
+        sp.add_argument('--id', help='load balancer ID', required=True)
+        sp.add_argument('--nodeid', help='node ID to get status from',
+                        required=True)
 
     def run(self):
         self._generate()

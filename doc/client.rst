@@ -48,15 +48,6 @@ Global Options
 Client Commands
 ---------------
 
-======= ==================
-Command Required Parameter
-======= ==================
-list    None
-create  loadbalancerID
-modify  loadbalancerID
-status  loadbalancerID
-======= ==================
-
 .. program:: libra_client.py create
 
 create
@@ -91,6 +82,10 @@ modify
 
 Update a load balancer's configuration
 
+.. option:: --id <id>
+
+   The ID of the load balancer
+
 .. option:: --name <name>
 
    A new name for the load balancer
@@ -112,3 +107,93 @@ status
 ^^^^^^
 
 Get the status of a single load balancer
+
+.. option:: --id <id>
+
+   The ID of the load balancer
+
+.. program:: libra_client.py delete
+
+delete
+^^^^^^
+
+Delete a load balancer
+
+.. option:: --id <id>
+
+   The ID of the load balancer
+
+.. program:: libra_client.py node-list
+
+node-list
+^^^^^^^^^
+
+List the nodes in a load balancer
+
+.. option:: --id <id>
+
+   The ID of the load balancer
+
+.. program:: libra_client.py node-delete
+
+node-delete
+^^^^^^^^^^^
+
+Delete a node from the load balancer
+
+.. option:: --id <id>
+
+   The ID of the load balancer
+
+.. option:: --nodeid <nodeid>
+
+   The ID of the node to be removed
+
+.. program:: libra_client.py node-add
+
+node-add
+^^^^^^^^
+
+Add a node to a load balancer
+
+.. option:: --id <id>
+
+   The ID of the load balancer
+
+.. option:: --node <ip:port>
+
+   The node address in ip:port format
+
+.. program:: libra_client.py node-modify
+
+node-modify
+^^^^^^^^^^^
+
+Modify a node in a load balancer
+
+.. option:: --id <id>
+
+   The ID of the load balancer
+
+.. option:: --nodeid <nodeid>
+
+   The ID of the node to be modified
+
+.. option:: --node <ip:port>
+
+   The new node address in ip:port format
+
+.. program:: libra_client.py node-status
+
+node-status
+^^^^^^^^^^^
+
+Get the status of a node in a load balancer
+
+.. option:: --id <id>
+
+   The ID of the load balancer
+
+.. option:: --nodeid <nodeid>
+
+   The ID of the node in the load balancer
