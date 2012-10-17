@@ -86,7 +86,7 @@ class ClientOptions(object):
         sp = subparsers.add_parser(
             'status', help='get status of a load balancer'
         )
-        sp.add_argument('--id', help='load balancer ID', requied=True)
+        sp.add_argument('--id', help='load balancer ID', required=True)
         sp = subparsers.add_parser(
             'node-list', help='list nodes in a load balancer'
         )

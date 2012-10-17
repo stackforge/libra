@@ -27,7 +27,7 @@ class LibraAPI(object):
             service_type='libra'
         )
 
-    def list_lb(self):
+    def list_lb(self, args):
         resp, body = self._get('/loadbalaners')
         column_names = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm',
                         'Status', 'Created', 'Updated']
@@ -35,8 +35,8 @@ class LibraAPI(object):
                    'created', 'updated']
         self._render_list(column_names, columns, body['loadBalancers'])
 
-    def get_lb(self, lbid):
-        resp, body = self._get('/loadbalancers/{0}'.format(lbid))
+    def status_lb(self, args):
+        resp, body = self._get('/loadbalancers/{0}'.format(args.lbid))
         column_names = ['ID', 'Name', 'Protocol', 'Port', 'Algorithm',
                         'Status', 'Created', 'Updated', 'IPs', 'Nodes',
                         'Persistence Type', 'Connection Throttle']

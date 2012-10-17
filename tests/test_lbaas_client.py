@@ -6,6 +6,10 @@ import sys
 from StringIO import StringIO
 from libra.client.libraapi import LibraAPI
 
+class DummyArgs(object):
+    def __init__(self):
+        self.lbid = 2000
+
 
 class TestLBaaSClientLibraAPI(unittest.TestCase):
     def setUp(self):
@@ -50,7 +54,7 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
                 try:
                     out = StringIO()
                     sys.stdout = out
-                    self.api.list_lb()
+                    self.api.list_lb(None)
                     output = out.getvalue().strip()
                     self.assertRegexpMatches(output, 'lb-site1')
                     self.assertRegexpMatches(output, '71')
@@ -111,7 +115,8 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
                 try:
                     out = StringIO()
                     sys.stdout = out
-                    self.api.get_lb('2000')
+                    args = DummyArgs()
+                    self.api.status_lb(args)
                     output = out.getvalue().strip()
                     self.assertRegexpMatches(output, 'HTTP_COOKIE')
                 finally:

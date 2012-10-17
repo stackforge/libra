@@ -4,7 +4,7 @@ Libra Client
 Synopsis
 --------
 
-:program:`libra_client.py` [:ref:`OPTIONS <libra_client-options>`] [:ref:`COMMAND <libra_client-commands>`]
+:program:`libra_client.py` [:ref:`GENERAL OPTIONS <libra_client-options>`] [:ref:`COMMAND <libra_client-commands>`] [*COMMAND_OPTIONS*]
 
 Description
 -----------

@@ -23,13 +23,8 @@ def main():
     api = LibraAPI(args.os_username, args.os_password, args.os_tenant_name,
                    args.os_auth_url, args.os_region_name)
 
-    if args.command == 'list':
-        api.list_lb()
-    elif args.command == 'status':
-        api.get_lb(args.lbid)
-    elif args.command == 'modify':
-        api.modify_lb(args)
-    elif args.command == 'create':
-        api.create_lb(args)
+    method = getattr(api, '{cmd}_lb'.format(cmd=args.command))
+
+    method(args)
 
     return 0
