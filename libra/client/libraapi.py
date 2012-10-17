@@ -45,6 +45,30 @@ class LibraAPI(object):
                    'sessionPersistence', 'connectionThrottle']
         self._render_dict(column_names, columns, body)
 
+    def delete_lb(self, args):
+        pass
+
+    def create_lb(self, args):
+        pass
+
+    def modify_lb(self, args):
+        pass
+
+    def node_list_lb(self, args):
+        pass
+
+    def node_delete_lb(self, args):
+        pass
+
+    def node_add_lb(self, args):
+        pass
+
+    def node_modify_lb(self, args):
+        pass
+
+    def node_status_lb(self, args):
+        pass
+
     def _render_list(self, column_names, columns, data):
         table = prettytable.PrettyTable(column_names)
         for item in data:
