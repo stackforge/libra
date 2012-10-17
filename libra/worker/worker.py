@@ -103,7 +103,8 @@ def main():
 
     options = Options('worker', 'Worker Daemon')
     options.parser.add_argument(
-        '-s', dest='reconnect_sleep', type=int, metavar='TIME',
+        '-s', '--reconnect_sleep',
+        dest='reconnect_sleep', type=int, metavar='TIME',
         default=60, help='seconds to sleep between job server reconnects'
     )
     options.parser.add_argument(
