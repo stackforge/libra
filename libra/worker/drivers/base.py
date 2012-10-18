@@ -27,7 +27,7 @@ class LoadBalancerDriver(object):
     class and implement the relevant API methods that it can support.
 
     Generally, an appliance driver should queue up any changes made
-    via these API calls until the activate() method is called.
+    via these API calls until the create() method is called.
     """
 
     # Load balancer algorithms
