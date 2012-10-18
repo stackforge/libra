@@ -82,3 +82,15 @@ LoadBalancerDriver Class
     .. py:method:: enable()
 
     .. py:method:: delete()
+
+Known Load Balancer Drivers Dictionary
+--------------------------------------
+
+.. py:module:: libra.worker.drivers
+
+.. py:data:: known_drivers
+
+    This is the dictionary that maps values for the :option:`--driver` option
+    to a class implementing the driver :py:class:`~LoadBalancerDriver` API
+    for that appliance. After implementing a new driver class, you simply add
+    a new entry to this dictionary to plug in the new driver.
