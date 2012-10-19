@@ -46,10 +46,30 @@ class LibraAPI(object):
         self._render_dict(column_names, columns, body)
 
     def delete_lb(self, args):
-        pass
+        self._delete('/loadbalancers/{0}'.format(args.lbid))
 
     def create_lb(self, args):
-        pass
+        data = {}
+        nodes = []
+        data['name'] = args.name
+        if args.port is not None:
+            data['port'] = args.port
+        if args.protocol is not None:
+            data['protocol'] = args.protocol
+        for node in args.node:
+            addr = args.node.split(':')
+            nodes.append({'address': addr[0], 'port': addr[1],
+                          'condition': 'ENABLED'})
+        data['nodes'] = nodes
+        if args.vip is not None:
+            data['virtualIps'] = [{'id': args.vip}]
+
+        resp, body = self._post('/loadbalancers', data)
+        column_names = ['ID', 'Name', 'Protocol', 'Port', 'Algorithm',
+                        'Status', 'Created', 'Updated', 'IPs', 'Nodes']
+        columns = ['id', 'name', 'protocol', 'port', 'algorithm', 'status',
+                   'created', 'updated', 'virtualIps', 'nodes']
+        self._render_dict(column_names, columns, body)
 
     def modify_lb(self, args):
         pass

@@ -65,11 +65,10 @@ class ClientOptions(object):
         )
         sp.add_argument('--name', help='name for the load balancer',
                         required=True)
-        sp.add_argument('--port', help='port for the load balancer',
-                        required=True)
+        sp.add_argument('--port', help='port for the load balancer')
         sp.add_argument('--protocol',
                         help='protocol for the load balancer (TCP or HTTP)',
-                        choices=['HTTP', 'TCP'], required=True)
+                        choices=['HTTP', 'TCP'])
         sp.add_argument('--node',
                         help='a node for the load balancer in ip:port format',
                         action='append', required=True)
