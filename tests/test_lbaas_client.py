@@ -29,7 +29,7 @@ class MockLibraAPI(LibraAPI):
 
 class TestLBaaSClientLibraAPI(unittest.TestCase):
     def setUp(self):
-        self.api = LibraAPI('username', 'password', 'tenant', 'auth_test', 'region')
+        self.api = MockLibraAPI('username', 'password', 'tenant', 'auth_test', 'region')
         self.api.nova.management_url = "http://example.com"
         self.api.nova.auth_token = "token"
 
@@ -149,7 +149,6 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
                     self.api.delete_lb(args)
 
     def testCreateLb(self):
-        """ TODO: Check response data too """
         fake_response = httplib2.Response({"status": '202'})
         fake_body = json.dumps({
             'name': 'a-new-loadbalancer',
@@ -196,10 +195,17 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
         mock_request = mock.Mock(return_value=(fake_response, fake_body))
         with mock.patch.object(httplib2.Http, "request", mock_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
-                api = MockLibraAPI('username', 'password', 'tenant', 'auth_test', 'region')
-                api.nova.management_url = "http://example.com"
-                api.nova.auth_token = "token"
-                args = DummyCreateArgs()
-                api.create_lb(args)
-                self.assertEquals(post_compare, api.postdata)
+                orig = sys.stdout
+                try:
+                    out = StringIO()
+                    sys.stdout = out
+                    args = DummyCreateArgs()
+                    self.api.create_lb(args)
+                    self.assertEquals(post_compare, self.api.postdata)
+                    output = out.getvalue().strip()
+                    self.assertRegexpMatches(output, 'ROUND_ROBIN')
+                    self.assertRegexpMatches(output, 'BUILD')
+                    self.assertRegexpMatches(output, '144')
+                finally:
+                    sys.stdout = orig
 
