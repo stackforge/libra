@@ -57,14 +57,14 @@ class LibraAPI(object):
         if args.protocol is not None:
             data['protocol'] = args.protocol
         for node in args.node:
-            addr = args.node.split(':')
+            addr = node.split(':')
             nodes.append({'address': addr[0], 'port': addr[1],
                           'condition': 'ENABLED'})
         data['nodes'] = nodes
         if args.vip is not None:
             data['virtualIps'] = [{'id': args.vip}]
 
-        resp, body = self._post('/loadbalancers', data)
+        resp, body = self._post('/loadbalancers', body=data)
         column_names = ['ID', 'Name', 'Protocol', 'Port', 'Algorithm',
                         'Status', 'Created', 'Updated', 'IPs', 'Nodes']
         columns = ['id', 'name', 'protocol', 'port', 'algorithm', 'status',

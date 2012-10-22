@@ -3,6 +3,7 @@ import json
 import mock
 import httplib2
 import sys
+import novaclient
 from StringIO import StringIO
 from libra.client.libraapi import LibraAPI
 
@@ -10,6 +11,21 @@ class DummyArgs(object):
     def __init__(self):
         self.lbid = 2000
 
+class DummyCreateArgs(object):
+    def __init__(self):
+        self.name = 'a-new-loadbalancer'
+        self.node = ['10.1.1.1:80', '10.1.1.2:81']
+        self.port = None
+        self.protocol = None
+        self.vip = None
+
+class MockLibraAPI(LibraAPI):
+    def __init__(self, username, password, tenant, auth_url, region):
+        self.postdata = None
+        return super(MockLibraAPI, self).__init__(username, password, tenant, auth_url, region)
+    def _post(self, url, **kwargs):
+        self.postdata = kwargs['body']
+        return super(MockLibraAPI, self)._post(url, **kwargs)
 
 class TestLBaaSClientLibraAPI(unittest.TestCase):
     def setUp(self):
@@ -121,4 +137,69 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
                     self.assertRegexpMatches(output, 'HTTP_COOKIE')
                 finally:
                     sys.stdout = orig
+
+    def testDeleteFailLb(self):
+        fake_response = httplib2.Response({"status": '500'})
+        fake_body = ''
+        mock_request = mock.Mock(return_value=(fake_response, fake_body))
+        with mock.patch.object(httplib2.Http, "request", mock_request):
+            with mock.patch('time.time', mock.Mock(return_value=1234)):
+                with self.assertRaises(novaclient.exceptions.ClientException):
+                    args = DummyArgs()
+                    self.api.delete_lb(args)
+
+    def testCreateLb(self):
+        """ TODO: Check response data too """
+        fake_response = httplib2.Response({"status": '202'})
+        fake_body = json.dumps({
+            'name': 'a-new-loadbalancer',
+            'id': '144',
+            'protocol': 'HTTP',
+            'port': '83',
+            'algorithm': 'ROUND_ROBIN',
+            'status': 'BUILD',
+            'created': '2011-04-13T14:18:07Z',
+            'updated': '2011-04-13T14:18:07Z',
+            'virtualIps': [
+                    {
+                        'address': '15.0.0.1',
+                        'id': '39',
+                        'type': 'PUBLIC',
+                        'ipVersion': 'IPV4',
+                    }
+                ],
+            'nodes': [
+                    {
+                        'address': '10.1.1.1',
+                        'id': '653',
+                        'port': '80',
+                        'status': 'ONLINE',
+                        'condition': 'ENABLED'
+                    }
+                ]
+            })
+        post_compare = {
+                    "name": "a-new-loadbalancer",
+                    "nodes": [
+                                {
+                                    "address": "10.1.1.1",
+                                    "condition": "ENABLED",
+                                    "port": "80"
+                                },
+                                {
+                                    "address": "10.1.1.2",
+                                    "condition": "ENABLED",
+                                    "port": "81"
+                                }
+                             ]
+                        }
+        mock_request = mock.Mock(return_value=(fake_response, fake_body))
+        with mock.patch.object(httplib2.Http, "request", mock_request):
+            with mock.patch('time.time', mock.Mock(return_value=1234)):
+                api = MockLibraAPI('username', 'password', 'tenant', 'auth_test', 'region')
+                api.nova.management_url = "http://example.com"
+                api.nova.auth_token = "token"
+                args = DummyCreateArgs()
+                api.create_lb(args)
+                self.assertEquals(post_compare, api.postdata)
 
