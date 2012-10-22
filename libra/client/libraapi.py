@@ -72,7 +72,12 @@ class LibraAPI(object):
         self._render_dict(column_names, columns, body)
 
     def modify_lb(self, args):
-        pass
+        data = {}
+        if args.name is not None:
+            data['name'] = args.name
+        if args.algorithm is not None:
+            data['algorithm'] = args.algorithm
+        self._put('/loadbalancers/{0}'.format(args.lbid), body=data)
 
     def node_list_lb(self, args):
         pass

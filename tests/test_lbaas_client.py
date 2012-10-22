@@ -21,15 +21,26 @@ class DummyCreateArgs(object):
         self.protocol = None
         self.vip = None
 
+class DummyModifyArgs(object):
+    """ Fake argparse response for Modify function """
+    def __init__(self):
+        self.lbid = 2012
+        self.name = 'a-modified-loadbalancer'
+        self.algorithm = 'LEAST_CONNECTIONS'
+
 class MockLibraAPI(LibraAPI):
     """ Used to capture data that would be sent to the API server """
     def __init__(self, username, password, tenant, auth_url, region):
         self.postdata = None
+        self.putdata = None
         return super(MockLibraAPI, self).__init__(username, password, tenant, auth_url, region)
     def _post(self, url, **kwargs):
         """ Store the post data and execute as normal """
         self.postdata = kwargs['body']
         return super(MockLibraAPI, self)._post(url, **kwargs)
+    def _put(self, url, **kwargs):
+        """ Store the put data, no need to execute the httplib """
+        self.putdata = kwargs['body']
 
 class TestLBaaSClientLibraAPI(unittest.TestCase):
     def setUp(self):
@@ -303,3 +314,16 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
                 finally:
                     sys.stdout = orig
 
+
+    def testModifyLb(self):
+        """
+        Tests the MODIFY function, no repsonse so we only test the PUT data
+        """
+        # This is what the PUT data should look like based on the args passed
+        put_compare = {
+                        "name": "a-modified-loadbalancer",
+                        "algorithm": "LEAST_CONNECTIONS" 
+                       }
+        args = DummyModifyArgs()
+        self.api.modify_lb(args)
+        self.assertEquals(put_compare, self.api.putdata)
