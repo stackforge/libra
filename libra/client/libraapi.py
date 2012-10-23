@@ -36,7 +36,7 @@ class LibraAPI(object):
         self._render_list(column_names, columns, body['loadBalancers'])
 
     def status_lb(self, args):
-        resp, body = self._get('/loadbalancers/{0}'.format(args.lbid))
+        resp, body = self._get('/loadbalancers/{0}'.format(args.id))
         column_names = ['ID', 'Name', 'Protocol', 'Port', 'Algorithm',
                         'Status', 'Created', 'Updated', 'IPs', 'Nodes',
                         'Persistence Type', 'Connection Throttle']
@@ -46,7 +46,7 @@ class LibraAPI(object):
         self._render_dict(column_names, columns, body)
 
     def delete_lb(self, args):
-        self._delete('/loadbalancers/{0}'.format(args.lbid))
+        self._delete('/loadbalancers/{0}'.format(args.id))
 
     def create_lb(self, args):
         data = {}
@@ -77,22 +77,44 @@ class LibraAPI(object):
             data['name'] = args.name
         if args.algorithm is not None:
             data['algorithm'] = args.algorithm
-        self._put('/loadbalancers/{0}'.format(args.lbid), body=data)
+        self._put('/loadbalancers/{0}'.format(args.id), body=data)
 
     def node_list_lb(self, args):
-        pass
+        resp, body = self._get('/loadbalaners/{0}/nodes'.format(args.id))
+        column_names = ['ID', 'Address', 'Port', 'Condition', 'Status']
+        columns = ['id', 'address', 'port', 'condition', 'status']
+        self._render_list(column_names, columns, body['nodes'])
 
     def node_delete_lb(self, args):
-        pass
+        self._delete('/loadbalancers/{0}/nodes/{1}'
+                     .format(args.id, args.nodeid))
 
     def node_add_lb(self, args):
-        pass
+        data = {}
+        nodes = []
+
+        for node in args.node:
+            addr = node.split(':')
+            nodes.append({'address': addr[0], 'port': addr[1],
+                          'condition': 'ENABLED'})
+        data['nodes'] = nodes
+        resp, body = self._post('/loadbalancers/{0}/nodes'
+                                .format(args.id), body=data)
+        column_names = ['ID', 'Address', 'Port', 'Condition', 'Status']
+        columns = ['id', 'address', 'port', 'condition', 'status']
+        self._render_list(column_names, columns, body['nodes'])
 
     def node_modify_lb(self, args):
-        pass
+        data = {'condition': args.condition}
+        self._put('/loadbalancers/{0}/nodes/{1}'
+                  .format(args.id, args.nodeid), body=data)
 
     def node_status_lb(self, args):
-        pass
+        resp, body = self._get('/loadbalaners/{0}/nodes/{1}'
+                               .format(args.id, args.nodeid))
+        column_names = ['ID', 'Address', 'Port', 'Condition', 'Status']
+        columns = ['id', 'address', 'port', 'condition', 'status']
+        self._render_list(column_names, columns, body['nodes'])
 
     def _render_list(self, column_names, columns, data):
         table = prettytable.PrettyTable(column_names)

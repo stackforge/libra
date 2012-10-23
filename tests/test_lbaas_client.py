@@ -10,7 +10,7 @@ from libra.client.libraapi import LibraAPI
 class DummyArgs(object):
     """ Fake argparse response """
     def __init__(self):
-        self.lbid = 2000
+        self.id = 2000
 
 class DummyCreateArgs(object):
     """ Fake argparse response for Create function """
@@ -24,7 +24,7 @@ class DummyCreateArgs(object):
 class DummyModifyArgs(object):
     """ Fake argparse response for Modify function """
     def __init__(self):
-        self.lbid = 2012
+        self.id = 2012
         self.name = 'a-modified-loadbalancer'
         self.algorithm = 'LEAST_CONNECTIONS'
 

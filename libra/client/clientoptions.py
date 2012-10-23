@@ -102,14 +102,14 @@ class ClientOptions(object):
         )
         sp.add_argument('--id', help='load balancer ID', required=True)
         sp.add_argument('--node', help='node to add in ip:port form',
-                        required=True)
+                        required=True, action='append')
         sp = subparsers.add_parser(
             'node-modify', help='modify node in a load balancer'
         )
         sp.add_argument('--id', help='load balancer ID', required=True)
         sp.add_argument('--nodeid', help='node ID to modify', required=True)
-        sp.add_argument('--node', help='the new node address in ip:port form',
-                        required=True)
+        sp.add_argument('--condition', help='the new state for the node',
+                        choices=['ENABLED', 'DISABLED'], required=True)
         sp = subparsers.add_parser(
             'node-status', help='get status of a node in a load balancer'
         )
