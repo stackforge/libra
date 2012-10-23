@@ -69,7 +69,7 @@ Create a load balancer
 
 .. option:: --node <ip:port>
 
-   The IP and port for a load balancer node (can be used multiple times)
+   The IP and port for a load balancer node (can be used multiple times to add multiple nodes)
 
 .. option:: --vip <vip>
 
@@ -162,14 +162,14 @@ Add a node to a load balancer
 
 .. option:: --node <ip:port>
 
-   The node address in ip:port format
+   The node address in ip:port format (can be used multiple times to add multiple nodes)
 
 .. program:: libra_client.py node-modify
 
 node-modify
 ^^^^^^^^^^^
 
-Modify a node in a load balancer
+Modify a node's state in a load balancer
 
 .. option:: --id <id>
 
@@ -179,9 +179,9 @@ Modify a node in a load balancer
 
    The ID of the node to be modified
 
-.. option:: --node <ip:port>
+.. option:: --condition <condition>
 
-   The new node address in ip:port format
+   The new state of the node (either ENABLED or DISABLED)
 
 .. program:: libra_client.py node-status
 
