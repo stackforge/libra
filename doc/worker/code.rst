@@ -135,4 +135,4 @@ The steps shown above are:
 * The :py:class:`~controller.LBaaSController` object then creates a response
   message and returns this message back to the Gearman worker task.
 * The Gearman worker task sends the response message back through the Gearman
-  job server to the originating client (nor represented above).
+  job server to the originating client (not represented above).
