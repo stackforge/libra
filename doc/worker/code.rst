@@ -121,8 +121,8 @@ The steps shown above are:
 
 .. py:module:: libra.worker
 
-* The Gearman worker task is run when the worker receives a message from the
-  Gearman job server (not represented above).
+* The Gearman worker task, :py:func:`~worker.lbaas_task`, is run when the
+  worker receives a message from the Gearman job server (not represented above).
 * This task then uses the :py:class:`~controller.LBaaSController` to process
   the message that it received.
 * Based on the contents of the message, the controller then makes the relevant
