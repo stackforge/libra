@@ -94,3 +94,45 @@ Known Load Balancer Drivers Dictionary
    to a class implementing the driver :py:class:`~LoadBalancerDriver` API
    for that appliance. After implementing a new driver class, you simply add
    a new entry to this dictionary to plug in the new driver.
+
+Relationship Diagram
+--------------------
+
+Below is a conceptual diagram that shows the basic relationships between
+the items described above::
+
+  +-------------+     JSON request      +-------------------+
+  |   Gearman   | --------------------> |                   |
+  |   worker    |                       |  LBaaSController  |
+  |   task      | <-------------------- |                   |
+  +-------------+     JSON response     +-------------------+
+                                           |            ^
+                                           |            |
+                                 API call  |            | (Optional Exception)
+                                           |            |
+                                           V            |
+                                        +----------------------+
+                                        |                      |
+                                        |  LoadBalancerDriver  |
+                                        |                      |
+                                        +----------------------+
+
+The steps shown above are:
+
+.. py:module:: libra.worker
+
+* The Gearman worker task is run when the worker receives a message from the
+  Gearman job server (not represented above).
+* This task then uses the :py:class:`~controller.LBaaSController` to process
+  the message that it received.
+* Based on the contents of the message, the controller then makes the relevant
+  driver API calls using the :py:class:`~drivers.LoadBalancerDriver` driver
+  that was selected via the :option:`--driver` option.
+* The driver executes the API call. If the driver encounters an error during
+  execution, an exception is thrown that should be handled by the
+  :py:class:`~controller.LBaaSController` object. Otherwise, nothing is
+  returned, indicating success.
+* The :py:class:`~controller.LBaaSController` object then creates a response
+  message and returns this message back to the Gearman worker task.
+* The Gearman worker task sends the response message back through the Gearman
+  job server to the originating client (no represented above).
