@@ -26,7 +26,7 @@ import datetime
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = []
+extensions = ['rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -49,12 +49,13 @@ copyright = u'2012, Andrew Hutchings, David Shrewsbury'
 # built documents.
 #
 # The short X.Y version.
-version = "%d.%02d" % (
+version = "%d-%02d-%02d-alpha1" % (
     datetime.datetime.now().year,
-    datetime.datetime.now().month
+    datetime.datetime.now().month,
+    datetime.datetime.now().day
 )
 # The full version, including alpha/beta/rc tags.
-release = "%d.%02d.%02d" % (
+release = "%d-%02d-%02d-alpha1" % (
     datetime.datetime.now().year,
     datetime.datetime.now().month,
     datetime.datetime.now().day
@@ -191,6 +192,10 @@ latex_documents = [
     ('index', 'LBaaS.tex', u'LBaaS Worker and Pool Manager Documentation',
         u'Andrew Hutchings and David Shrewsbury', 'manual'),
 ]
+
+pdf_documents = [('index', u'Libra', u'Libra Client, Worker and Pool Manager Documentation', u'Andrew Hutchings and David Shrewsbury')]
+
+#pdf_break_level = 1
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
