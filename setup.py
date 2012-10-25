@@ -37,7 +37,7 @@ try:
         def run(self):
             # too hard to build PDFs on Mac
             builders = ['html', 'man']
-            if sys.platform is not 'darwin':
+            if sys.platform != 'darwin':
                 builders.append('pdf')
             for builder in builders:
                 self.builder = builder
@@ -51,7 +51,7 @@ ci_cmdclass['test'] = PyTest
 
 setup_reqs = ['Sphinx']
 
-if sys.platform is not 'darwin':
+if sys.platform != 'darwin':
     setup_reqs.append('rst2pdf')
 
 setuptools.setup(
