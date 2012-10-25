@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import sys
 import setuptools
 from setuptools.command.test import test as TestCommand
 
@@ -34,7 +35,11 @@ try:
 
     class local_BuildDoc(BuildDoc):
         def run(self):
-            for builder in ['html', 'man', 'pdf']:
+            # too hard to build PDFs on Mac
+            builders = ['html', 'man']
+            if sys.platform is not 'darwin':
+                builders.append('pdf')
+            for builder in builders:
                 self.builder = builder
                 self.finalize_options()
                 BuildDoc.run(self)
@@ -43,6 +48,11 @@ except Exception:
     pass
 
 ci_cmdclass['test'] = PyTest
+
+setup_reqs = ['Sphinx']
+
+if sys.platform is not 'darwin':
+    setup_reqs.append('rst2pdf')
 
 setuptools.setup(
     name="libra",
@@ -61,5 +71,5 @@ setuptools.setup(
     cmdclass=ci_cmdclass,
     tests_require=['pytest-pep8'],
     install_requires=['gearman', 'python-daemon'],
-    setup_requires=['Sphinx', 'rst2pdf']
+    setup_requires=setup_reqs
 )
