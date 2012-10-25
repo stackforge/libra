@@ -61,4 +61,5 @@ setuptools.setup(
     cmdclass=ci_cmdclass,
     tests_require=['pytest-pep8'],
     install_requires=['gearman', 'python-daemon'],
+    setup_requires=['Sphinx', 'rst2pdf']
 )

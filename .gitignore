@@ -1,6 +1,7 @@
 .tox
 *.pyc
 *.egg-info
+*.egg
 dist
 build
 .cache
