@@ -52,6 +52,7 @@ Worker Section
 
 Command Line Options
 --------------------
+   .. program:: libra_worker.py
 
    .. option:: -c <FILE>, --config <FILE>
 

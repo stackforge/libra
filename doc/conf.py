@@ -199,6 +199,8 @@ pdf_documents = [('index', u'Libra', u'Libra Client, Worker and Pool Manager Doc
 
 #pdf_break_level = 1
 
+pdf_stylesheets = ['sphinx', 'libra']
+
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
 #latex_logo = None
