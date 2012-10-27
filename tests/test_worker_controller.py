@@ -105,4 +105,3 @@ class TestWorkerController(unittest.TestCase):
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
-
