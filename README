@@ -1,5 +1,12 @@
-Description
+Decrtiption
 -----------
+
+A set of Python based tools to manage a load balancer as a service setup.
+Includes a node pool manager, a load balancer node worker and a command line
+client.
+
+Worker Description
+------------------
 
 A Python-based Gearman worker that handles work for the job queue named
 'lbaas-<IP>'. It receives JSON data describing a load balancer, and
