@@ -13,45 +13,47 @@ class TestHAProxyDriver(unittest.TestCase):
         """ Test the HAProxy init() method """
         self.driver.init()
         self.assertIsInstance(self.driver._config, dict)
-        self.assertEqual(self.driver._config['mode'], 'http')
-        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
-        self.assertEqual(self.driver._config['bind_port'], 80)
 
-    def testSetProtocol(self):
+    def testAddProtocol(self):
         """ Test the HAProxy set_protocol() method """
-        self.driver.set_protocol('http', None)
-        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
-        self.assertEqual(self.driver._config['bind_port'], 80)
-        self.assertEqual(self.driver._config['mode'], 'http')
+        proto = 'http'
+        self.driver.add_protocol(proto, None)
+        self.assertIn(proto, self.driver._config)
+        self.assertEqual(self.driver._config[proto]['bind_address'], '0.0.0.0')
+        self.assertEqual(self.driver._config[proto]['bind_port'], 80)
 
-        self.driver.set_protocol('http', 8080)
-        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
-        self.assertEqual(self.driver._config['bind_port'], 8080)
-        self.assertEqual(self.driver._config['mode'], 'http')
+        proto = 'tcp'
+        self.driver.add_protocol(proto, 443)
+        self.assertIn(proto, self.driver._config)
+        self.assertEqual(self.driver._config[proto]['bind_address'], '0.0.0.0')
+        self.assertEqual(self.driver._config[proto]['bind_port'], 443)
 
-        self.driver.set_protocol('tcp', 443)
-        self.assertEqual(self.driver._config['bind_address'], '0.0.0.0')
-        self.assertEqual(self.driver._config['bind_port'], 443)
-        self.assertEqual(self.driver._config['mode'], 'tcp')
-
+    def testAddTCPRequiresPort(self):
         with self.assertRaises(Exception):
-            self.driver.set_protocol('tcp', None)
+            self.driver.add_protocol('tcp', None)
 
     def testAddServer(self):
         """ Test the HAProxy add_server() method """
-        self.driver.add_server('1.2.3.4', 7777)
-        self.driver.add_server('5.6.7.8', 8888)
-        self.assertIn('servers', self.driver._config)
-        servers = self.driver._config['servers']
+        proto = 'http'
+        self.driver.add_protocol(proto, None)
+        self.driver.add_server(proto, '1.2.3.4', 7777)
+        self.driver.add_server(proto, '5.6.7.8', 8888)
+        self.assertIn(proto, self.driver._config)
+        self.assertIn('servers', self.driver._config[proto])
+        servers = self.driver._config[proto]['servers']
         self.assertEqual(len(servers), 2)
         self.assertEqual(servers[0], ('1.2.3.4', 7777))
         self.assertEqual(servers[1], ('5.6.7.8', 8888))
 
     def testSetAlgorithm(self):
         """ Test the HAProxy set_algorithm() method """
-        self.driver.set_algorithm(self.driver.ROUNDROBIN)
-        self.assertEqual(self.driver._config['algorithm'], 'roundrobin')
-        self.driver.set_algorithm(self.driver.LEASTCONN)
-        self.assertEqual(self.driver._config['algorithm'], 'leastconn')
+        proto = 'http'
+        self.driver.add_protocol(proto, None)
+        self.driver.set_algorithm(proto, self.driver.ROUNDROBIN)
+        self.assertIn(proto, self.driver._config)
+        self.assertIn('algorithm', self.driver._config[proto])
+        self.assertEqual(self.driver._config[proto]['algorithm'], 'roundrobin')
+        self.driver.set_algorithm(proto, self.driver.LEASTCONN)
+        self.assertEqual(self.driver._config[proto]['algorithm'], 'leastconn')
         with self.assertRaises(Exception):
-            self.driver.set_protocol(99)
+            self.driver.set_algorithm(proto, 99)

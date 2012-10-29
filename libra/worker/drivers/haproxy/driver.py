@@ -29,12 +29,10 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def _init_config(self):
         self._config = dict()
-        self.set_protocol('HTTP', 80)
-        self.set_algorithm(self.ROUNDROBIN)
 
-    def _bind(self, address, port):
-        self._config['bind_address'] = address
-        self._config['bind_port'] = port
+    def _bind(self, protocol, address, port):
+        self._config[protocol]['bind_address'] = address
+        self._config[protocol]['bind_port'] = port
 
     def _config_to_string(self):
         """
@@ -54,7 +52,6 @@ class HAProxyDriver(LoadBalancerDriver):
         )
         output.append('defaults')
         output.append('    log global')
-        output.append('    mode %s' % self._config['mode'])
         output.append('    option httplog')
         output.append('    option dontlognull')
         output.append('    option redispatch')
@@ -63,18 +60,24 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    timeout connect 5000ms')
         output.append('    timeout client 50000ms')
         output.append('    timeout server 5000ms')
-        output.append('    balance %s' % self._config['algorithm'])
         output.append('    cookie SERVERID rewrite')
-        output.append('frontend http-in')
-        output.append('    bind %s:%s' % (self._config['bind_address'],
-                                          self._config['bind_port']))
-        output.append('    default_backend servers')
-        output.append('backend servers')
 
         serv_num = 1
-        for (addr, port) in self._config['servers']:
-            output.append('    server server%d %s:%s' % (serv_num, addr, port))
-            serv_num += 1
+
+        for proto in self._config:
+            protocfg = self._config[proto]
+            output.append('frontend %s-in' % proto)
+            output.append('    mode %s' % proto)
+            output.append('    bind %s:%s' % (protocfg['bind_address'],
+                                              protocfg['bind_port']))
+            output.append('    default_backend %s-servers' % proto)
+            output.append('backend %s-servers' % proto)
+            output.append('    balance %s' % protocfg['algorithm'])
+
+            for (addr, port) in protocfg['servers']:
+                output.append('    server server%d %s:%s' %
+                              (serv_num, addr, port))
+                serv_num += 1
 
         return '\n'.join(output) + '\n'
 
@@ -85,32 +88,37 @@ class HAProxyDriver(LoadBalancerDriver):
     def init(self):
         self._init_config()
 
-    def add_server(self, host, port):
-        if 'servers' not in self._config:
-            self._config['servers'] = []
-        self._config['servers'].append((host, port))
-
-    def set_protocol(self, protocol, port=None):
+    def add_protocol(self, protocol, port=None):
         proto = protocol.lower()
         if proto not in ('tcp', 'http', 'health'):
-            raise Exception("Invalid protocol: %s" % protocol)
-        self._config['mode'] = proto
+            raise Exception("Unsupported protocol: %s" % protocol)
+        if proto in self._config:
+            raise Exception("Protocol '%s' is already defined." % protocol)
+        else:
+            self._config[proto] = dict()
 
         if port is None:
             if proto == 'tcp':
                 raise Exception('Port is required for TCP protocol.')
             elif proto == 'http':
-                self._bind('0.0.0.0', 80)
+                self._bind(proto, '0.0.0.0', 80)
         else:
-            self._bind('0.0.0.0', port)
+            self._bind(proto, '0.0.0.0', port)
 
-    def set_algorithm(self, algo):
+    def add_server(self, protocol, host, port):
+        proto = protocol.lower()
+        if 'servers' not in self._config[proto]:
+            self._config[proto]['servers'] = []
+        self._config[proto]['servers'].append((host, port))
+
+    def set_algorithm(self, protocol, algo):
+        proto = protocol.lower()
         if algo == self.ROUNDROBIN:
-            self._config['algorithm'] = 'roundrobin'
+            self._config[proto]['algorithm'] = 'roundrobin'
         elif algo == self.LEASTCONN:
-            self._config['algorithm'] = 'leastconn'
+            self._config[proto]['algorithm'] = 'leastconn'
         else:
-            raise Exception('Invalid algorithm')
+            raise Exception('Invalid algorithm: %s' % protocol)
 
     def create(self):
         self.ossvc.write_config()

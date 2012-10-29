@@ -28,10 +28,15 @@ class TestWorkerController(unittest.TestCase):
     def testCreate(self):
         msg = {
             c.ACTION_FIELD: 'CREATE',
-            'nodes': [
+            'loadbalancers': [
                 {
-                    'address': '10.0.0.1',
-                    'port': 80
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ]
                 }
             ]
         }
@@ -43,10 +48,15 @@ class TestWorkerController(unittest.TestCase):
     def testUpdate(self):
         msg = {
             c.ACTION_FIELD: 'CREATE',
-            'nodes': [
+            'loadbalancers': [
                 {
-                    'address': '10.0.0.1',
-                    'port': 80
+                   'protocol': 'http',
+                   'nodes': [
+                        {
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ]
                 }
             ]
         }
@@ -82,9 +92,36 @@ class TestWorkerController(unittest.TestCase):
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
-    def testCreateMissingNodes(self):
+    def testCreateMissingLBs(self):
         msg = {
             c.ACTION_FIELD: 'CREATE'
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+    def testCreateMissingNodes(self):
+        msg = {
+            c.ACTION_FIELD: 'CREATE',
+            'loadbalancers': [ { 'protocol': 'http' } ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+    def testCreateMissingProto(self):
+        msg = {
+            c.ACTION_FIELD: 'CREATE',
+            'loadbalancers': [
+                {
+                   'nodes': [
+                        {
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ]
+                }
+            ]
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -93,11 +130,16 @@ class TestWorkerController(unittest.TestCase):
     def testBadAlgorithm(self):
         msg = {
             c.ACTION_FIELD: 'CREATE',
-            'algorithm': 'BOGUS',
-            'nodes': [
+            'loadbalancers': [
                 {
-                    'address': '10.0.0.1',
-                    'port': 80
+                    'protocol': 'http',
+                    'algorithm': 'BOGUS',
+                    'nodes': [
+                        {
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ]
                 }
             ]
         }

@@ -28,6 +28,12 @@ class LoadBalancerDriver(object):
 
     Generally, an appliance driver should queue up any changes made
     via these API calls until the create() method is called.
+
+    This design allows for a single load balancer to support multiple
+    protocols simultaneously. Each protocol added via the add_protocol()
+    method is assumed to be unique, and one protocol per port. This same
+    protocol is then supplied to other methods (e.g., add_server() and
+    set_algorithm()) to make changes for that specific protocol.
     """
 
     # Load balancer algorithms
@@ -38,16 +44,16 @@ class LoadBalancerDriver(object):
         """ Allows the driver to do any initialization for a new config. """
         raise NotImplementedError()
 
-    def add_server(self, host, port):
-        """ Add a server for which we will proxy. """
+    def add_protocol(self, protocol, port):
+        """ Add a supported protocol and listening port for the instance. """
         raise NotImplementedError()
 
-    def set_protocol(self, protocol, port):
-        """ Set the protocol of the instance. """
+    def add_server(self, protocol, host, port):
+        """ Add a server for the protocol for which we will proxy. """
         raise NotImplementedError()
 
-    def set_algorithm(self, algo):
-        """ Set the algorithm used by the load balancer. """
+    def set_algorithm(self, protocol, algo):
+        """ Set the algorithm used by the load balancer for this protocol. """
         raise NotImplementedError()
 
     def create(self):

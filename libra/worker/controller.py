@@ -24,6 +24,7 @@ class LBaaSController(object):
     RESPONSE_SUCCESS = "PASS"
     ACTION_FIELD = 'hpcs_action'
     RESPONSE_FIELD = 'hpcs_response'
+    LBLIST_FIELD = 'loadbalancers'
 
     def __init__(self, logger, driver, json_msg):
         self.logger = logger
@@ -61,7 +62,15 @@ class LBaaSController(object):
             return self.msg
 
     def _action_create(self):
-        """ Create a Load Balancer. """
+        """
+        Create a Load Balancer.
+
+        This is the only method (so far) that actually parses the contents
+        of the JSON message (other than the ACTION_FIELD field). Modifying
+        the JSON message structure likely means this method will need to
+        be modified, unless the change involves fields that are ignored.
+        """
+
         try:
             self.driver.init()
         except NotImplementedError:
@@ -71,78 +80,96 @@ class LBaaSController(object):
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        if 'nodes' not in self.msg:
-            return BadRequest("Missing 'nodes' element").to_json()
+        if self.LBLIST_FIELD not in self.msg:
+            return BadRequest(
+                "Missing '%s' element" % self.LBLIST_FIELD
+            ).to_json()
 
-        if 'protocol' in self.msg:
-            port = None
-            if 'port' in self.msg:
-                port = self.msg['port']
-            try:
-                self.driver.set_protocol(self.msg['protocol'], port)
-            except NotImplementedError:
-                self.logger.error(
-                    "Selected driver does not support setting protocol."
-                )
-                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
-                return self.msg
-            except Exception as e:
-                self.logger.error("Failure trying to set protocol: %s, %s" %
-                                  (e.__class__, e))
-                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
-                return self.msg
+        lb_list = self.msg['loadbalancers']
 
-        if 'algorithm' in self.msg:
-            algo = self.msg['algorithm'].upper()
-            if algo == 'ROUND_ROBIN':
-                algo = LoadBalancerDriver.ROUNDROBIN
-            elif algo == 'LEAST_CONNECTIONS':
-                algo = LoadBalancerDriver.LEASTCONN
+        for current_lb in lb_list:
+            if 'nodes' not in current_lb:
+                return BadRequest("Missing 'nodes' element").to_json()
+
+            if 'protocol' not in current_lb:
+                return BadRequest(
+                    "Missing required 'protocol' value."
+                ).to_json()
             else:
-                self.logger.error("Invalid algorithm: %s" % algo)
-                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
-                return self.msg
+                port = None
+                if 'port' in current_lb:
+                    port = current_lb['port']
+                try:
+                    self.driver.add_protocol(current_lb['protocol'], port)
+                except NotImplementedError:
+                    self.logger.error(
+                        "Selected driver does not support setting protocol."
+                    )
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
+                except Exception as e:
+                    self.logger.error(
+                        "Failure trying to set protocol: %s, %s" %
+                        (e.__class__, e)
+                    )
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
 
-            try:
-                self.driver.set_algorithm(algo)
-            except NotImplementedError:
-                self.logger.error(
-                    "Selected driver does not support setting algorithm."
-                )
-                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
-                return self.msg
-            except Exception as e:
-                self.logger.error("Selected driver failed setting algorithm.")
-                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
-                return self.msg
+            if 'algorithm' in current_lb:
+                algo = current_lb['algorithm'].upper()
+                if algo == 'ROUND_ROBIN':
+                    algo = LoadBalancerDriver.ROUNDROBIN
+                elif algo == 'LEAST_CONNECTIONS':
+                    algo = LoadBalancerDriver.LEASTCONN
+                else:
+                    self.logger.error("Invalid algorithm: %s" % algo)
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
 
-        for lb_node in self.msg['nodes']:
-            port, address = None, None
+                try:
+                    self.driver.set_algorithm(current_lb['protocol'], algo)
+                except NotImplementedError:
+                    self.logger.error(
+                        "Selected driver does not support setting algorithm."
+                    )
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
+                except Exception as e:
+                    self.logger.error(
+                        "Selected driver failed setting algorithm."
+                    )
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
 
-            if 'port' in lb_node:
-                port = lb_node['port']
-            else:
-                return BadRequest("Missing 'port' element.").to_json()
+            for lb_node in current_lb['nodes']:
+                port, address = None, None
 
-            if 'address' in lb_node:
-                address = lb_node['address']
-            else:
-                return BadRequest("Missing 'address' element.").to_json()
+                if 'port' in lb_node:
+                    port = lb_node['port']
+                else:
+                    return BadRequest("Missing 'port' element.").to_json()
 
-            try:
-                self.driver.add_server(address, port)
-            except NotImplementedError:
-                self.logger.error(
-                    "Selected driver does not support adding a server."
-                )
-                lb_node['condition'] = self.NODE_ERR
-            except Exception as e:
-                self.logger.error("Failure trying adding server: %s, %s" %
-                                  (e.__class__, e))
-                lb_node['condition'] = self.NODE_ERR
-            else:
-                self.logger.debug("Added server: %s:%s" % (address, port))
-                lb_node['condition'] = self.NODE_OK
+                if 'address' in lb_node:
+                    address = lb_node['address']
+                else:
+                    return BadRequest("Missing 'address' element.").to_json()
+
+                try:
+                    self.driver.add_server(current_lb['protocol'],
+                                           address,
+                                           port)
+                except NotImplementedError:
+                    self.logger.error(
+                        "Selected driver does not support adding a server."
+                    )
+                    lb_node['condition'] = self.NODE_ERR
+                except Exception as e:
+                    self.logger.error("Failure trying adding server: %s, %s" %
+                                      (e.__class__, e))
+                    lb_node['condition'] = self.NODE_ERR
+                else:
+                    self.logger.debug("Added server: %s:%s" % (address, port))
+                    lb_node['condition'] = self.NODE_OK
 
         try:
             self.driver.create()
@@ -150,8 +177,9 @@ class LBaaSController(object):
             self.logger.error(
                 "Selected driver does not support CREATE action."
             )
-            for lb_node in self.msg['nodes']:
-                lb_node['condition'] = self.NODE_ERR
+            for current_lb in lb_list:
+                for lb_node in current_lb['nodes']:
+                    lb_node['condition'] = self.NODE_ERR
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
             self.logger.error("CREATE failed: %s, %s" % (e.__class__, e))
