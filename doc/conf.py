@@ -195,7 +195,7 @@ latex_documents = [
         u'Andrew Hutchings and David Shrewsbury', 'manual'),
 ]
 
-pdf_documents = [('index', u'Libra', u'Libra Client, Worker and Pool Manager Documentation', u'Andrew Hutchings and David Shrewsbury')]
+pdf_documents = [('index', 'Libra-{0}'.format(version), u'Libra Client, Worker and Pool Manager Documentation', u'Andrew Hutchings and David Shrewsbury')]
 
 #pdf_break_level = 1
 
