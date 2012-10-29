@@ -145,7 +145,8 @@ def main():
     driver_class = importutils.import_class(known_drivers[args.driver])
 
     if args.driver == 'haproxy':
-        driver = driver_class(args.haproxy_service)
+        logger.info("Selected HAProxy service: %s" % args.haproxy_service)
+        driver = driver_class(haproxy_services[args.haproxy_service])
     else:
         driver = driver_class()
 
