@@ -50,10 +50,7 @@ class UbuntuServices(ServicesBase):
             raise Exception("%s does not exist. Start failed." %
                             self._haproxy_pid)
 
-    def service_restart(self):
-        return NotImplementedError()
-
-    def write_config(self):
+    def write_config(self, config_str):
         """
         Generate the new config and replace the current config file.
 
@@ -61,7 +58,6 @@ class UbuntuServices(ServicesBase):
         the production config file, then rename the temporary config to the
         production config.
         """
-        config_str = self._config_to_string()
         tmpfile = '/tmp/haproxy.cfg'
         fh = open(tmpfile, 'w')
         fh.write(config_str)

@@ -121,7 +121,7 @@ class HAProxyDriver(LoadBalancerDriver):
             raise Exception('Invalid algorithm: %s' % protocol)
 
     def create(self):
-        self.ossvc.write_config()
+        self.ossvc.write_config(self._config_to_string())
         self.ossvc.service_stop()
         self.ossvc.service_start()
 

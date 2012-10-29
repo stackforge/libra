@@ -34,11 +34,7 @@ class ServicesBase:
         """ Start the HAProxy service. """
         return NotImplementedError()
 
-    def service_restart(self):
-        """ Restart the HAProxy service. """
-        return NotImplementedError()
-
-    def write_config(self):
+    def write_config(self, config_str):
         """ Write the HAProxy configuration file. """
         return NotImplementedError()
 

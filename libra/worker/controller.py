@@ -125,21 +125,23 @@ class LBaaSController(object):
                     self.logger.error("Invalid algorithm: %s" % algo)
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
+            else:
+                algo = LoadBalancerDriver.ROUNDROBIN
 
-                try:
-                    self.driver.set_algorithm(current_lb['protocol'], algo)
-                except NotImplementedError:
-                    self.logger.error(
-                        "Selected driver does not support setting algorithm."
-                    )
-                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
-                    return self.msg
-                except Exception as e:
-                    self.logger.error(
-                        "Selected driver failed setting algorithm."
-                    )
-                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
-                    return self.msg
+            try:
+                self.driver.set_algorithm(current_lb['protocol'], algo)
+            except NotImplementedError:
+                self.logger.error(
+                    "Selected driver does not support setting algorithm."
+                )
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
+            except Exception as e:
+                self.logger.error(
+                    "Selected driver failed setting algorithm."
+                )
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
 
             for lb_node in current_lb['nodes']:
                 port, address = None, None
@@ -183,7 +185,7 @@ class LBaaSController(object):
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
             self.logger.error("CREATE failed: %s, %s" % (e.__class__, e))
-            for lb_node in self.msg['nodes']:
+            for lb_node in current_lb['nodes']:
                 lb_node['condition'] = self.NODE_ERR
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:

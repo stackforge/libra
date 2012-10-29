@@ -19,10 +19,7 @@ class FakeOSServices(ServicesBase):
     def service_start(self):
         pass
 
-    def service_restart(self):
-        pass
-
-    def write_config(self):
+    def write_config(self, config_str):
         pass
 
     def remove_configs(self):
