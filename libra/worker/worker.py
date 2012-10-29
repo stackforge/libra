@@ -21,9 +21,9 @@ import pwd
 import socket
 from time import sleep
 
+from libra.openstack.common import importutils
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.options import Options, setup_logging
-from libra.common.utils import import_class
 from libra.worker.controller import LBaaSController
 from libra.worker.drivers.base import known_drivers
 from libra.worker.drivers.haproxy.services_base import haproxy_services
@@ -142,7 +142,7 @@ def main():
     # the device.
 
     logger.info("Selected driver: %s" % args.driver)
-    driver_class = import_class(known_drivers[args.driver])
+    driver_class = importutils.import_class(known_drivers[args.driver])
 
     if args.driver == 'haproxy':
         driver = driver_class(args.haproxy_service)

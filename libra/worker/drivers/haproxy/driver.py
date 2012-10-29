@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from libra.common.utils import import_class
+from libra.openstack.common import importutils
 from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.services_base import ServicesBase
 
@@ -20,7 +20,7 @@ from libra.worker.drivers.haproxy.services_base import ServicesBase
 class HAProxyDriver(LoadBalancerDriver):
 
     def __init__(self, ossvc):
-        ossvc_driver = import_class(ossvc)
+        ossvc_driver = importutils.import_class(ossvc)
         self.ossvc = ossvc_driver()
         if not isinstance(self.ossvc, ServicesBase):
             raise Exception('Class is not derived from ServicesBase: %s' %
