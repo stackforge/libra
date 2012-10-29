@@ -72,6 +72,7 @@ class HAProxyDriver(LoadBalancerDriver):
                                               protocfg['bind_port']))
             output.append('    default_backend %s-servers' % proto)
             output.append('backend %s-servers' % proto)
+            output.append('    mode %s' % proto)
             output.append('    balance %s' % protocfg['algorithm'])
 
             for (addr, port) in protocfg['servers']:
