@@ -18,6 +18,7 @@ from setuptools.command.test import test as TestCommand
 from libra.openstack.common import setup
 
 requires = setup.parse_requirements()
+tests_requires = setup.parse_requirements(['tools/test-requires'])
 
 
 class PyTest(TestCommand):
@@ -72,7 +73,7 @@ setuptools.setup(
         ]
     },
     cmdclass=ci_cmdclass,
-    tests_require=['pytest-pep8'],
+    tests_require=tests_requires,
     install_requires=requires,
     setup_requires=setup_reqs
 )
