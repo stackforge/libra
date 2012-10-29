@@ -15,6 +15,9 @@
 import sys
 import setuptools
 from setuptools.command.test import test as TestCommand
+from libra.openstack.common import setup
+
+requires = setup.parse_requirements()
 
 
 class PyTest(TestCommand):
@@ -70,6 +73,6 @@ setuptools.setup(
     },
     cmdclass=ci_cmdclass,
     tests_require=['pytest-pep8'],
-    install_requires=['gearman', 'python-daemon'],
+    install_requires=requires,
     setup_requires=setup_reqs
 )
