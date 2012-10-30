@@ -109,10 +109,13 @@ class Server(object):
             for address in addresses:
                 if not address['addr'].startswith('10.'):
                     break
-            body['ip'] = address['addr']
+            body['address'] = address['addr']
             self.logger.info('Adding server {name} on {ip}'
-                             .format(name=body['name'], ip=body['ip']))
-            # TODO: upload to API server
+                             .format(name=body['name'], ip=body['address']))
+            # TODO: store failed uploads to API server to retry
+            status, response = api.add_node(body)
+            if not status:
+                return
             count = count - 1
 
     def exit_handler(self, signum, frame):
