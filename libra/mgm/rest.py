@@ -50,7 +50,7 @@ class APIClient(object):
         )
 
     def add_node(self, node_data):
-        requests.post('{url}/devices', json.dumps(node_data))
+        return self._post('{url}/devices'.format(url=self.url), node_data)
 
     def delete_node(self, node_id):
         requests.delete(
@@ -66,6 +66,20 @@ class APIClient(object):
     def _get(self, url):
         try:
             r = requests.get(url, verify=False)
+        except:
+            self.logger.error('Exception communicating to server: {exc}'
+                              .format(exc=sys.exc_info()[0]))
+            return False, None
+
+        if r.status_code != 200:
+            self.logger.error('Server returned error {code}'
+                              .format(code=r.status_code))
+            return False, r.json
+        return True, r.json
+
+    def _post(self, url, node_data):
+        try:
+            r = requests.post(url, data=json.dumps(node_data), verify=False)
         except:
             self.logger.error('Exception communicating to server: {exc}'
                               .format(exc=sys.exc_info()[0]))

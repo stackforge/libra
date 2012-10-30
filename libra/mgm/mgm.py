@@ -69,8 +69,6 @@ class Server(object):
                         'Building {nodes} nodes'
                         .format(nodes=nodes_required)
                     )
-                    # TODO:
-                    # deal with case where node is created but not sent to API
                     self.build_nodes(nodes_required, api)
                 else:
                     self.logger.info('No new nodes required')
@@ -95,10 +93,9 @@ class Server(object):
             self.args.nova_keyname,
             self.args.nova_secgroup,
             self.args.haproxy_image,
-            102
+            self.args.image_size
         )
         while count > 0:
-            # Do stuff
             status, data = nova.build()
             if not status:
                 self.logger.error(data)
@@ -109,10 +106,13 @@ class Server(object):
             for address in addresses:
                 if not address['addr'].startswith('10.'):
                     break
-            body['ip'] = address['addr']
+            body['address'] = address['addr']
             self.logger.info('Adding server {name} on {ip}'
-                             .format(name=body['name'], ip=body['ip']))
-            # TODO: upload to API server
+                             .format(name=body['name'], ip=body['address']))
+            # TODO: store failed uploads to API server to retry
+            status, response = api.add_node(body)
+            if not status:
+                return
             count = count - 1
 
     def exit_handler(self, signum, frame):
