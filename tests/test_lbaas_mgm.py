@@ -44,7 +44,7 @@ class TestLBaaSMgmNova(unittest.TestCase):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
                 resp, data = self.api.build()
                 self.assertTrue(resp)
-                self.assertEqual(data['server']['id'], 417773)
+                self.assertEqual(data['id'], 417773)
 
     def testCreateNodeFail(self):
         with mock.patch.object(httplib2.Http, "request", mock_bad_request):
