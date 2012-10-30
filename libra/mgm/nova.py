@@ -53,9 +53,12 @@ class Node(object):
         while waits > 0:
             time.sleep(3)
             status = self._status(server_id)
-            # Should also check if it is not spawning, so errors are detected
             if status['status'] == 'ACTIVE':
                 return True, status
+            elif not status['status'].startswith('BUILD'):
+                return False, 'Error spawning node {nid} status {stat}'.format(
+                    node=node_id, stat=status['status']
+                )
             waits = waits - 1
 
         return (False,
