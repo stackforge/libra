@@ -21,6 +21,7 @@ import time
 import sys
 import threading
 
+from libra.mgm.rest import APIClient
 from libra.common.options import Options, setup_logging
 
 
@@ -39,17 +40,12 @@ class Server(object):
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
 
-        # make initial sync and then run scheduler
+        # make initial check and then run scheduler
         self.logger.info(
-            'Scheduling node sync for {sync} minutes'
-            .format(sync=self.args.sync_interval)
-        )
-        self.logger.info(
-            'and node check for {check} minutes'
+            'Scheduling node check for {check} minutes'
             .format(check=self.args.check_interval)
         )
         self.rlock = threading.RLock()
-        self.sync_nodes()
         self.check_nodes()
         while True:
             time.sleep(1)
@@ -58,17 +54,35 @@ class Server(object):
         """ check if known nodes are used """
         with self.rlock:
             self.logger.info('Checking if new nodes are needed')
-            self.ct = threading.Timer(60 * int(self.args.check_interval),
-                                      self.check_nodes, ())
-            self.ct.start()
+            api = APIClient(self.args.api_servers, self.logger)
+            if api.is_online:
+                self.logger.info('Connected to {url}'.format(url=api.url))
+                status, usage = api.get_usage()
+                if not status:
+                    self.reset_scheduler()
+                    return
+                if usage['free'] < self.args.nodes:
+                    # we need to build new nodes
+                    self.logger.info(
+                        'Building {nodes} nodes'
+                        .format(nodes=self.args.nodes - usage['free'])
+                    )
+                    # TODO:
+                    # build nodes
+                    # send to API server
+                    # deal with case where node is created but not sent to API
+                else:
+                    self.logger.info('No new nodes required')
+            else:
+                self.logger.error('No working API server found')
+            self.reset_scheduler()
 
-    def sync_nodes(self):
-        """ sync list of known nodes """
-        with self.rlock:
-            self.logger.info('Syncing internal nodes list')
-            self.st = threading.Timer(60 * int(self.args.sync_interval),
-                                      self.sync_nodes, ())
-            self.st.start()
+    def reset_scheduler(self):
+        self.logger.info('Sleeping for {mins} minutes'
+                         .format(mins=self.args.check_interval))
+        self.ct = threading.Timer(60 * int(self.args.check_interval),
+                                  self.check_nodes, ())
+        self.ct.start()
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -98,10 +112,6 @@ def main():
     options.parser.add_argument(
         '--check_interval', type=int, default=5,
         help='how often to check if new nodes are needed (in minutes)'
-    )
-    options.parser.add_argument(
-        '--sync_interval', type=int, default=60,
-        help='how often to sync node lost (in minutes)'
     )
     args = options.run()
 
