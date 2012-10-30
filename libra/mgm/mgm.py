@@ -22,6 +22,7 @@ import sys
 import threading
 
 from libra.mgm.rest import APIClient
+from libra.mgm.nova import Node
 from libra.common.options import Options, setup_logging
 
 
@@ -63,14 +64,14 @@ class Server(object):
                     return
                 if usage['free'] < self.args.nodes:
                     # we need to build new nodes
+                    nodes_required = self.args.nodes - usage['free']
                     self.logger.info(
                         'Building {nodes} nodes'
-                        .format(nodes=self.args.nodes - usage['free'])
+                        .format(nodes=nodes_required)
                     )
                     # TODO:
-                    # build nodes
-                    # send to API server
                     # deal with case where node is created but not sent to API
+                    self.build_nodes(nodes_required, api)
                 else:
                     self.logger.info('No new nodes required')
             else:
@@ -83,6 +84,36 @@ class Server(object):
         self.ct = threading.Timer(60 * int(self.args.check_interval),
                                   self.check_nodes, ())
         self.ct.start()
+
+    def build_nodes(self, count, api):
+        nova = Node(
+            self.args.nova_user,
+            self.args.nova_pass,
+            self.args.nova_tenant,
+            self.args.nova_auth_url,
+            self.args.nova_region,
+            self.args.nova_keyname,
+            self.args.nova_secgroup,
+            self.args.haproxy_image,
+            102
+        )
+        while count > 0:
+            # Do stuff
+            status, data = nova.build()
+            if not status:
+                self.logger.error(data)
+                return
+            body = {}
+            body['name'] = data['name']
+            addresses = data['addresses']['private']
+            for address in addresses:
+                if not address['addr'].startswith('10.'):
+                    break
+            body['ip'] = address['addr']
+            self.logger.info('Adding server {name} on {ip}'
+                             .format(name=body['name'], ip=body['ip']))
+            # TODO: upload to API server
+            count = count - 1
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)

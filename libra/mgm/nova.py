@@ -14,6 +14,7 @@
 
 import uuid
 import time
+import sys
 
 from novaclient import client
 
@@ -42,7 +43,9 @@ class Node(object):
         try:
             body = self._create(node_id)
         except:
-            return False, 'Error creating node {nid}'.format(nid=node_id)
+            return False, 'Error creating node {nid} exception {exc}'.format(
+                nid=node_id, exc=sys.exc_info()[0]
+            )
 
         server_id = body['server']['id']
         # try for 40 * 3 seconds
@@ -50,8 +53,9 @@ class Node(object):
         while waits > 0:
             time.sleep(3)
             status = self._status(server_id)
-            if status == 'ACTIVE':
-                return True, body
+            # Should also check if it is not spawning, so errors are detected
+            if status['status'] == 'ACTIVE':
+                return True, status
             waits = waits - 1
 
         return (False,
@@ -91,7 +95,7 @@ class Node(object):
         """ used to keep scanning to see if node is up """
         url = "/servers/{0}".format(node_id)
         resp, body = self.nova.get(url)
-        return body['server']['status']
+        return body['server']
 
     def _delete(self, node_id):
         """ delete a nova node, return 204 succeed """
