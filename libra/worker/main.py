@@ -14,24 +14,14 @@
 
 import daemon
 import daemon.pidfile
-import gearman.errors
 import grp
 import pwd
-import socket
-from time import sleep
 
 from libra.openstack.common import importutils
-from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.options import Options, setup_logging
 from libra.worker.worker import config_manager
 from libra.worker.drivers.base import known_drivers
 from libra.worker.drivers.haproxy.services_base import haproxy_services
-
-
-class CustomJSONGearmanWorker(JSONGearmanWorker):
-    """ Custom class we will use to pass arguments to the Gearman task. """
-    logger = None
-    driver = None
 
 
 class Server(object):
@@ -48,31 +38,10 @@ class Server(object):
 
     def main(self):
         """ Main method of the server.  """
-        my_ip = socket.gethostbyname(socket.gethostname())
-        task_name = "lbaas-%s" % my_ip
-        self.logger.info("Registering task %s" % task_name)
-
-        worker = CustomJSONGearmanWorker(self.servers)
-        worker.set_client_id(my_ip)
-        worker.register_task(task_name, config_manager)
-        worker.logger = self.logger
-        worker.driver = self.driver
-
-        retry = True
-
-        while (retry):
-            try:
-                worker.work()
-            except KeyboardInterrupt:
-                retry = False
-            except gearman.errors.ServerUnavailable:
-                self.logger.error("Job server(s) went away. Reconnecting.")
-                sleep(self.reconnect_sleep)
-                retry = True
-            except Exception as e:
-                self.logger.critical("Exception: %s, %s" % (e.__class__, e))
-                retry = False
-
+        config_manager(self.logger,
+                       self.driver,
+                       self.servers,
+                       self.reconnect_sleep)
         self.logger.info("Shutting down")
 
 
