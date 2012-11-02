@@ -67,7 +67,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["*.tests"]),
     entry_points={
         'console_scripts': [
-            'libra_worker = libra.worker.worker:main',
+            'libra_worker = libra.worker.main:main',
             'libra_pool_mgm = libra.mgm.mgm:main',
             'libra_client = libra.client.client:main',
         ]
