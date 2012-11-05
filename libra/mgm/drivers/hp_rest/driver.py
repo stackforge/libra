@@ -17,26 +17,41 @@ import json
 import random
 import sys
 
+from libra.mgm.drivers.base import MgmDriver
+
 API_VERSION = 'v1'
 
 
-class APIClient(object):
+class HPRestDriver(MgmDriver):
+
     def __init__(self, addresses, logger):
-        self.logger = logger
         addresses = addresses.split(' ')
+        self.logger = logger
         random.shuffle(addresses)
         for address in addresses:
             self.url = 'https://{0}/{1}'.format(address, API_VERSION)
-            logger.info('Trying {url}'.format(url=self.url))
+            self.logger.info('Trying {url}'.format(url=self.url))
             status, data = self._get('{url}/devices/usage'
                                      .format(url=self.url))
             if status:
-                logger.info('API Server is online')
-                self.is_online = True
+                self.logger.info('API Server is online')
+                self.online = True
                 return
 
         # if we get this far all API servers are down
-        self.is_online = False
+        self.online = False
+
+    def get_url(self):
+        return self.url
+
+    def get_free_count(self):
+        status, usage = self.get_usage()
+        if not status:
+            return None
+        return usage['free']
+
+    def is_online(self):
+        return self.is_online
 
     def get_node_list(self, limit, marker):
         return self._get('{url}/devices'.format(url=self.url))

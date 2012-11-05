@@ -21,17 +21,19 @@ import time
 import sys
 import threading
 
-from libra.mgm.rest import APIClient
+from libra.openstack.common import importutils
 from libra.mgm.nova import Node
 from libra.common.options import Options, setup_logging
+from libra.mgm.drivers.base import known_drivers
 
 
 class Server(object):
     def __init__(self, logger, args):
         self.logger = logger
         self.args = args
-        self.st = None
         self.ct = None
+        self.api = None
+        self.driver_class = None
 
     def main(self):
         self.logger.info(
@@ -40,6 +42,11 @@ class Server(object):
         )
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
+
+        self.logger.info("Selected driver: {0}".format(self.args.driver))
+        self.driver_class = importutils.import_class(
+            known_drivers[self.args.driver]
+        )
 
         # make initial check and then run scheduler
         self.logger.info(
@@ -55,16 +62,18 @@ class Server(object):
         """ check if known nodes are used """
         with self.rlock:
             self.logger.info('Checking if new nodes are needed')
-            api = APIClient(self.args.api_servers, self.logger)
-            if api.is_online:
-                self.logger.info('Connected to {url}'.format(url=api.url))
-                status, usage = api.get_usage()
-                if not status:
+            api = self.driver_class(self.args.api_servers, self.logger)
+            if api.is_online():
+                self.logger.info(
+                    'Connected to {url}'.format(url=api.get_url())
+                )
+                free_count = api.get_free_count()
+                if free_count is None:
                     self.reset_scheduler()
                     return
-                if usage['free'] < self.args.nodes:
+                if free_count < self.args.nodes:
                     # we need to build new nodes
-                    nodes_required = self.args.nodes - usage['free']
+                    nodes_required = self.args.nodes - free_count
                     self.logger.info(
                         'Building {nodes} nodes'
                         .format(nodes=nodes_required)
@@ -121,8 +130,6 @@ class Server(object):
         self.shutdown(False)
 
     def shutdown(self, error):
-        if self.st:
-            self.st.cancel()
         if self.ct:
             self.ct.cancel()
 
@@ -143,6 +150,11 @@ def main():
     options.parser.add_argument(
         '--check_interval', type=int, default=5,
         help='how often to check if new nodes are needed (in minutes)'
+    )
+    options.parser.add_argument(
+        '--driver', dest='driver',
+        choices=known_drivers.keys(), default='hp_rest',
+        help='type of device to use'
     )
     args = options.run()
 
