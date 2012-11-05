@@ -12,6 +12,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import eventlet
+eventlet.monkey_patch()
+
 import daemon
 import daemon.pidfile
 import grp
@@ -24,24 +27,32 @@ from libra.worker.drivers.base import known_drivers
 from libra.worker.drivers.haproxy.services_base import haproxy_services
 
 
-class Server(object):
+class EventServer(object):
     """
     Encapsulates server activity so we can run it in either daemon or
     non-daemon mode.
     """
 
-    def __init__(self, logger, servers, reconnect_sleep):
+    def __init__(self, logger):
         self.logger = logger
-        self.driver = None
-        self.servers = servers
-        self.reconnect_sleep = reconnect_sleep
 
-    def main(self):
-        """ Main method of the server.  """
-        config_manager(self.logger,
-                       self.driver,
-                       self.servers,
-                       self.reconnect_sleep)
+    def main(self, tasks):
+        """
+        Main method of the server.
+
+        tasks
+            A tuple with two items: a function name, and a tuple with
+            that function's arguments.
+        """
+
+        thread_list = []
+
+        for task, args in tasks:
+            thread_list.append(eventlet.spawn(task, *args))
+
+        for thd in thread_list:
+            thd.wait()
+
         self.logger.info("Shutting down")
 
 
@@ -98,11 +109,15 @@ def main():
         driver = driver_class()
 
     logger.info("Job server list: %s" % args.server)
-    server = Server(logger, args.server, args.reconnect_sleep)
-    server.driver = driver
+    server = EventServer(logger)
+
+    # Tasks to execute in parallel
+    task_list = [
+        (config_manager, (logger, driver, args.server, args.reconnect_sleep))
+    ]
 
     if args.nodaemon:
-        server.main()
+        server.main(task_list)
     else:
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
@@ -124,6 +139,6 @@ def main():
                 return 1
 
         with context:
-            server.main()
+            server.main(task_list)
 
     return 0
