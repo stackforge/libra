@@ -63,6 +63,15 @@ class UbuntuServices(ServicesBase):
         fh.write(config_str)
         fh.close()
 
+        # Validate the config
+        check_cmd = "/usr/sbin/haproxy -f %s -c" % tmpfile
+        try:
+            subprocess.check_output(check_cmd.split(),
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            raise Exception("Configuration file is invalid:\n%s" %
+                            e.output.rstrip('\n'))
+
         # Copy any existing configuration file to a backup.
         if os.path.exists(self._config_file):
             copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file,
