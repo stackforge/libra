@@ -1,5 +1,5 @@
-Configuration
-=============
+Configuration of Node Pool Manager and Worker
+=============================================
 
 Options can be specified either via the command line, or with a configuration
 file, or both. Options given on the command line will override any options
@@ -39,7 +39,9 @@ Worker Section
 ^^^^^^^^^^^^^^
 
    The ``[worker]`` section is specific to the libra_worker utility. Below
-   is an example::
+   is an example:
+
+   .. code-block:: ini
 
       [worker]
       user = haproxy
@@ -50,8 +52,33 @@ Worker Section
       pid = /var/run/libra/libra_worker.pid
       logfile = /var/log/libra/libra_worker.log
 
-Command Line Options
---------------------
+Pool Manager Section
+^^^^^^^^^^^^^^^^^^^^^
+
+   The ``[mgm]`` section is specific to the libra_pool_mgm utility. Below is an
+   example:
+
+   .. code-block:: ini
+
+       [mgm]
+       pid = /var/run/libra/libra_mgm.pid
+       logfile = /var/log/libra/libra_mgm.log
+       nova_auth_url = https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0/
+       nova_user = username
+       nova_pass = password
+       nova_tenant = tenant
+       nova_region = region
+       nova_keyname = default
+       nova_secgroup = default
+       haproxy_image = 12345
+       api_servers = 10.0.0.1:8889 10.0.0.2:8889
+       nodes = 10
+       check_interval = 5
+       image_size = 102
+
+
+Worker Command Line Options
+---------------------------
    .. program:: libra_worker.py
 
    .. option:: -c <FILE>, --config <FILE>
@@ -115,3 +142,53 @@ Command Line Options
       Enable verbose output. Normally, only errors are logged. This enables
       additional logging, but not as much as the :option:`-d` option.
 
+
+Pool Manager Command Line Options
+---------------------------------
+   .. program:: libra_pool_mgm.py
+
+   .. option:: -c <FILE>, --config <FILE>
+
+      Load options from the specified configuration file. Command line
+      options will take precedence over any options specified in the
+      configuration file.
+
+   .. option:: -d, --debug
+
+      Enable debugging output.
+
+   .. option:: --group <GROUP>
+
+      Specifies the group for the process when run in daemon mode.
+
+   .. option:: -h, --help
+
+      Show the help message and quit.
+
+   .. option:: -l <FILE>, --logfile <FILE>
+
+      Name of the log file. When running in daemon mode, the default log
+      file is */var/log/libra/libra_worker.log*. When not in daemon mode,
+      logging will go to STDOUT unless a log file is specified.
+
+   .. option:: -n, --nodaemon
+
+      Do not run as a daemon. This option is useful for debugging purposes
+      only as the worker is intended to be run as a daemon normally.
+
+   .. option:: -p <PID>, --pid <PID>
+
+      Name of the PID file to use. Default is:
+      */var/run/libra/libra_worker.pid*
+
+   .. option:: --user <USER>
+
+      Specifies the user for the process when in daemon mode. Default is the
+      current user.
+
+   .. option:: -v, --verbose
+
+      Enable verbose output. Normally, only errors are logged. This enables
+      additional logging, but not as much as the :option:`-d` option.
+
+  

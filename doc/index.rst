@@ -7,3 +7,5 @@ Load Balancer as a Service Device Tools
    introduction
    client/index
    worker/index
+   pool_mgm/index
+   config

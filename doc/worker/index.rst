@@ -5,5 +5,4 @@ Libra Gearman Worker
    :maxdepth: 2
 
    about
-   config
    code
