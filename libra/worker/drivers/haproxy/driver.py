@@ -42,8 +42,8 @@ class HAProxyDriver(LoadBalancerDriver):
         output = []
         output.append('global')
         output.append('    daemon')
-        output.append('    log 127.0.0.1 local0')
-        output.append('    log 127.0.0.1 local1 notice')
+        output.append('    log /dev/log local0')
+        output.append('    log /dev/log local1 notice')
         output.append('    maxconn 4096')
         output.append('    user haproxy')
         output.append('    group haproxy')
