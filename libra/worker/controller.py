@@ -199,7 +199,7 @@ class LBaaSController(object):
         # NOTE(shrews): We would need to know the current configuration of
         # the load balancer to do an update. Note sure this is really feasible,
         # so for now we just do the same as CREATE.
-        return self.action_create()
+        return self._action_create()
 
     def _action_suspend(self):
         """ Suspend a Load Balancer. """
