@@ -52,7 +52,6 @@ class HAProxyDriver(LoadBalancerDriver):
         )
         output.append('defaults')
         output.append('    log global')
-        output.append('    option httplog')
         output.append('    option dontlognull')
         output.append('    option redispatch')
         output.append('    maxconn 2000')
@@ -60,17 +59,32 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    timeout connect 5000ms')
         output.append('    timeout client 50000ms')
         output.append('    timeout server 5000ms')
-        output.append('    cookie SERVERID rewrite')
 
         serv_num = 1
 
         for proto in self._config:
             protocfg = self._config[proto]
+
+            #------------------------
+            # Frontend configuration
+            #------------------------
             output.append('frontend %s-in' % proto)
             output.append('    mode %s' % proto)
             output.append('    bind %s:%s' % (protocfg['bind_address'],
                                               protocfg['bind_port']))
             output.append('    default_backend %s-servers' % proto)
+
+            # HTTP specific options
+            if proto == 'http':
+                output.append('    option httplog')
+                output.append('    cookie SERVERID rewrite')
+            # TCP specific options
+            elif proto == 'tcp':
+                output.append('    option tcplog')
+
+            #------------------------
+            # Backend configuration
+            #------------------------
             output.append('backend %s-servers' % proto)
             output.append('    mode %s' % proto)
             output.append('    balance %s' % protocfg['algorithm'])
