@@ -45,19 +45,26 @@ class LBaaSController(object):
 
         action = self.msg[self.ACTION_FIELD].upper()
         self.logger.info("Requested action: %s" % action)
-        if action == 'CREATE':
-            return self._action_create()
-        elif action == 'UPDATE':
-            return self._action_update()
-        elif action == 'SUSPEND':
-            return self._action_suspend()
-        elif action == 'ENABLE':
-            return self._action_enable()
-        elif action == 'DELETE':
-            return self._action_delete()
-        else:
-            self.logger.error("Invalid `%s` value: %s" %
-                              (self.ACTION_FIELD, action))
+
+        try:
+            if action == 'CREATE':
+                return self._action_create()
+            elif action == 'UPDATE':
+                return self._action_update()
+            elif action == 'SUSPEND':
+                return self._action_suspend()
+            elif action == 'ENABLE':
+                return self._action_enable()
+            elif action == 'DELETE':
+                return self._action_delete()
+            else:
+                self.logger.error("Invalid `%s` value: %s" %
+                                  (self.ACTION_FIELD, action))
+                self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                return self.msg
+        except Exception as e:
+            self.logger.error("Controller exception: %s, %s" %
+                              (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
