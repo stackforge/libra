@@ -19,6 +19,7 @@ import pwd
 import signal
 import time
 import sys
+import os
 import threading
 
 from libra.openstack.common import importutils
@@ -53,6 +54,9 @@ class Server(object):
             'Scheduling node check for {check} minutes'
             .format(check=self.args.check_interval)
         )
+        # NOTE(LinuxJedi): Threading lock is for the case in the future where
+        # we need two timers, we don't want them to both execute their trigger
+        # at the same time.
         self.rlock = threading.RLock()
         self.check_nodes()
         while True:
@@ -62,7 +66,7 @@ class Server(object):
         """ check if known nodes are used """
         with self.rlock:
             self.logger.info('Checking if new nodes are needed')
-            api = self.driver_class(self.args.api_servers, self.logger)
+            api = self.driver_class(self.args.api_server, self.logger)
             if api.is_online():
                 self.logger.info(
                     'Connected to {url}'.format(url=api.get_url())
@@ -144,6 +148,10 @@ class Server(object):
 def main():
     options = Options('mgm', 'Node Management Daemon')
     options.parser.add_argument(
+        '--api_server', action='append', metavar='HOST:POST',
+        help='a list of API servers to connect to (for HP REST API driver)'
+    )
+    options.parser.add_argument(
         '--nodes', type=int, default=1,
         help='number of nodes'
     )
@@ -156,7 +164,68 @@ def main():
         choices=known_drivers.keys(), default='hp_rest',
         help='type of device to use'
     )
+    options.parser.add_argument(
+        '--nova_auth_url',
+        help='the auth URL for the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_user',
+        help='the username for the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_region',
+        help='the region to use for the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_tenant',
+        help='the tenant for the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_keyname',
+        help='the key name for new nodes spun up in the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_secgroup',
+        help='the security group for new nodes spun up in the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_image',
+        help='the image ID to use for new nodes spun up in the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_image_size',
+        help='the image size ID (flavor ID) to use for new nodes spun up in'
+             ' the Nova API'
+    )
+
     args = options.run()
+
+    required_args = [
+        'nova_image', 'nova_image_size', 'nova_secgroup', 'nova_keyname',
+        'nova_tenant', 'nova_region', 'nova_user', 'nova_auth_url'
+    ]
+
+    # NOTE(LinuxJedi): We are checking for required args here because the
+    # parser can't yet check both command line and config file to see if an
+    # option has been set
+    for req in required_args:
+        test_var = getattr(args, req)
+        if test_var is None:
+            sys.stderr.write(
+                '{app}: error: argument --{test_var} is required\n'
+                .format(app=os.path.basename(sys.argv[0]), test_var=req))
+            return 2
+
+    if not args.api_server:
+        # NOTE(shrews): Can't set a default in argparse method because the
+        # value is appended to the specified default.
+        args.api_server.append('localhost:8889')
+    elif not isinstance(args.api_server, list):
+        # NOTE(shrews): The Options object cannot intelligently handle
+        # creating a list from an option that may have multiple values.
+        # We convert it to the expected type here.
+        svr_list = args.api_server.split()
+        args.api_server = svr_list
 
     logger = setup_logging('libra_mgm', args)
     server = Server(logger, args)

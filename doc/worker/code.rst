@@ -15,7 +15,10 @@ Gearman Task
 Server Class
 ------------
 
-.. py:module:: libra.worker.worker
+..
+   Commenting out this because it causes error, should fall through from
+   previous usage
+   .. py:module:: libra.worker.worker
 
 .. py:class:: Server(logger, servers, reconnect_sleep)
 
@@ -85,8 +88,10 @@ LoadBalancerDriver Class
 
 Known Load Balancer Drivers Dictionary
 --------------------------------------
-
-.. py:module:: libra.worker.drivers
+..
+   Commenting out this because it causes error, should fall through from
+   previous usage
+   .. py:module:: libra.worker.drivers
 
 .. py:data:: known_drivers
 

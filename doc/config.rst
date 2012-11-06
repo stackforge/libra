@@ -30,7 +30,9 @@ Global Section
 
    The ``[global]`` section contains options common to the various Libra
    utilities (worker, mgm, etc). This section is read before any other
-   section, so values may be overridden by the other sections::
+   section, so values may be overridden by the other sections:
+
+   .. code-block:: ini
 
       [global]
       verbose = true
@@ -70,11 +72,11 @@ Pool Manager Section
        nova_region = region
        nova_keyname = default
        nova_secgroup = default
-       haproxy_image = 12345
-       api_servers = 10.0.0.1:8889 10.0.0.2:8889
+       nova_image = 12345
+       nova_image_size = 102
+       api_server = 10.0.0.1:8889 10.0.0.2:8889
        nodes = 10
        check_interval = 5
-       image_size = 102
 
 
 Worker Command Line Options
@@ -147,15 +149,33 @@ Pool Manager Command Line Options
 ---------------------------------
    .. program:: libra_pool_mgm.py
 
+   .. option:: --api_server <HOST:PORT>
+
+      The hostname/IP and port colon separated for use with the HP REST API
+      driver.  Can be specified multiple times for multiple servers
+
    .. option:: -c <FILE>, --config <FILE>
 
       Load options from the specified configuration file. Command line
       options will take precedence over any options specified in the
       configuration file.
 
+   .. option:: --check_interval <CHECK_INTERVAL>
+
+      How often to check the API server to see if noew nodes are needed
+      (in value is minutes)
+
    .. option:: -d, --debug
 
       Enable debugging output.
+
+   .. option:: --driver <DRIVER>
+
+      API driver to use. Valid driver options are:
+
+      * *hp_rest* - HP REST API, talks to the HP Cloud API server (based
+        on Atlas API)
+        This is the default driver.
 
    .. option:: --group <GROUP>
 
@@ -175,6 +195,43 @@ Pool Manager Command Line Options
 
       Do not run as a daemon. This option is useful for debugging purposes
       only as the worker is intended to be run as a daemon normally.
+
+   .. option:: --nodes <NODES>
+
+      The size of the pool of spare nodes the pool manager should keep.
+
+   .. option:: --nova_auth_url <NOVA_AUTH_URL>
+
+      The URL used to authenticate for the Nova API
+
+   .. option:: --nova_user <NOVA_USER>
+
+      The username to autenticate for the Nova API
+
+   .. option:: --nova_tenant <NOVA_TENANT>
+
+      The tenant to use for the Nova API
+
+   .. option:: --nova_region <NOVA_REGION>
+
+      The region to use for the Nova API
+
+   .. option:: --nova_keyname <NOVA_KEYNAME>
+
+      The key name to use when spinning up nodes in the Nova API
+
+   .. option:: --nova_secgroup <NOVA_SECGROUP>
+
+      The security group to use when spinning up nodes in the Nova API
+
+   .. option:: --nova_image <NOVA_IMAGE>
+
+      The image ID to use on new nodes spun up in the Nova API
+
+   .. option:: --nova_image_size <NOVA_IMAGE_SIZE>
+
+      The flavor ID (image size ID) to use for new nodes spun up in the Nova
+      API
 
    .. option:: -p <PID>, --pid <PID>
 

@@ -25,7 +25,6 @@ API_VERSION = 'v1'
 class HPRestDriver(MgmDriver):
 
     def __init__(self, addresses, logger):
-        addresses = addresses.split(' ')
         self.logger = logger
         random.shuffle(addresses)
         for address in addresses:
