@@ -105,8 +105,8 @@ class Server(object):
             self.args.nova_region,
             self.args.nova_keyname,
             self.args.nova_secgroup,
-            self.args.haproxy_image,
-            self.args.image_size
+            self.args.nova_image,
+            self.args.nova_image_size
         )
         while count > 0:
             status, data = nova.build()
