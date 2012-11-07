@@ -13,7 +13,7 @@
 # under the License.
 
 import json
-from gearman import GearmanWorker, DataEncoder
+from gearman import GearmanClient, GearmanWorker, DataEncoder
 
 
 class JSONDataEncoder(DataEncoder):
@@ -32,4 +32,9 @@ class JSONDataEncoder(DataEncoder):
 
 class JSONGearmanWorker(GearmanWorker):
     """ Overload the Gearman worker class so we can set the data encoder. """
+    data_encoder = JSONDataEncoder
+
+
+class JSONGearmanClient(GearmanClient):
+    """ Overload the Gearman client class so we can set the data encoder. """
     data_encoder = JSONDataEncoder
