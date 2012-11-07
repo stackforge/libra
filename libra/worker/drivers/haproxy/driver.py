@@ -74,11 +74,10 @@ class HAProxyDriver(LoadBalancerDriver):
                                               protocfg['bind_port']))
             output.append('    default_backend %s-servers' % proto)
 
-            # HTTP specific options
+            # HTTP specific options for the frontend
             if proto == 'http':
                 output.append('    option httplog')
-                output.append('    cookie SERVERID rewrite')
-            # TCP specific options
+            # TCP specific options for the frontend
             elif proto == 'tcp':
                 output.append('    option tcplog')
 
@@ -88,6 +87,10 @@ class HAProxyDriver(LoadBalancerDriver):
             output.append('backend %s-servers' % proto)
             output.append('    mode %s' % proto)
             output.append('    balance %s' % protocfg['algorithm'])
+
+            # HTTP specific options for the backend
+            if proto == 'http':
+                output.append('    cookie SERVERID rewrite')
 
             for (addr, port) in protocfg['servers']:
                 output.append('    server server%d %s:%s' %
