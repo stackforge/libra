@@ -18,6 +18,8 @@ import os.path
 import sys
 import ConfigParser
 
+from libra import __version__
+
 
 """
 Common options parser.
@@ -109,6 +111,10 @@ class Options(object):
         )
 
         self.parser.add_argument(
+            '--version', dest='version', action='store_true',
+            help='print version and exit'
+        )
+        self.parser.add_argument(
             '-n', '--nodaemon', dest='nodaemon', action='store_true',
             help='do not run in daemon mode'
         )
@@ -149,7 +155,11 @@ class Options(object):
         # would take precedence.
         if self._arg_defaults:
             self.parser.set_defaults(**self._arg_defaults)
-        return self.parser.parse_args()
+        args = self.parser.parse_args()
+        if args.version:
+            print("Libra toolset version %s" % __version__)
+            sys.exit(0)
+        return args
 
 
 def setup_logging(name, args):

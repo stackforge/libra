@@ -58,10 +58,13 @@ setup_reqs = ['Sphinx']
 if sys.platform != 'darwin':
     setup_reqs.append('rst2pdf')
 
+# Get the version number
+execfile('libra/__init__.py')
+
 setuptools.setup(
     name="libra",
     description="Python LBaaS Gearman Worker and Pool Manager",
-    version="1.0",
+    version=__version__,
     author="David Shrewsbury <shrewsbury.dave@gmail.com>, \
         Andrew Hutchings <andrew@linuxjedi.co.uk>",
     packages=setuptools.find_packages(exclude=["*.tests"]),
