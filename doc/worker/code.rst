@@ -3,38 +3,43 @@ Code Walkthrough
 
 Here we'll highlight some of the more important code aspects.
 
-Gearman Task
-------------
+Gearman Worker Thread
+---------------------
 .. py:module:: libra.worker.worker
 
-.. py:function:: lbaas_task(worker, job)
+.. py:function:: config_manager(logger, driver, servers, reconnect_sleep)
 
-   This is the function executed by the Gearman worker for each message
-   retrieved from a Gearman job server.
+   This function encapsulates the functionality for the Gearman worker thread
+   that will be started by the :py:class:`~libra.worker.main.EventServer`
+   class. It should never exit.
 
-Server Class
-------------
+   This function connects to the Gearman job server(s) and runs the Gearman
+   worker task, which itself is another function that is called for each
+   message retrieved from the Gearman job servers.
 
-..
-   Commenting out this because it causes error, should fall through from
-   previous usage
-   .. py:module:: libra.worker.worker
+   If all Gearman job servers become unavailable, the worker would
+   normally exit. This function identifies that situation and periodically
+   attempts to restart the worker in an endless loop.
 
-.. py:class:: Server(logger, servers, reconnect_sleep)
+EventServer Class
+-----------------
+
+.. py:module:: libra.worker.main
+
+.. py:class:: EventServer(logger)
 
    This class encapsulates the server activity once it starts in either
-   daemon or non-daemon mode and all configuration options are read.
+   daemon or non-daemon mode and all configuration options are read. It
+   uses the `eventlet <http://eventlet.net/doc/>`_ Python module to start
+   tasks that it will be supplied.
 
-   .. py:method:: main()
+   .. py:method:: main(tasks)
 
       The one and only method in the class and represents the primary
-      function of the program. The Gearman worker is started in this method,
-      which then executes the :py:func:`~lbaas_task` function for each message.
-      It does not exit unless the worker itself exits.
+      function of the program. A list of functions and their parameters
+      is supplied as the only argument. Each function will be started in
+      its own Green Thread.
 
-      If all Gearman job servers become unavailable, the worker would
-      normally exit. This method identifies that situation and periodically
-      attempts to restart the worker in an endless loop.
 
 LBaaSController Class
 ---------------------
@@ -43,7 +48,8 @@ LBaaSController Class
 
 .. py:class:: LBaaSController(logger, driver, json_msg)
 
-   This class is used by the :py:func:`~libra.worker.worker.lbaas_task` function drive the
+   This class is used by the Gearman task started within the worker thread
+   (the :py:func:`~libra.worker.worker.config_manager` function) to drive the
    Gearman message handling.
 
    .. py:method:: run()
@@ -86,12 +92,10 @@ LoadBalancerDriver Class
 
    .. py:method:: delete()
 
+   .. py:method:: get_stats()
+
 Known Load Balancer Drivers Dictionary
 --------------------------------------
-..
-   Commenting out this because it causes error, should fall through from
-   previous usage
-   .. py:module:: libra.worker.drivers
 
 .. py:data:: known_drivers
 
@@ -126,8 +130,9 @@ The steps shown above are:
 
 .. py:module:: libra.worker
 
-* The Gearman worker task, :py:func:`~worker.lbaas_task`, is run when the
-  worker receives a message from the Gearman job server (not represented above).
+* The Gearman worker task used in the worker thread (see the
+  :py:func:`~worker.config_manager` function), is run when the worker
+  receives a message from the Gearman job server (not represented above).
 * This task then uses the :py:class:`~controller.LBaaSController` to process
   the message that it received.
 * Based on the contents of the message, the controller then makes the relevant
