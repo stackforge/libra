@@ -15,16 +15,19 @@
 import eventlet
 
 
-def stats_manager(logger, driver):
-    logger.debug("Statistics gathering process started.")
+def stats_manager(logger, driver, stats_poll):
+    logger.debug("[stats] Statistics gathering process started.")
+    logger.debug("[stats] Polling interval: %d" % stats_poll)
 
     while True:
         try:
             driver.get_stats()
         except NotImplementedError:
-            logger.warn("Driver does not implement statisics gathering.")
+            logger.warn(
+                "[stats] Driver does not implement statisics gathering."
+            )
             break
 
-        eventlet.sleep(60)
+        eventlet.sleep(stats_poll)
 
-    logger.info("Statistics gathering process terminated.")
+    logger.info("[stats] Statistics gathering process terminated.")

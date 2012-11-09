@@ -144,6 +144,10 @@ Worker Command Line Options
       Enable verbose output. Normally, only errors are logged. This enables
       additional logging, but not as much as the :option:`-d` option.
 
+   .. option:: --stats-poll <SECONDS>
+
+      The number of seconds to sleep between statistics polling of the
+      load balancer driver. Default is 300 seconds.
 
 Pool Manager Command Line Options
 ---------------------------------
@@ -248,4 +252,4 @@ Pool Manager Command Line Options
       Enable verbose output. Normally, only errors are logged. This enables
       additional logging, but not as much as the :option:`-d` option.
 
-  
+

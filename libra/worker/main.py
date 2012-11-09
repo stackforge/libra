@@ -81,6 +81,10 @@ def main():
         choices=haproxy_services.keys(), default='ubuntu',
         help='os services to use with HAProxy driver (when used)'
     )
+    options.parser.add_argument(
+        '--stats-poll', dest='stats_poll', type=int, metavar='TIME',
+        default=300, help='statistics polling interval in seconds'
+    )
     args = options.run()
 
     logger = setup_logging('libra_worker', args)
@@ -115,7 +119,7 @@ def main():
     # Tasks to execute in parallel
     task_list = [
         (config_manager, (logger, driver, args.server, args.reconnect_sleep)),
-        (stats_manager, (logger, driver))
+        (stats_manager, (logger, driver, args.stats_poll))
     ]
 
     if args.nodaemon:
