@@ -38,7 +38,6 @@ def handler(worker, job):
     logger = worker.logger
     driver = worker.driver
 
-    logger.debug("Entered worker task")
     logger.debug("Received JSON message: %s" % json.dumps(job.data, indent=4))
 
     controller = LBaaSController(logger, driver, job.data)
@@ -51,7 +50,7 @@ def handler(worker, job):
 def config_manager(logger, driver, servers, reconnect_sleep):
     my_ip = socket.gethostbyname(socket.gethostname())
     task_name = "lbaas-%s" % my_ip
-    logger.info("Registering task %s" % task_name)
+    logger.info("[worker] Registering task %s" % task_name)
 
     worker = CustomJSONGearmanWorker(servers)
     worker.set_client_id(my_ip)
@@ -67,9 +66,11 @@ def config_manager(logger, driver, servers, reconnect_sleep):
         except KeyboardInterrupt:
             retry = False
         except gearman.errors.ServerUnavailable:
-            logger.error("Job server(s) went away. Reconnecting.")
+            logger.error("[worker] Job server(s) went away. Reconnecting.")
             time.sleep(reconnect_sleep)
             retry = True
         except Exception as e:
-            logger.critical("Exception: %s, %s" % (e.__class__, e))
+            logger.critical("[worker] Exception: %s, %s" % (e.__class__, e))
             retry = False
+
+    logger.debug("[worker] Worker process terminated.")
