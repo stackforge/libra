@@ -28,16 +28,16 @@ class ServicesBase:
 
     def service_stop(self):
         """ Stop the HAProxy service. """
-        return NotImplementedError()
+        raise NotImplementedError()
 
     def service_start(self):
         """ Start the HAProxy service. """
-        return NotImplementedError()
+        raise NotImplementedError()
 
     def write_config(self, config_str):
         """ Write the HAProxy configuration file. """
-        return NotImplementedError()
+        raise NotImplementedError()
 
     def remove_configs(self):
         """ Remove current and saved HAProxy config files. """
-        return NotImplementedError()
+        raise NotImplementedError()
