@@ -41,3 +41,7 @@ class ServicesBase:
     def remove_configs(self):
         """ Remove current and saved HAProxy config files. """
         raise NotImplementedError()
+
+    def get_stats(self):
+        """ Get the stats from HAProxy. """
+        raise NotImplementedError()

@@ -15,6 +15,7 @@
 import os
 import subprocess
 
+from libra.common.lbstats import LBStatistics
 from libra.worker.drivers.haproxy.services_base import ServicesBase
 
 
@@ -100,3 +101,7 @@ class UbuntuServices(ServicesBase):
         except subprocess.CalledProcessError as e:
             raise Exception("Failed to delete HAProxy config files: %s" %
                             e.output.rstrip('\n'))
+
+    def get_stats(self):
+        stats = LBStatistics()
+        return stats

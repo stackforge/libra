@@ -12,23 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import eventlet
 
-
-def stats_manager(logger, driver, stats_poll):
-    logger.debug("[stats] Statistics gathering process started.")
-    logger.debug("[stats] Polling interval: %d" % stats_poll)
-
-    while True:
-        try:
-            stats = driver.get_stats()
-        except NotImplementedError:
-            logger.warn(
-                "[stats] Driver does not implement statisics gathering."
-            )
-            break
-
-        logger.debug("[stats] Statistics: %s" % stats)
-        eventlet.sleep(stats_poll)
-
-    logger.info("[stats] Statistics gathering process terminated.")
+class LBStatistics(object):
+    """ Load balancer statistics class. """
+    pass

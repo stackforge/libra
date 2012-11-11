@@ -152,3 +152,6 @@ class HAProxyDriver(LoadBalancerDriver):
     def delete(self):
         self.ossvc.service_stop()
         self.ossvc.remove_configs()
+
+    def get_stats(self):
+        return self.ossvc.get_stats()
