@@ -21,14 +21,18 @@ def stats_manager(logger, driver, stats_poll):
 
     while True:
         try:
-            stats = driver.get_stats()
+            http_stats = driver.get_stats('http')
+            tcp_stats = driver.get_stats('tcp')
         except NotImplementedError:
             logger.warn(
                 "[stats] Driver does not implement statisics gathering."
             )
             break
 
-        logger.debug("[stats] Statistics: %s" % stats)
+        logger.debug("[stats] HTTP bytes in/out: (%d, %d)" %
+                     (http_stats.bytes_in, http_stats.bytes_out))
+        logger.debug("[stats] TCP bytes in/out: (%d, %d)" %
+                     (tcp_stats.bytes_in, tcp_stats.bytes_out))
         eventlet.sleep(stats_poll)
 
     logger.info("[stats] Statistics gathering process terminated.")

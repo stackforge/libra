@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import csv
 import os
 import subprocess
 
@@ -102,6 +103,45 @@ class UbuntuServices(ServicesBase):
             raise Exception("Failed to delete HAProxy config files: %s" %
                             e.output.rstrip('\n'))
 
-    def get_stats(self):
+    def get_stats(self, protocol):
+        """
+        Query HAProxy socket for stats on the given protocol.
+
+        protocol
+            One of the supported protocol names (http or tcp).
+
+        This function will query the HAProxy statistics socket and pull out
+        the values that it needs for the given protocol (which equates to one
+        load balancer). The values are stored in a LBStatistics object that
+        will be returned to the caller.
+
+        The output of the socket query is in CSV format and defined here:
+
+        http://cbonte.github.com/haproxy-dconv/configuration-1.4.html#9
+        """
+
         stats = LBStatistics()
+
+        cmd = 'echo "show stat" | ' \
+              'sudo /usr/bin/socat stdio /var/run/haproxy-stats.socket'
+        try:
+            csv_output = subprocess.check_output(cmd, shell=True)
+        except subprocess.CalledProcessError as e:
+            raise Exception("Failed to get statistics: %s" %
+                            e.output.rstrip('\n'))
+
+        # Remove leading '# ' from string and trailing newlines
+        csv_output = csv_output[2:].rstrip()
+        # Turn string into a list, removing last two empty lines
+        csv_lines = csv_output.split('\n')
+
+        proxy_name = "%s-in" % protocol.lower()
+        service_name = "FRONTEND"
+
+        reader = csv.DictReader(csv_lines)
+        for row in reader:
+            if row['pxname'] == proxy_name and row['svname'] == service_name:
+                stats.bytes_out = row['bout']
+                break
+
         return stats

@@ -31,6 +31,12 @@ Now you may install the Libra toolset:
 
     $ sudo python setup.py install
 
+The worker also needs some packages installed in order to be used with
+HAProxy. The commands below will install them on Ubuntu:
+
+    $ sudo apt-get install haproxy
+    $ sudo apt-get install socat
+
 
 Edit /etc/sudoers
 -----------------
@@ -40,7 +46,7 @@ prompted for a password. It is suggested that you run the worker as
 the `haproxy` user and `haproxy` group on Ubuntu systems. Then add the
 following line to /etc/sudoers:
 
-    %haproxy ALL = NOPASSWD: /usr/sbin/service, /bin/cp, /bin/mv, /bin/rm
+    %haproxy ALL = NOPASSWD: /usr/sbin/service, /bin/cp, /bin/mv, /bin/rm, /usr/bin/socat
 
 The above lets everyone in the `haproxy` group run those commands
 as root without being prompted for a password.
@@ -64,6 +70,10 @@ Basic commands:
 
     # Start up with debugging output in non-daemon mode
     $ libra_worker --debug --nodaemon
+
+NOTE: When running the worker in daemon mode, you must make sure that the
+directory where the PID file will be (-p/--pid option) is writable by the
+user/group specified with the --user and --group options.
 
 You can verify that the worker is running by using the sample Gearman
 client in the bin/ directory:

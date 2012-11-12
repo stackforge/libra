@@ -15,4 +15,28 @@
 
 class LBStatistics(object):
     """ Load balancer statistics class. """
-    pass
+
+    def __init__(self):
+        self.stats = {}
+        self.bytes_out = 0
+        self.bytes_in = 0
+
+    @property
+    def bytes_out(self):
+        return self.stats['bytes_out']
+
+    @bytes_out.setter
+    def bytes_out(self, value):
+        if not isinstance(value, int):
+            raise TypeError("Must be an integer.")
+        self.stats['bytes_out'] = value
+
+    @property
+    def bytes_in(self):
+        return self.stats['bytes_in']
+
+    @bytes_in.setter
+    def bytes_in(self, value):
+        if not isinstance(value, int):
+            raise TypeError("Must be an integer.")
+        self.stats['bytes_in'] = value
