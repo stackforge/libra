@@ -208,13 +208,16 @@ def main():
     # NOTE(LinuxJedi): We are checking for required args here because the
     # parser can't yet check both command line and config file to see if an
     # option has been set
+    missing_args = 0
     for req in required_args:
         test_var = getattr(args, req)
         if test_var is None:
+            missing_args += 1
             sys.stderr.write(
                 '{app}: error: argument --{test_var} is required\n'
                 .format(app=os.path.basename(sys.argv[0]), test_var=req))
-            return 2
+    if missing_args:
+        return 2
 
     if not args.api_server:
         # NOTE(shrews): Can't set a default in argparse method because the
