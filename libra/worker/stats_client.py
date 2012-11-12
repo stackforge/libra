@@ -24,9 +24,12 @@ def stats_manager(logger, driver, stats_poll):
             http_stats = driver.get_stats('http')
             tcp_stats = driver.get_stats('tcp')
         except NotImplementedError:
-            logger.warn(
+            logger.critical(
                 "[stats] Driver does not implement statisics gathering."
             )
+            break
+        except Exception as e:
+            logger.critical("[stats] Exception: %s, %s" % (e.__class__, e))
             break
 
         logger.debug("[stats] HTTP bytes in/out: (%d, %d)" %
