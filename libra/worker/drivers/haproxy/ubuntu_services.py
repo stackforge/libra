@@ -30,24 +30,22 @@ class UbuntuServices(ServicesBase):
 
     def service_stop(self):
         """ Stop the HAProxy service on the local machine. """
-        cmd = '/usr/bin/sudo /usr/sbin/service haproxy stop'
+        cmd = '/usr/bin/sudo -n /usr/sbin/service haproxy stop'
         try:
             subprocess.check_output(cmd.split())
         except subprocess.CalledProcessError as e:
-            raise Exception("Failed to stop HAProxy service: %s" %
-                            e.output.rstrip('\n'))
+            raise Exception("Failed to stop HAProxy service: %s" % e)
         if os.path.exists(self._haproxy_pid):
             raise Exception("%s still exists. Stop failed." %
                             self._haproxy_pid)
 
     def service_start(self):
         """ Start the HAProxy service on the local machine. """
-        cmd = '/usr/bin/sudo /usr/sbin/service haproxy start'
+        cmd = '/usr/bin/sudo -n /usr/sbin/service haproxy start'
         try:
             subprocess.check_output(cmd.split())
         except subprocess.CalledProcessError as e:
-            raise Exception("Failed to start HAProxy service: %s" %
-                            e.output.rstrip('\n'))
+            raise Exception("Failed to start HAProxy service: %s" % e)
         if not os.path.exists(self._haproxy_pid):
             raise Exception("%s does not exist. Start failed." %
                             self._haproxy_pid)
@@ -71,37 +69,37 @@ class UbuntuServices(ServicesBase):
             subprocess.check_output(check_cmd.split(),
                                     stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            raise Exception("Configuration file is invalid:\n%s" %
-                            e.output.rstrip('\n'))
+            raise Exception("Configuration file is invalid: %s\n%s" %
+                            (e, e.output.rstrip('\n')))
 
         # Copy any existing configuration file to a backup.
         if os.path.exists(self._config_file):
-            copy_cmd = "/usr/bin/sudo /bin/cp %s %s" % (self._config_file,
-                                                        self._backup_config)
+            copy_cmd = "/usr/bin/sudo -n /bin/cp %s %s" % (self._config_file,
+                                                           self._backup_config)
             try:
                 subprocess.check_output(copy_cmd.split(),
                                         stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
-                raise Exception("Failed to copy configuration file: %s" %
-                                e.output.rstrip('\n'))
+                raise Exception("Failed to copy configuration file: %s\n%s"
+                                % (e, e.output.rstrip('\n')))
 
         # Move the temporary config file to production version.
-        move_cmd = "/usr/bin/sudo /bin/mv %s %s" % (tmpfile, self._config_file)
+        move_cmd = "/usr/bin/sudo -n /bin/mv %s %s" % (tmpfile,
+                                                       self._config_file)
         try:
             subprocess.check_output(move_cmd.split(), stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            raise Exception("Failed to write configuration file: %s" %
-                            e.output.rstrip('\n'))
+            raise Exception("Failed to write configuration file: %s\n%s"
+                            % (e, e.output.rstrip('\n')))
 
     def remove_configs(self):
         """ Delete current and backup configs on the local machine. """
-        cmd = '/usr/bin/sudo /bin/rm -f %s %s' % (self._config_file,
-                                                  self._backup_config)
+        cmd = '/usr/bin/sudo -n /bin/rm -f %s %s' % (self._config_file,
+                                                     self._backup_config)
         try:
             subprocess.check_output(cmd.split())
         except subprocess.CalledProcessError as e:
-            raise Exception("Failed to delete HAProxy config files: %s" %
-                            e.output.rstrip('\n'))
+            raise Exception("Failed to delete HAProxy config files: %s" % e)
 
     def get_stats(self, protocol):
         """
@@ -123,12 +121,11 @@ class UbuntuServices(ServicesBase):
         stats = LBStatistics()
 
         cmd = 'echo "show stat" | ' \
-              'sudo /usr/bin/socat stdio /var/run/haproxy-stats.socket'
+              'sudo -n /usr/bin/socat stdio /var/run/haproxy-stats.socket'
         try:
             csv_output = subprocess.check_output(cmd, shell=True)
         except subprocess.CalledProcessError as e:
-            raise Exception("Failed to get statistics: %s" %
-                            e.output.rstrip('\n'))
+            raise Exception("Failed to get statistics: %s" % e)
 
         # Remove leading '# ' from string and trailing newlines
         csv_output = csv_output[2:].rstrip()
