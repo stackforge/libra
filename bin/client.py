@@ -44,17 +44,22 @@ def main():
     data = """
 {
     "hpcs_action": "create",
-    "name": "a-new-loadbalancer",
-    "nodes":      [
-                    {
-                      "address": "10.1.1.1",
-                      "port": "80"
-                    },
-                    {
-                      "address": "10.1.1.2",
-                      "port": "81"
-                    }
-                   ]
+    "loadbalancers": [
+        {
+            "name": "a-new-loadbalancer",
+            "protocol": "http",
+            "nodes": [
+                {
+                    "address": "10.1.1.1",
+                    "port": "80"
+                },
+                {
+                    "address": "10.1.1.2",
+                    "port": "81"
+                }
+            ]
+        }
+    ]
 }
 """
 
