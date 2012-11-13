@@ -120,11 +120,21 @@ class Server(object):
                 if not address['addr'].startswith('10.'):
                     break
             body['address'] = address['addr']
-            self.logger.info('Adding server {name} on {ip}'
+            self.logger.info('Adding node {name} on {ip}'
                              .format(name=body['name'], ip=body['address']))
             # TODO: store failed uploads to API server to retry
             status, response = api.add_node(body)
             if not status:
+                self.logger.error(
+                    'Could not upload node {name} to API server, deleting'
+                    .format(name=data['name'])
+                )
+                status, response = nova.delete(data['id'])
+                if not status:
+                    self.logger.error(response)
+                else:
+                    self.logger.info('Delete succeeded')
+                self.logger.warning('Aborting node building')
                 return
             count = count - 1
 

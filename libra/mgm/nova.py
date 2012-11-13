@@ -71,12 +71,16 @@ class Node(object):
         try:
             resp = self._delete(node_id)
         except:
-            return False
+            return False, 'Error deleting node {nid} exception {exc}'.format(
+                nid=node_id, exc=sys.exc_info()[0]
+            )
 
         if resp['status'] != '204':
-            return False
+            return False, 'Error deleting node {nid} status {stat}'.format(
+                node=node_id, stat=status['status']
+            )
 
-        return True
+        return True, ''
 
     def _create(self, node_id):
         """ create a nova node """
