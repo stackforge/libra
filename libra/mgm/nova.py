@@ -18,8 +18,6 @@ import sys
 
 from novaclient import client
 
-LIBRA_VERSION = 'v1'
-
 
 class Node(object):
     def __init__(self, username, password, tenant, auth_url, region, keyname,
@@ -86,7 +84,7 @@ class Node(object):
         """ create a nova node """
         url = "/servers"
         body = {"server": {
-                "name": 'lbaas-{0}-{1}'.format(LIBRA_VERSION, node_id),
+                "name": '{0}'.format(node_id),
                 "imageRef": self.image,
                 "key_name": self.keyname,
                 "flavorRef": self.node_type,
