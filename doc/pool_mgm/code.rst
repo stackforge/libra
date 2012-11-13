@@ -123,7 +123,8 @@ Known Drivers Dictionary
 
 .. py:data:: known_drivers
 
-   This is the dictionary that maps values for the :option:`--driver` option
+   This is the dictionary that maps values for the
+   :option:`libra_pool_mgm.py --driver` option
    to a class implementing the driver :py:class:`~MgmDriver` API
    for that API server. After implementing a new driver class, you simply add
    a new entry to this dictionary to plug in the new driver.
