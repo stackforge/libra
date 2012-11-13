@@ -56,11 +56,11 @@ class TestLBaaSMgmNova(unittest.TestCase):
     def testDeleteNodeFail(self):
         with mock.patch.object(httplib2.Http, "request", mock_bad_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
-                resp = self.api.delete('1234')
+                resp, data = self.api.delete('1234')
                 self.assertFalse(resp)
 
     def testDeleteNodeSucceed(self):
         with mock.patch.object(httplib2.Http, "request", mock_del_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
-                resp = self.api.delete('1234')
+                resp, data = self.api.delete('1234')
                 self.assertTrue(resp)
