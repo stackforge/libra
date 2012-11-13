@@ -48,8 +48,13 @@ def handler(worker, job):
 
 
 def config_manager(logger, driver, servers, reconnect_sleep):
-    my_ip = socket.gethostbyname(socket.gethostname())
-    task_name = "lbaas-%s" % my_ip
+    # Version of the JSON message format that this worker understands.
+    msg_fmt_version = "1.0"
+
+    # Hostname should be a unique value, like UUID
+    hostname = socket.gethostname()
+
+    task_name = "lbaas-%s-%s" % (msg_fmt_version, hostname)
     logger.info("[worker] Registering task %s" % task_name)
 
     worker = CustomJSONGearmanWorker(servers)
