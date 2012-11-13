@@ -100,7 +100,7 @@ Known Load Balancer Drivers Dictionary
 .. py:data:: known_drivers
 
    This is the dictionary that maps values for the
-   :option:`libra_worker.py --driver` option
+   :option:`--driver <libra_worker.py --driver>` option
    to a class implementing the driver :py:class:`~LoadBalancerDriver` API
    for that appliance. After implementing a new driver class, you simply add
    a new entry to this dictionary to plug in the new driver.
@@ -138,7 +138,8 @@ The steps shown above are:
   the message that it received.
 * Based on the contents of the message, the controller then makes the relevant
   driver API calls using the :py:class:`~drivers.LoadBalancerDriver` driver
-  that was selected via the :option:`libra_worker.py --driver` option.
+  that was selected via the :option:`--driver <libra_worker.py --driver>` 
+  option.
 * The driver executes the API call. If the driver encounters an error during
   execution, an exception is thrown that should be handled by the
   :py:class:`~controller.LBaaSController` object. Otherwise, nothing is
