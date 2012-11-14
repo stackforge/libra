@@ -19,7 +19,7 @@ import sys
 import ConfigParser
 
 from libra import __version__
-
+from logging_handler import CompressedTimedRotatingFileHandler 
 
 """
 Common options parser.
@@ -178,7 +178,9 @@ def setup_logging(name, args):
     )
 
     if logfile:
-        handler = logging.FileHandler(logfile)
+        handler = CompressedTimedRotatingFileHandler(
+            logfile, when='D', interval=1, backupCount=7
+        )
         handler.setFormatter(ts_formatter)
     else:
         handler = logging.StreamHandler(sys.stdout)
