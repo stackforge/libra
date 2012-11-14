@@ -73,7 +73,7 @@ Pool Manager Section
        nova_keyname = default
        nova_secgroup = default
        nova_image = 12345
-       nova_image_size = 102
+       nova_image_size = standard.medium
        api_server = 10.0.0.1:8889 10.0.0.2:8889
        nodes = 10
        check_interval = 5
@@ -230,12 +230,12 @@ Pool Manager Command Line Options
 
    .. option:: --nova_image <NOVA_IMAGE>
 
-      The image ID to use on new nodes spun up in the Nova API
+      The image ID or name to use on new nodes spun up in the Nova API
 
    .. option:: --nova_image_size <NOVA_IMAGE_SIZE>
 
-      The flavor ID (image size ID) to use for new nodes spun up in the Nova
-      API
+      The flavor ID (image size ID) or name to use for new nodes spun up in
+      the Nova API
 
    .. option:: -p <PID>, --pid <PID>
 

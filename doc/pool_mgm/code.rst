@@ -69,8 +69,8 @@ Node Class
    :param region: The Nova region
    :param keyaname: The Nova key name for new nodes
    :param secgroup: The Nova security group for new nodes
-   :param image: The Nova image ID for new nodes
-   :param node_type: The flavor ID for new nodes
+   :param image: The Nova image ID or name for new nodes
+   :param node_type: The flavor ID or name for new nodes
 
    .. py:method:: build()
 

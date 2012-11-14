@@ -97,17 +97,23 @@ class Server(object):
         self.ct.start()
 
     def build_nodes(self, count, api):
-        nova = Node(
-            self.args.nova_user,
-            self.args.nova_pass,
-            self.args.nova_tenant,
-            self.args.nova_auth_url,
-            self.args.nova_region,
-            self.args.nova_keyname,
-            self.args.nova_secgroup,
-            self.args.nova_image,
-            self.args.nova_image_size
-        )
+        try:
+            nova = Node(
+                self.args.nova_user,
+                self.args.nova_pass,
+                self.args.nova_tenant,
+                self.args.nova_auth_url,
+                self.args.nova_region,
+                self.args.nova_keyname,
+                self.args.nova_secgroup,
+                self.args.nova_image,
+                self.args.nova_image_size
+            )
+        except Exception as exc:
+            self.logger.error('Error initialising Nova connection {exc}'
+                .format(exc=exc)
+            )
+            return
         while count > 0:
             status, data = nova.build()
             if not status:
@@ -200,12 +206,13 @@ def main():
     )
     options.parser.add_argument(
         '--nova_image',
-        help='the image ID to use for new nodes spun up in the Nova API'
+        help='the image ID or name to use for new nodes spun up in the'
+             ' Nova API'
     )
     options.parser.add_argument(
         '--nova_image_size',
-        help='the image size ID (flavor ID) to use for new nodes spun up in'
-             ' the Nova API'
+        help='the image size ID (flavor ID) or name to use for new nodes spun'
+             ' up in the Nova API'
     )
 
     args = options.run()

@@ -15,8 +15,13 @@
 import uuid
 import time
 import sys
+import urllib
 
 from novaclient import client
+
+
+class NotFound(Exception):
+    pass
 
 
 class Node(object):
@@ -32,8 +37,15 @@ class Node(object):
         )
         self.keyname = keyname
         self.secgroup = secgroup
-        self.image = image
-        self.node_type = node_type
+        if image.isdigit():
+            self.image = image
+        else:
+            self.image = self._get_image(image)
+
+        if node_type.isdigit():
+            self.node_type = node_type
+        else:
+            self.node_type = self._get_flavor(node_type)
 
     def build(self):
         """ create a node, test it is running """
@@ -75,7 +87,7 @@ class Node(object):
 
         if resp['status'] != '204':
             return False, 'Error deleting node {nid} status {stat}'.format(
-                node=node_id, stat=status['status']
+                node=node_id, stat=resp['status']
             )
 
         return True, ''
@@ -108,3 +120,34 @@ class Node(object):
         resp, body = self.nova.delete(url)
 
         return resp
+
+    def _get_image(self, image_name):
+        """ tries to find an image from the name """
+        args = {'name': image_name}
+        url = "/images?{0}".format(urllib.urlencode(args))
+        resp, body = self.nova.get(url)
+        if resp['status'] not in ['200', '203']:
+            msg = "Error {0} searching for image with name {1}".format(
+                resp['status'], image_name
+            )
+            raise NotFound(msg)
+        if len(body['images']) != 1:
+            print body['images']
+            msg = "Could not find image with name {0}".format(image_name)
+            raise NotFound(msg)
+        return body['images'][0]['id']
+
+    def _get_flavor(self, flavor_name):
+        """ tries to find a flavor from the name """
+        url = "/flavors"
+        resp, body = self.nova.get(url)
+        if resp['status'] not in ['200', '203']:
+            msg = "Error {0} searching for flavor with name {1}".format(
+                resp['status'], flavor_name
+            )
+            raise NotFound(msg)
+        for flavor in body['flavors']:
+            if flavor['name'] == flavor_name:
+                return flavor['id']
+        msg = "Could not find flavor with name {0}".format(flavor_name)
+        raise NotFound(msg)
