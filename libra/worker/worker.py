@@ -58,7 +58,7 @@ def config_manager(logger, driver, servers, reconnect_sleep):
     logger.info("[worker] Registering task %s" % task_name)
 
     worker = CustomJSONGearmanWorker(servers)
-    worker.set_client_id(my_ip)
+    worker.set_client_id(hostname)
     worker.register_task(task_name, handler)
     worker.logger = logger
     worker.driver = driver
