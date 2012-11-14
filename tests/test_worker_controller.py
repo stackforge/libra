@@ -27,7 +27,7 @@ class TestWorkerController(unittest.TestCase):
 
     def testCreate(self):
         msg = {
-            c.ACTION_FIELD: 'CREATE',
+            c.ACTION_FIELD: 'UPDATE',
             'loadbalancers': [
                 {
                     'protocol': 'http',
@@ -47,7 +47,7 @@ class TestWorkerController(unittest.TestCase):
 
     def testUpdate(self):
         msg = {
-            c.ACTION_FIELD: 'CREATE',
+            c.ACTION_FIELD: 'UPDATE',
             'loadbalancers': [
                 {
                    'protocol': 'http',
@@ -94,7 +94,7 @@ class TestWorkerController(unittest.TestCase):
 
     def testCreateMissingLBs(self):
         msg = {
-            c.ACTION_FIELD: 'CREATE'
+            c.ACTION_FIELD: 'UPDATE'
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -102,7 +102,7 @@ class TestWorkerController(unittest.TestCase):
 
     def testCreateMissingNodes(self):
         msg = {
-            c.ACTION_FIELD: 'CREATE',
+            c.ACTION_FIELD: 'UPDATE',
             'loadbalancers': [ { 'protocol': 'http' } ]
         }
         controller = c(self.logger, self.driver, msg)
@@ -111,7 +111,7 @@ class TestWorkerController(unittest.TestCase):
 
     def testCreateMissingProto(self):
         msg = {
-            c.ACTION_FIELD: 'CREATE',
+            c.ACTION_FIELD: 'UPDATE',
             'loadbalancers': [
                 {
                    'nodes': [
@@ -129,7 +129,7 @@ class TestWorkerController(unittest.TestCase):
 
     def testBadAlgorithm(self):
         msg = {
-            c.ACTION_FIELD: 'CREATE',
+            c.ACTION_FIELD: 'UPDATE',
             'loadbalancers': [
                 {
                     'protocol': 'http',

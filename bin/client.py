@@ -43,7 +43,7 @@ def main():
     client = JSONGearmanClient(['localhost:4730'])
     data = """
 {
-    "hpcs_action": "create",
+    "hpcs_action": "update",
     "loadbalancers": [
         {
             "name": "a-new-loadbalancer",

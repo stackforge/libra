@@ -47,9 +47,7 @@ class LBaaSController(object):
         self.logger.info("Requested action: %s" % action)
 
         try:
-            if action == 'CREATE':
-                return self._action_create()
-            elif action == 'UPDATE':
+            if action == 'UPDATE':
                 return self._action_update()
             elif action == 'SUSPEND':
                 return self._action_suspend()
@@ -68,9 +66,9 @@ class LBaaSController(object):
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-    def _action_create(self):
+    def _action_update(self):
         """
-        Create a Load Balancer.
+        Create/Update a Load Balancer.
 
         This is the only method (so far) that actually parses the contents
         of the JSON message (other than the ACTION_FIELD field). Modifying
@@ -200,13 +198,6 @@ class LBaaSController(object):
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
 
         return self.msg
-
-    def _action_update(self):
-        """ Update a Load Balancer. """
-        # NOTE(shrews): We would need to know the current configuration of
-        # the load balancer to do an update. Note sure this is really feasible,
-        # so for now we just do the same as CREATE.
-        return self._action_create()
 
     def _action_suspend(self):
         """ Suspend a Load Balancer. """
