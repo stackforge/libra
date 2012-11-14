@@ -24,8 +24,8 @@ from libra.openstack.common import importutils
 from libra.common.options import Options, setup_logging
 from libra.worker.drivers.base import known_drivers
 from libra.worker.drivers.haproxy.services_base import haproxy_services
-from libra.worker.stats_client import stats_manager
-from libra.worker.worker import config_manager
+from libra.worker.stats_client import stats_thread
+from libra.worker.worker import config_thread
 
 
 class EventServer(object):
@@ -118,8 +118,8 @@ def main():
 
     # Tasks to execute in parallel
     task_list = [
-        (config_manager, (logger, driver, args.server, args.reconnect_sleep)),
-        (stats_manager, (logger, driver, args.stats_poll))
+        (config_thread, (logger, driver, args.server, args.reconnect_sleep)),
+        (stats_thread, (logger, driver, args.stats_poll))
     ]
 
     if args.nodaemon:

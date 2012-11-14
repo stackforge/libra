@@ -47,7 +47,8 @@ def handler(worker, job):
     return response
 
 
-def config_manager(logger, driver, servers, reconnect_sleep):
+def config_thread(logger, driver, servers, reconnect_sleep):
+    """ Worker thread function. """
     # Version of the JSON message format that this worker understands.
     msg_fmt_version = "1.0"
 

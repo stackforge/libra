@@ -7,7 +7,7 @@ Gearman Worker Thread
 ---------------------
 .. py:module:: libra.worker.worker
 
-.. py:function:: config_manager(logger, driver, servers, reconnect_sleep)
+.. py:function:: config_thread(logger, driver, servers, reconnect_sleep)
 
    This function encapsulates the functionality for the Gearman worker thread
    that will be started by the :py:class:`~libra.worker.main.EventServer`
@@ -49,7 +49,7 @@ LBaaSController Class
 .. py:class:: LBaaSController(logger, driver, json_msg)
 
    This class is used by the Gearman task started within the worker thread
-   (the :py:func:`~libra.worker.worker.config_manager` function) to drive the
+   (the :py:func:`~libra.worker.worker.config_thread` function) to drive the
    Gearman message handling.
 
    .. py:method:: run()
@@ -132,13 +132,13 @@ The steps shown above are:
 .. py:module:: libra.worker
 
 * The Gearman worker task used in the worker thread (see the
-  :py:func:`~worker.config_manager` function), is run when the worker
+  :py:func:`~worker.config_thread` function), is run when the worker
   receives a message from the Gearman job server (not represented above).
 * This task then uses the :py:class:`~controller.LBaaSController` to process
   the message that it received.
 * Based on the contents of the message, the controller then makes the relevant
   driver API calls using the :py:class:`~drivers.LoadBalancerDriver` driver
-  that was selected via the :option:`--driver <libra_worker.py --driver>` 
+  that was selected via the :option:`--driver <libra_worker.py --driver>`
   option.
 * The driver executes the API call. If the driver encounters an error during
   execution, an exception is thrown that should be handled by the

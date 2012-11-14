@@ -16,6 +16,7 @@ import csv
 import os
 import subprocess
 
+from libra.common.exc import ServiceUnavailable
 from libra.common.lbstats import LBStatistics
 from libra.worker.drivers.haproxy.services_base import ServicesBase
 
@@ -117,6 +118,9 @@ class UbuntuServices(ServicesBase):
 
         http://cbonte.github.com/haproxy-dconv/configuration-1.4.html#9
         """
+
+        if not os.path.exists(self._haproxy_pid):
+            raise ServiceUnavailable()
 
         stats = LBStatistics()
 

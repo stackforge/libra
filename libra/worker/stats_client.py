@@ -14,8 +14,19 @@
 
 import eventlet
 
+from libra.common.exc import ServiceUnavailable
 
-def stats_manager(logger, driver, stats_poll):
+
+def record_stats(logger, http_stats, tcp_stats):
+    """ Permanently record load balancer statistics. """
+    logger.debug("[stats] HTTP bytes in/out: (%d, %d)" %
+                 (http_stats.bytes_in, http_stats.bytes_out))
+    logger.debug("[stats] TCP bytes in/out: (%d, %d)" %
+                 (tcp_stats.bytes_in, tcp_stats.bytes_out))
+
+
+def stats_thread(logger, driver, stats_poll):
+    """ Statistics thread function. """
     logger.debug("[stats] Statistics gathering process started.")
     logger.debug("[stats] Polling interval: %d" % stats_poll)
 
@@ -28,14 +39,14 @@ def stats_manager(logger, driver, stats_poll):
                 "[stats] Driver does not implement statisics gathering."
             )
             break
+        except ServiceUnavailable:
+            logger.warn("[stats] Unable to get statistics at this time.")
         except Exception as e:
             logger.critical("[stats] Exception: %s, %s" % (e.__class__, e))
             break
+        else:
+            record_stats(logger, http_stats, tcp_stats)
 
-        logger.debug("[stats] HTTP bytes in/out: (%d, %d)" %
-                     (http_stats.bytes_in, http_stats.bytes_out))
-        logger.debug("[stats] TCP bytes in/out: (%d, %d)" %
-                     (tcp_stats.bytes_in, tcp_stats.bytes_out))
         eventlet.sleep(stats_poll)
 
     logger.info("[stats] Statistics gathering process terminated.")
