@@ -18,6 +18,7 @@ import sys
 import urllib
 
 from novaclient import client
+from novaclient import exceptions
 
 
 class NotFound(Exception):
@@ -52,7 +53,7 @@ class Node(object):
         node_id = uuid.uuid1()
         try:
             body = self._create(node_id)
-        except:
+        except exceptions.ClientException:
             return False, 'Error creating node {nid} exception {exc}'.format(
                 nid=node_id, exc=sys.exc_info()[0]
             )
@@ -80,7 +81,7 @@ class Node(object):
         """ delete a node """
         try:
             resp = self._delete(node_id)
-        except:
+        except exceptions.ClientException:
             return False, 'Error deleting node {nid} exception {exc}'.format(
                 nid=node_id, exc=sys.exc_info()[0]
             )

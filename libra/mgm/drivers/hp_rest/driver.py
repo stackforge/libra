@@ -50,7 +50,7 @@ class HPRestDriver(MgmDriver):
         return usage['free']
 
     def is_online(self):
-        return self.is_online
+        return self.online
 
     def get_node_list(self, limit, marker):
         return self._get('{url}/devices'.format(url=self.url))
@@ -80,7 +80,7 @@ class HPRestDriver(MgmDriver):
     def _get(self, url):
         try:
             r = requests.get(url, verify=False)
-        except:
+        except requests.exceptions.RequestException:
             self.logger.error('Exception communicating to server: {exc}'
                               .format(exc=sys.exc_info()[0]))
             return False, None
@@ -94,7 +94,7 @@ class HPRestDriver(MgmDriver):
     def _post(self, url, node_data):
         try:
             r = requests.post(url, data=json.dumps(node_data), verify=False)
-        except:
+        except requests.exceptions.RequestException:
             self.logger.error('Exception communicating to server: {exc}'
                               .format(exc=sys.exc_info()[0]))
             return False, None
