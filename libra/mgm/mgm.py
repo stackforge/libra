@@ -265,6 +265,9 @@ def main():
             except KeyError:
                 logger.critical("Invalid user: %s" % args.user)
                 return 1
+            # NOTE(LinuxJedi): we are switching user so need to switch
+            # the ownership of the log file for rotation
+            os.chown(logger.handlers[0].baseFilename, context.uid, -1)
         if args.group:
             try:
                 context.gid = grp.getgrnam(args.group).gr_gid
