@@ -72,7 +72,8 @@ Basic commands:
     $ libra_worker --debug --nodaemon
 
 NOTE: When running the worker in daemon mode, you must make sure that the
-directory where the PID file will be (-p/--pid option) exists and is writable
+directory where the PID file will be (-p/--pid option) and the directory where
+the log files will be written (-l/--logfile option) exists and is writable
 by the user/group specified with the --user and --group options. Also, the
 Python module used to start the daemon process does not like it when the PID
 file already exists at startup.
