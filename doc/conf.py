@@ -27,8 +27,7 @@ import sys
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-if sys.platform != 'darwin':
-    extensions = ['rst2pdf.pdfbuilder']
+#extensions = ['rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -191,15 +190,15 @@ htmlhelp_basename = 'LBaaSdoc'
 # (source start file, target name, title, author,
 # documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'LBaaS.tex', u'LBaaS Worker and Pool Manager Documentation',
+    ('index', 'Libra-{0}.tex'.format(version), u'Libra Client, Worker and Pool Manager Documentation',
         u'Andrew Hutchings and David Shrewsbury', 'manual'),
 ]
 
-pdf_documents = [('index', 'Libra-{0}'.format(version), u'Libra Client, Worker and Pool Manager Documentation', u'Andrew Hutchings and David Shrewsbury')]
+#pdf_documents = [('index', 'Libra-{0}'.format(version), u'Libra Client, Worker and Pool Manager Documentation', u'Andrew Hutchings and David Shrewsbury')]
 
 #pdf_break_level = 1
 
-pdf_stylesheets = ['sphinx', 'libra']
+#pdf_stylesheets = ['sphinx', 'libra']
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
