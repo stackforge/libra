@@ -39,24 +39,28 @@ try:
 
     class local_BuildDoc(BuildDoc):
         def run(self):
-            # too hard to build PDFs on Mac
             builders = ['html', 'man']
-            if sys.platform != 'darwin':
-                builders.append('pdf')
             for builder in builders:
                 self.builder = builder
                 self.finalize_options()
                 BuildDoc.run(self)
+
+    class local_BuildDoc_latex(BuildDoc):
+        def run(self):
+            builders = ['latex']
+            for builder in builders:
+                self.builder = builder
+                self.finalize_options()
+                BuildDoc.run(self)
+
     ci_cmdclass['build_sphinx'] = local_BuildDoc
+    ci_cmdclass['build_sphinx_latex'] = local_BuildDoc_latex
 except Exception:
     pass
 
 ci_cmdclass['test'] = PyTest
 
 setup_reqs = ['Sphinx']
-
-if sys.platform != 'darwin':
-    setup_reqs.append('rst2pdf')
 
 # Get the version number
 execfile('libra/__init__.py')
