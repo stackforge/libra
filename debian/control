@@ -1,0 +1,15 @@
+Source: libra
+Section: python
+Priority: optional
+Maintainer: Andrew Hutchings (LinuxJedi)
+Build-Depends: debhelper (>=9), python-support (>=1.0), cdbs (>=0.4.111), python-all-dev, python-sphinx (>=1.0), rst2pdf (>=0.16)
+Standards-Version: 3.9.4
+
+Package: libra
+Architecture: all
+Homepage: https://launchpad.net/libra
+XB-Python-Version: ${python-Versions}
+Depends: ${misc:Depends} ${python:Depends}
+Provides: ${python:Provides}
+Description: Tools for an Openstack Load Balancer as a Service
+

@@ -7,3 +7,5 @@ build
 .cache
 *.swp
 doc/html
+debian/libra.debhelper.log
+debian/libra/
