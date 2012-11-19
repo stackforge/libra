@@ -34,6 +34,7 @@ class Node(object):
             tenant,
             auth_url,
             region_name=region,
+            no_cache=True,
             service_type='compute'
         )
         self.keyname = keyname
