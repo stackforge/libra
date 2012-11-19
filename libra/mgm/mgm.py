@@ -189,6 +189,10 @@ def main():
         help='the username for the Nova API'
     )
     options.parser.add_argument(
+        '--nova_pass',
+        help='the password for the Nova API'
+    )
+    options.parser.add_argument(
         '--nova_region',
         help='the region to use for the Nova API'
     )
@@ -219,7 +223,7 @@ def main():
 
     required_args = [
         'nova_image', 'nova_image_size', 'nova_secgroup', 'nova_keyname',
-        'nova_tenant', 'nova_region', 'nova_user', 'nova_auth_url'
+        'nova_tenant', 'nova_region', 'nova_user', 'nove_pass', 'nova_auth_url'
     ]
 
     # NOTE(LinuxJedi): We are checking for required args here because the
