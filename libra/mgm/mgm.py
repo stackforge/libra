@@ -107,7 +107,8 @@ class Server(object):
                 self.args.nova_keyname,
                 self.args.nova_secgroup,
                 self.args.nova_image,
-                self.args.nova_image_size
+                self.args.nova_image_size,
+                node_basename=self.args.node_basename
             )
         except Exception as exc:
             self.logger.error('Error initialising Nova connection {exc}'
@@ -179,6 +180,10 @@ def main():
         '--driver', dest='driver',
         choices=known_drivers.keys(), default='hp_rest',
         help='type of device to use'
+    )
+    options.parser.add_argument(
+        '--node_basename', dest='node_basename',
+        help='prepend the name of all nodes with this'
     )
     options.parser.add_argument(
         '--nova_auth_url',

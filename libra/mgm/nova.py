@@ -27,7 +27,7 @@ class NotFound(Exception):
 
 class Node(object):
     def __init__(self, username, password, tenant, auth_url, region, keyname,
-                 secgroup, image, node_type):
+                 secgroup, image, node_type, node_basename=None):
         self.nova = client.HTTPClient(
             username,
             password,
@@ -39,6 +39,7 @@ class Node(object):
         )
         self.keyname = keyname
         self.secgroup = secgroup
+        self.node_basename = node_basename
         if image.isdigit():
             self.image = image
         else:
@@ -97,8 +98,12 @@ class Node(object):
     def _create(self, node_id):
         """ create a nova node """
         url = "/servers"
+        if self.node_basename:
+            node_name = '{0}_{1}'.format(self.node_basename, node_id)
+        else:
+            node_name = '{0}'.format(node_id)
         body = {"server": {
-                "name": '{0}'.format(node_id),
+                "name": node_name,
                 "imageRef": self.image,
                 "key_name": self.keyname,
                 "flavorRef": self.node_type,

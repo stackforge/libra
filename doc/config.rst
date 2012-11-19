@@ -77,6 +77,7 @@ Pool Manager Section
        api_server = 10.0.0.1:8889 10.0.0.2:8889
        nodes = 10
        check_interval = 5
+       node_basename = 'libra'
 
 
 Worker Command Line Options
@@ -200,6 +201,11 @@ Pool Manager Command Line Options
       Do not run as a daemon. This option is useful for debugging purposes
       only as the worker is intended to be run as a daemon normally.
 
+   .. option:: --node_basename <NODE_BASENAME>
+
+      A name to prefix the UUID name given to the nodes the pool manager
+      generates.
+
    .. option:: --nodes <NODES>
 
       The size of the pool of spare nodes the pool manager should keep.
@@ -210,7 +216,11 @@ Pool Manager Command Line Options
 
    .. option:: --nova_user <NOVA_USER>
 
-      The username to autenticate for the Nova API
+      The username to authenticate for the Nova API
+
+   .. option:: --nova_pass <NOVA_PASS>
+
+      The password to authenticate for the Nova API
 
    .. option:: --nova_tenant <NOVA_TENANT>
 
