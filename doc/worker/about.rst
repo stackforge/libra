@@ -28,6 +28,10 @@ HAProxy. The commands below will install them on Ubuntu::
     $ sudo apt-get install haproxy
     $ sudo apt-get install socat
 
+The Ubuntu default is to have HAProxy disabled. You will need to edit the
+file */etc/default/haproxy* and set *ENABLED* to 1 if you want HAProxy to
+actually start (hint: you do).
+
 Edit /etc/sudoers
 ^^^^^^^^^^^^^^^^^
 
