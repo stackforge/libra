@@ -40,6 +40,10 @@ class Node(object):
         self.keyname = keyname
         self.secgroup = secgroup
         self.node_basename = node_basename
+        # Replace '_' with '-' in basename
+        if self.node_basename:
+            self.basename = self.basename.replace('_', '-')
+            
         if image.isdigit():
             self.image = image
         else:
