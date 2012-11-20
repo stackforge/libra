@@ -12,6 +12,110 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import daemon
+import daemon.pidfile
+import gearman.errors
+import grp
+import json
+import os
+import pwd
+import socket
+import time
+
+from libra.common.json_gearman import JSONGearmanWorker
+from libra.common.options import Options, setup_logging
+
+
+class CustomJSONGearmanWorker(JSONGearmanWorker):
+    """ Custom class we will use to pass arguments to the Gearman task. """
+    logger = None
+
+
+def handler(worker, job):
+    """ Main Gearman worker task. """
+    logger = worker.logger
+    logger.debug("Received JSON message: %s" % json.dumps(job.data, indent=4))
+    return {"OK"}
+
+
+def start(logger, servers):
+    """ Start the main server processing. """
+
+    hostname = socket.gethostname()
+    task_name = "lbaas-statistics"
+    worker = CustomJSONGearmanWorker(servers)
+    worker.set_client_id(hostname)
+    worker.register_task(task_name, handler)
+    worker.logger = logger
+
+    retry = True
+
+    while retry:
+        try:
+            worker.work()
+        except KeyboardInterrupt:
+            retry = False
+        except gearman.errors.ServerUnavailable:
+            logger.error("[statsd] Job server(s) went away. Reconnecting.")
+            time.sleep(60)
+            retry = True
+        except Exception as e:
+            logger.critical("[statsd] Exception: %s, %s" % (e.__class__, e))
+            retry = False
+
+    logger.info("[statsd] Statistics process terminated.")
+
 
 def main():
-    return 0
+    """ Main Python entry point for the statistics daemon. """
+
+    options = Options('statsd', 'Statistics Daemon')
+    options.parser.add_argument(
+        '--server', dest='server', action='append', metavar='HOST:PORT',
+        default=[],
+        help='add a Gearman job server to the connection list'
+    )
+
+    args = options.run()
+
+    logger = setup_logging('libra_statsd', args)
+
+    if not args.server:
+        # NOTE(shrews): Can't set a default in argparse method because the
+        # value is appended to the specified default.
+        args.server.append('localhost:4730')
+    elif not isinstance(args.server, list):
+        # NOTE(shrews): The Options object cannot intelligently handle
+        # creating a list from an option that may have multiple values.
+        # We convert it to the expected type here.
+        svr_list = args.server.split()
+        args.server = svr_list
+
+    logger.info("Job server list: %s" % args.server)
+
+    if args.nodaemon:
+        start(logger, args.server)
+    else:
+        context = daemon.DaemonContext(
+            umask=0o022,
+            pidfile=daemon.pidfile.TimeoutPIDLockFile(args.pid),
+            files_preserve=[logger.handlers[0].stream]
+        )
+        if args.user:
+            try:
+                context.uid = pwd.getpwnam(args.user).pw_uid
+            except KeyError:
+                logger.critical("Invalid user: %s" % args.user)
+                return 1
+            # NOTE(LinuxJedi): we are switching user so need to switch
+            # the ownership of the log file for rotation
+            os.chown(logger.handlers[0].baseFilename, context.uid, -1)
+        if args.group:
+            try:
+                context.gid = grp.getgrnam(args.group).gr_gid
+            except KeyError:
+                logger.critical("Invalid group: %s" % args.group)
+                return 1
+
+        with context:
+            start(logger, args.server)
