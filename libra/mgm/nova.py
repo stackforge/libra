@@ -42,7 +42,7 @@ class Node(object):
         self.node_basename = node_basename
         # Replace '_' with '-' in basename
         if self.node_basename:
-            self.basename = self.basename.replace('_', '-')
+            self.node_basename = self.node_basename.replace('_', '-')
 
         if image.isdigit():
             self.image = image
