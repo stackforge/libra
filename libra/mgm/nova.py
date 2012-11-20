@@ -99,7 +99,7 @@ class Node(object):
         """ create a nova node """
         url = "/servers"
         if self.node_basename:
-            node_name = '{0}_{1}'.format(self.node_basename, node_id)
+            node_name = '{0}-{1}'.format(self.node_basename, node_id)
         else:
             node_name = '{0}'.format(node_id)
         body = {"server": {
