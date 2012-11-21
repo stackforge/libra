@@ -25,26 +25,6 @@ class TestWorkerController(unittest.TestCase):
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
 
-    def testCreate(self):
-        msg = {
-            c.ACTION_FIELD: 'UPDATE',
-            'loadbalancers': [
-                {
-                    'protocol': 'http',
-                    'nodes': [
-                        {
-                            'address': '10.0.0.1',
-                            'port': 80
-                        }
-                    ]
-                }
-            ]
-        }
-        controller = c(self.logger, self.driver, msg)
-        response = controller.run()
-        self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
-
     def testUpdate(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
