@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import datetime
+
 
 class LBStatistics(object):
     """ Load balancer statistics class. """
@@ -20,6 +22,7 @@ class LBStatistics(object):
         self.stats = {}
         self.bytes_out = 0
         self.bytes_in = 0
+        self.utc_timestamp = datetime.datetime.utcnow()
 
     @property
     def bytes_out(self):
@@ -40,3 +43,14 @@ class LBStatistics(object):
         if not isinstance(value, int):
             raise TypeError("Must be an integer: '%s'" % value)
         self.stats['bytes_in'] = value
+
+    @property
+    def utc_timestamp(self):
+        """ UTC timestamp for when these statistics are generated. """
+        return self._utc_ts
+
+    @utc_timestamp.setter
+    def utc_timestamp(self, value):
+        if not isinstance(value, datetime.datetime):
+            raise TypeError("Must be a datetime.datetime: '%s'" % value)
+        self._utc_ts = value
