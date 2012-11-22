@@ -65,6 +65,7 @@ Pool Manager Section
        [mgm]
        pid = /var/run/libra/libra_mgm.pid
        logfile = /var/log/libra/libra_mgm.log
+       datadir = /etc/libra/
        nova_auth_url = https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0/
        nova_user = username
        nova_pass = password
@@ -77,6 +78,7 @@ Pool Manager Section
        api_server = 10.0.0.1:8889 10.0.0.2:8889
        nodes = 10
        check_interval = 5
+       failed_interval = 15
        node_basename = 'libra'
 
 
@@ -167,8 +169,13 @@ Pool Manager Command Line Options
 
    .. option:: --check_interval <CHECK_INTERVAL>
 
-      How often to check the API server to see if noew nodes are needed
-      (in value is minutes)
+      How often to check the API server to see if new nodes are needed
+      (value is minutes)
+
+   .. option:: --failed_interval <FAILED_INTERVAL>
+
+      How often to check the list of failed node uploads to see if the nodes
+      are now in a good state (value is in minutes)
 
    .. option:: -d, --debug
 
@@ -195,6 +202,10 @@ Pool Manager Command Line Options
       Name of the log file. When running in daemon mode, the default log
       file is */var/log/libra/libra_worker.log*. When not in daemon mode,
       logging will go to STDOUT unless a log file is specified.
+
+   .. option:: --datadir <DATADIR>
+
+      The data directory used to store things such as the failed node list.
 
    .. option:: -n, --nodaemon
 

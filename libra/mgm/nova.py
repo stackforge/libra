@@ -25,6 +25,16 @@ class NotFound(Exception):
     pass
 
 
+class BuildError(Exception):
+    def __init__(self, msg, node_name, node_id=0):
+        self.msg = msg
+        self.node_name = node_name
+        self.node_id = node_id
+
+    def __str__(self):
+        return self.msg
+
+
 class Node(object):
     def __init__(self, username, password, tenant, auth_url, region, keyname,
                  secgroup, image, node_type, node_basename=None):
@@ -60,8 +70,9 @@ class Node(object):
         try:
             body = self._create(node_id)
         except exceptions.ClientException:
-            return False, 'Error creating node {nid} exception {exc}'.format(
-                nid=node_id, exc=sys.exc_info()[0]
+            raise BuildError(
+                'Error creating node, exception {exc}'
+                .format(exc=sys.exc_info()[0]), node_id
             )
 
         server_id = body['server']['id']
@@ -69,19 +80,19 @@ class Node(object):
         waits = 40
         while waits > 0:
             time.sleep(3)
-            status = self._status(server_id)
+            resp, status = self.status(server_id)
+            status = status['server']
             if status['status'] == 'ACTIVE':
-                return True, status
+                return status
             elif not status['status'].startswith('BUILD'):
-                return False, 'Error spawning node {nid} status {stat}'.format(
-                    node=node_id, stat=status['status']
+                raise BuildError(
+                    'Error spawning node, status {stat}'
+                    .format(stat=status['status']),
+                    node_id, server_id,
                 )
             waits = waits - 1
 
-        return (False,
-                'Timeout creating node, uuid: {nid}, server ID: {sid}'
-                .format(nid=node_id, sid=server_id)
-                )
+        raise BuildError('Timeout creating node', node_id, server_id)
 
     def delete(self, node_id):
         """ delete a node """
@@ -119,11 +130,11 @@ class Node(object):
         resp, body = self.nova.post(url, body=body)
         return body
 
-    def _status(self, node_id):
+    def status(self, node_id):
         """ used to keep scanning to see if node is up """
         url = "/servers/{0}".format(node_id)
         resp, body = self.nova.get(url)
-        return body['server']
+        return resp, body
 
     def _delete(self, node_id):
         """ delete a nova node, return 204 succeed """

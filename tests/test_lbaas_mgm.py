@@ -5,7 +5,7 @@ import httplib2
 import json
 
 import mock_objects
-from libra.mgm.nova import Node
+from libra.mgm.nova import Node, BuildError
 
 fake_response = httplib2.Response({"status": '200'})
 fake_bad_response = httplib2.Response({"status": '500'})
@@ -42,16 +42,14 @@ class TestLBaaSMgmNova(unittest.TestCase):
     def testCreateNode(self):
         with mock.patch.object(httplib2.Http, "request", mock_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
-                resp, data = self.api.build()
-                self.assertTrue(resp)
+                data = self.api.build()
                 self.assertEqual(data['id'], 417773)
 
     def testCreateNodeFail(self):
         with mock.patch.object(httplib2.Http, "request", mock_bad_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
-                resp, data = self.api.build()
-                self.assertFalse(resp)
-                self.assertRegexpMatches(data, 'Error creating')
+                with self.assertRaises(BuildError):
+                    data = self.api.build()
 
     def testDeleteNodeFail(self):
         with mock.patch.object(httplib2.Http, "request", mock_bad_request):

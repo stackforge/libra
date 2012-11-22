@@ -14,7 +14,8 @@
 
 # Mapping of --driver options to a class
 known_drivers = {
-    'hp_rest': 'libra.mgm.drivers.hp_rest.driver.HPRestDriver'
+    'hp_rest': 'libra.mgm.drivers.hp_rest.driver.HPRestDriver',
+    'dummy': 'libra.mgm.drivers.dummy.driver.DummyDriver'
 }
 
 
