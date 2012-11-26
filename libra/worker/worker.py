@@ -55,7 +55,7 @@ def config_thread(logger, driver, servers, reconnect_sleep):
 
     worker = CustomJSONGearmanWorker(servers)
     worker.set_client_id(hostname)
-    worker.register_task(task_name, handler)
+    worker.register_task(hostname, handler)
     worker.logger = logger
     worker.driver = driver
 
