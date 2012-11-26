@@ -127,3 +127,10 @@ class TestWorkerController(unittest.TestCase):
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
+
+    def testDiscover(self):
+        msg = { c.ACTION_FIELD: 'DISCOVER' }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('version', response)
+        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)

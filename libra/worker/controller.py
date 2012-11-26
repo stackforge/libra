@@ -55,6 +55,8 @@ class LBaaSController(object):
                 return self._action_enable()
             elif action == 'DELETE':
                 return self._action_delete()
+            elif action == 'DISCOVER':
+                return self._action_discover()
             else:
                 self.logger.error("Invalid `%s` value: %s" %
                                   (self.ACTION_FIELD, action))
@@ -65,6 +67,19 @@ class LBaaSController(object):
                               (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
+
+    def _action_discover(self):
+        """
+        Return service discovery information.
+
+        This message type is currently used to report which message
+        version this worker supports.
+        """
+        # Version of the JSON message format that this worker understands.
+        msg_fmt_version = "1.0"
+        self.msg['version'] = msg_fmt_version
+        self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
+        return self.msg
 
     def _action_update(self):
         """

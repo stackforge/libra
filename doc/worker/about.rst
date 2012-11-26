@@ -4,10 +4,10 @@ Description
 Purpose
 -------
 
-A Python-based Gearman worker that handles work for the job queue named
-'lbaas-HOSTNAME'. It receives JSON data describing a load balancer, and
-returns this same JSON object, but with status fields added to describe
-the state of the LB.
+A Python-based Gearman worker that handles messages for the Gearman job queue
+sharing the same name as the local hostname. The messages that it receives are
+JSON objects describing a load balancer, and returns this same JSON object, but
+with status fields added to describe the state of the LB.
 
 Installation
 ------------

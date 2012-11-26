@@ -49,14 +49,9 @@ def handler(worker, job):
 
 def config_thread(logger, driver, servers, reconnect_sleep):
     """ Worker thread function. """
-    # Version of the JSON message format that this worker understands.
-    msg_fmt_version = "1.0"
-
     # Hostname should be a unique value, like UUID
     hostname = socket.gethostname()
-
-    task_name = "lbaas-%s-%s" % (msg_fmt_version, hostname)
-    logger.info("[worker] Registering task %s" % task_name)
+    logger.info("[worker] Registering task %s" % hostname)
 
     worker = CustomJSONGearmanWorker(servers)
     worker.set_client_id(hostname)
