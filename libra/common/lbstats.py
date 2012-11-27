@@ -20,8 +20,8 @@ class LBStatistics(object):
 
     def __init__(self):
         self.stats = {}
-        self.bytes_out = 0
-        self.bytes_in = 0
+        self.bytes_out = 0L
+        self.bytes_in = 0L
         self.utc_timestamp = datetime.datetime.utcnow()
 
     @property
@@ -30,8 +30,8 @@ class LBStatistics(object):
 
     @bytes_out.setter
     def bytes_out(self, value):
-        if not isinstance(value, int):
-            raise TypeError("Must be an integer: '%s'" % value)
+        if not isinstance(value, long):
+            raise TypeError("Must be a long integer: '%s'" % value)
         self.stats['bytes_out'] = value
 
     @property
@@ -40,8 +40,8 @@ class LBStatistics(object):
 
     @bytes_in.setter
     def bytes_in(self, value):
-        if not isinstance(value, int):
-            raise TypeError("Must be an integer: '%s'" % value)
+        if not isinstance(value, long):
+            raise TypeError("Must be a long integer: '%s'" % value)
         self.stats['bytes_in'] = value
 
     @property

@@ -143,9 +143,9 @@ class UbuntuServices(ServicesBase):
         for row in reader:
             if row['pxname'] == proxy_name and row['svname'] == service_name:
                 if row['bout']:
-                    stats.bytes_out = int(row['bout'])
+                    stats.bytes_out = long(row['bout'])
                 if row['bin']:
-                    stats.bytes_in = int(row['bin'])
+                    stats.bytes_in = long(row['bin'])
                 break
 
         return stats

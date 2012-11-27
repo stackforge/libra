@@ -12,23 +12,23 @@ class TestLBStatistics(unittest.TestCase):
 
     def testInitValues(self):
         now = datetime.datetime.utcnow()
-        self.assertEquals(self.stats.bytes_out, 0)
-        self.assertEquals(self.stats.bytes_in, 0)
         ts = self.stats.utc_timestamp
         self.assertEquals(ts.year, now.year)
         self.assertEquals(ts.month, now.month)
         self.assertEquals(ts.day, now.day)
         self.assertEquals(ts.hour, now.hour)
+        self.assertEquals(self.stats.bytes_out, 0L)
+        self.assertEquals(self.stats.bytes_in, 0L)
 
     def testSetBytesIn(self):
-        self.stats.bytes_in = 99
-        self.assertEquals(self.stats.bytes_in, 99)
+        self.stats.bytes_in = 99L
+        self.assertEquals(self.stats.bytes_in, 99L)
         with self.assertRaises(TypeError):
             self.stats.bytes_in = "NaN"
 
     def testSetBytesOut(self):
-        self.stats.bytes_out = 100
-        self.assertEquals(self.stats.bytes_out, 100)
+        self.stats.bytes_out = 100L
+        self.assertEquals(self.stats.bytes_out, 100L)
         with self.assertRaises(TypeError):
             self.stats.bytes_out = "NaN"
 
