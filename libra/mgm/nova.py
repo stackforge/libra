@@ -143,6 +143,23 @@ class Node(object):
 
         return resp
 
+    # TODO: merge get_node and _get_image to remove duplication of code
+
+    def get_node(self, node_name):
+        """ tries to find a node from the name """
+        args = {'name': node_name}
+        url = "/servers?{0}".format(urllib.urlencode(args))
+        resp, body = self.nova.get(url)
+        if resp['status'] not in ['200', '203']:
+            msg = "Error {0} searching for node with name {1}".format(
+                resp['status'], node_name
+            )
+            raise NotFound(msg)
+        if len(body['servers']) != 1:
+            msg = "Could not find node with name {0}".format(node_name)
+            raise NotFound(msg)
+        return body['servers'][0]['id']
+
     def _get_image(self, image_name):
         """ tries to find an image from the name """
         args = {'name': image_name}
@@ -154,7 +171,6 @@ class Node(object):
             )
             raise NotFound(msg)
         if len(body['images']) != 1:
-            print body['images']
             msg = "Could not find image with name {0}".format(image_name)
             raise NotFound(msg)
         return body['images'][0]['id']

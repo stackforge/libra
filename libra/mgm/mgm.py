@@ -215,6 +215,27 @@ class Server(object):
         body['address'] = address['addr']
         return body
 
+    def find_unknown(self, name, nova):
+        """
+            Nova can tell us a node failed to build when it didn't
+            This does a check and if it did start to build adds it to the
+            failed node list.
+        """
+        try:
+            node_id = nova.get_node(name)
+            self.logger.info('Storing node to try again later')
+            self.node_list.add(node_id)
+        except exceptions.NotFound:
+            # Node really didn't build
+            return
+        except exceptions.ClientException as exc:
+            # TODO: edge case where if node reports failed, actually succeeds
+            # and this node check fails we will have a dangling node
+            self.logger.error(
+                'Error getting failed node info from Nova, exception {exc}'
+                .format(exc=exc)
+            )
+
     def build_nodes(self, count, api):
         try:
             nova = Node(
@@ -244,6 +265,8 @@ class Server(object):
                 if exc.node_id > 0:
                     self.logger.info('Storing node to try again later')
                     self.node_list.add(exc.node_id)
+                else:
+                    self.find_unknown(exc.node_name, nova)
                 self.logger.warning('Aborting node building')
                 return
             body = self.build_node_data(data)
