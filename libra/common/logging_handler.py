@@ -36,7 +36,7 @@ class CompressedTimedRotatingFileHandler(
         # Delete oldest log
         # TODO: clear multiple old logs
         if self.backupCount > 0:
-            s = glob.glob('{0}.20'.format(self.baseFilename))
+            s = glob.glob('{0}.20*'.format(self.baseFilename))
             if len(s) > self.backupCount:
                 s.sort()
                 os.remove(s[0])
