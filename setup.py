@@ -83,5 +83,8 @@ setuptools.setup(
     cmdclass=ci_cmdclass,
     tests_require=tests_requires,
     install_requires=requires,
-    setup_requires=setup_reqs
+    setup_requires=setup_reqs,
+    data_files=[
+        ('share/libra/', ['etc/sample_libra.cfg'])
+    ]
 )

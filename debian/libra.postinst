@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "configure" ]; then
+  if [ -z "`id -u libra 2> /dev/null`" ]; then
+    adduser --system --group --home /usr/lib/libra --gecos "Libra load balancer" \
+            --no-create-home --disabled-password --quiet libra || true
+  fi
+
+  ucf --three-way /usr/share/libra/sample_libra.cfg /etc/libra.cfg
+
+  if [ ! -d /var/log/libra ]; then
+    mkdir /var/log/libra
+    chown libra:libra /var/log/libra
+  fi
+
+  if [ ! -d /var/run/libra ]; then
+    mkdir /var/run/libra
+    chown libra:libra /var/run/libra
+  fi
+
+fi
+
+#DEBHELPER#

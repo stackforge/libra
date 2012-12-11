@@ -7,3 +7,10 @@ build
 .cache
 *.swp
 doc/html
+debian/files
+debian/libra.debhelper.log
+debian/libra.postinst.debhelper
+debian/libra.preinst.debhelper
+debian/libra.prerm.debhelper
+debian/libra.substvars
+debian/libra/

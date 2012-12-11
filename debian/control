@@ -1,0 +1,16 @@
+Source: libra
+Section: python
+Priority: optional
+Maintainer: Andrew Hutchings (LinuxJedi)
+Build-Depends: debhelper (>=9), python-support (>=1.0), cdbs (>=0.4.111), python-all-dev, python-eventlet (>=0.9), python-gearman (>=2.0), python-daemon (>=1.5), python-novaclient (>=2.9), python-requests (>=0.12)
+Build-Depends-Indep: python-sphinx (>=1.0), rst2pdf (>=0.16)
+Standards-Version: 3.9.4
+Homepage: https://launchpad.net/libra
+
+Package: libra
+Architecture: all
+XB-Python-Version: ${python-Versions}
+Depends: ${misc:Depends}, ${python:Depends}
+Provides: ${python:Provides}
+Description: Tools for an Openstack Load Balancer as a Service
+
