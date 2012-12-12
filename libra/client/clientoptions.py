@@ -50,6 +50,20 @@ class ClientOptions(object):
             required=True,
             help='Authentication region'
         )
+        self.options.add_argument(
+            '--debug',
+            action='store_true',
+            help='Debug network messages'
+        )
+        self.options.add_argument(
+            '--insecure',
+            action='store_true',
+            help='Don\'t verify SSL cert'
+        )
+        self.options.add_argument(
+            '--bypass_url',
+            help='Use this API endpoint instead of the Service Catalog'
+        )
         subparsers = self.options.add_subparsers(
             metavar='<subcommand>', dest='command'
         )

@@ -17,18 +17,22 @@ from novaclient import client
 
 
 class LibraAPI(object):
-    def __init__(self, username, password, tenant, auth_url, region):
+    def __init__(self, username, password, tenant, auth_url, region,
+                 insecure, debug, bypass_url):
         self.nova = client.HTTPClient(
             username,
             password,
             tenant,
             auth_url,
             region_name=region,
-            service_type='libra'
+            service_type='compute',
+            http_log_debug=debug,
+            insecure=insecure,
+            bypass_url=bypass_url
         )
 
     def list_lb(self, args):
-        resp, body = self._get('/loadbalaners')
+        resp, body = self._get('/loadbalancers')
         column_names = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm',
                         'Status', 'Created', 'Updated']
         columns = ['name', 'id', 'protocol', 'port', 'algorithm', 'status',
@@ -43,6 +47,8 @@ class LibraAPI(object):
         columns = ['id', 'name', 'protocol', 'port', 'algorithm', 'status',
                    'created', 'updated', 'virtualIps', 'nodes',
                    'sessionPersistence', 'connectionThrottle']
+        if 'sessionPersistence' not in body:
+            body['sessionPersistence'] = 'None'
         self._render_dict(column_names, columns, body)
 
     def delete_lb(self, args):
@@ -80,7 +86,7 @@ class LibraAPI(object):
         self._put('/loadbalancers/{0}'.format(args.id), body=data)
 
     def node_list_lb(self, args):
-        resp, body = self._get('/loadbalaners/{0}/nodes'.format(args.id))
+        resp, body = self._get('/loadbalancers/{0}/nodes'.format(args.id))
         column_names = ['ID', 'Address', 'Port', 'Condition', 'Status']
         columns = ['id', 'address', 'port', 'condition', 'status']
         self._render_list(column_names, columns, body['nodes'])
@@ -110,7 +116,7 @@ class LibraAPI(object):
                   .format(args.id, args.nodeid), body=data)
 
     def node_status_lb(self, args):
-        resp, body = self._get('/loadbalaners/{0}/nodes/{1}'
+        resp, body = self._get('/loadbalancers/{0}/nodes/{1}'
                                .format(args.id, args.nodeid))
         column_names = ['ID', 'Address', 'Port', 'Condition', 'Status']
         columns = ['id', 'address', 'port', 'condition', 'status']

@@ -33,7 +33,7 @@ class MockLibraAPI(LibraAPI):
     def __init__(self, username, password, tenant, auth_url, region):
         self.postdata = None
         self.putdata = None
-        return super(MockLibraAPI, self).__init__(username, password, tenant, auth_url, region)
+        return super(MockLibraAPI, self).__init__(username, password, tenant, auth_url, region, False, False, None)
     def _post(self, url, **kwargs):
         """ Store the post data and execute as normal """
         self.postdata = kwargs['body']
