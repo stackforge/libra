@@ -49,6 +49,8 @@ class LibraAPI(object):
                    'sessionPersistence', 'connectionThrottle']
         if 'sessionPersistence' not in body:
             body['sessionPersistence'] = 'None'
+        if 'connectionThrottle' not in body:
+            body['connectionThrottle'] = 'None'
         self._render_dict(column_names, columns, body)
 
     def delete_lb(self, args):
@@ -120,7 +122,7 @@ class LibraAPI(object):
                                .format(args.id, args.nodeid))
         column_names = ['ID', 'Address', 'Port', 'Condition', 'Status']
         columns = ['id', 'address', 'port', 'condition', 'status']
-        self._render_list(column_names, columns, body['nodes'])
+        self._render_dict(column_names, columns, body)
 
     def _render_list(self, column_names, columns, data):
         table = prettytable.PrettyTable(column_names)
