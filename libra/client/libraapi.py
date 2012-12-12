@@ -31,6 +31,16 @@ class LibraAPI(object):
             bypass_url=bypass_url
         )
 
+    def limits_lb(self, args):
+        resp, body = self._get('/limits')
+        column_names = ['Verb', 'Value', 'Remaining', 'Unit', 'Next Available']
+        columns = ['verb', 'value', 'remaining', 'unit', 'next-available']
+        self._render_list(column_names, columns,
+                          body['limits']['rate']['values']['limit'])
+        column_names = ['Values']
+        columns = ['values']
+        self._render_dict(column_names, columns, body['limits']['absolute'])
+
     def list_lb(self, args):
         resp, body = self._get('/loadbalancers')
         column_names = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm',
