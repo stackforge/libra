@@ -23,6 +23,19 @@ Global Options
 
    Show help message and exit
 
+.. option:: --debug
+
+   Turn on HTTP debugging for requests
+
+.. option:: --insecure
+
+   Don't validate SSL certs
+
+.. option:: --bypass_url <bypass-url>
+
+   URL to use as an endpoint instead of the one specified by the Service
+   Catalog
+
 .. option:: --os_auth_url <auth-url>
 
    The OpenStack authentication URL
