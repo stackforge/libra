@@ -68,6 +68,9 @@ class ClientOptions(object):
             metavar='<subcommand>', dest='command'
         )
         subparsers.add_parser(
+            'limits', help='get account API usage limits'
+        )
+        subparsers.add_parser(
             'list', help='list load balancers'
         )
         sp = subparsers.add_parser(
