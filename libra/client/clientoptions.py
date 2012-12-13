@@ -71,6 +71,12 @@ class ClientOptions(object):
             'limits', help='get account API usage limits'
         )
         subparsers.add_parser(
+            'algorithms', help='get a list of supported algorithms'
+        )
+        subparsers.add_parser(
+            'protocols', help='get a list of supported protocols and ports'
+        )
+        subparsers.add_parser(
             'list', help='list load balancers'
         )
         sp = subparsers.add_parser(
