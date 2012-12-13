@@ -14,7 +14,7 @@
 
 from libraapi import LibraAPI
 from clientoptions import ClientOptions
-
+from novaclient import exceptions
 
 def main():
     options = ClientOptions()
@@ -27,6 +27,9 @@ def main():
     cmd = args.command.replace('-', '_')
     method = getattr(api, '{cmd}_lb'.format(cmd=cmd))
 
-    method(args)
+    try:
+        method(args)
+    except exceptions.ClientException as exc:
+        print exc
 
     return 0
