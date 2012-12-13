@@ -11,6 +11,7 @@ class DummyArgs(object):
     """ Fake argparse response """
     def __init__(self):
         self.id = 2000
+        self.deleted = False
 
 class DummyCreateArgs(object):
     """ Fake argparse response for Create function """
@@ -87,7 +88,8 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
                 try:
                     out = StringIO()
                     sys.stdout = out
-                    self.api.list_lb(None)
+                    args = DummyArgs()
+                    self.api.list_lb(args)
                     output = out.getvalue().strip()
                     self.assertRegexpMatches(output, 'lb-site1')
                     self.assertRegexpMatches(output, '71')

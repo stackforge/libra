@@ -76,8 +76,12 @@ class ClientOptions(object):
         subparsers.add_parser(
             'protocols', help='get a list of supported protocols and ports'
         )
-        subparsers.add_parser(
+        sp = subparsers.add_parser(
             'list', help='list load balancers'
+        )
+        sp.add_argument(
+            '--deleted', help='list deleted load balancers',
+            action='store_true'
         )
         sp = subparsers.add_parser(
             'delete', help='delete a load balancer'

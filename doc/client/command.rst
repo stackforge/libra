@@ -114,6 +114,10 @@ list
 
 List all load balancers
 
+.. option:: --deleted
+
+   Show deleted load balancers
+
 .. program:: libra_client limits
 
 limits
