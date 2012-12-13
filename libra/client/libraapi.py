@@ -54,7 +54,10 @@ class LibraAPI(object):
         self._render_list(column_names, columns, body['algorithms'])
 
     def list_lb(self, args):
-        resp, body = self._get('/loadbalancers')
+        if args.deleted:
+            resp, body = self._get('/loadbalancers?status=DELETED')
+        else:
+            resp, body = self._get('/loadbalancers')
         column_names = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm',
                         'Status', 'Created', 'Updated']
         columns = ['name', 'id', 'protocol', 'port', 'algorithm', 'status',
