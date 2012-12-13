@@ -41,6 +41,18 @@ class LibraAPI(object):
         columns = ['values']
         self._render_dict(column_names, columns, body['limits']['absolute'])
 
+    def protocols_lb(self, args):
+        resp, body = self._get('/protocols')
+        column_names = ['Name', 'Port']
+        columns = ['name', 'port']
+        self._render_list(column_names, columns, body['protocols'])
+
+    def algorithms_lb(self, args):
+        resp, body = self._get('/algorithms')
+        column_names = ['Name']
+        columns = ['name']
+        self._render_list(column_names, columns, body['algorithms'])
+
     def list_lb(self, args):
         resp, body = self._get('/loadbalancers')
         column_names = ['Name', 'ID', 'Protocol', 'Port', 'Algorithm',

@@ -4,12 +4,12 @@ Libra Client
 Synopsis
 --------
 
-:program:`libra_client.py` [:ref:`GENERAL OPTIONS <libra_client-options>`] [:ref:`COMMAND <libra_client-commands>`] [*COMMAND_OPTIONS*]
+:program:`libra_client` [:ref:`GENERAL OPTIONS <libra_client-options>`] [:ref:`COMMAND <libra_client-commands>`] [*COMMAND_OPTIONS*]
 
 Description
 -----------
 
-:program:`libra_client.py` is a utility designed to communicate with Atlas API
+:program:`libra_client` is a utility designed to communicate with Atlas API
 based Load Balancer as a Service systems.
 
 .. _libra_client-options:
@@ -17,7 +17,7 @@ based Load Balancer as a Service systems.
 Global Options
 --------------
 
-.. program:: libra_client.py
+.. program:: libra_client
 
 .. option:: --help, -h
 
@@ -61,7 +61,7 @@ Global Options
 Client Commands
 ---------------
 
-.. program:: libra_client.py create
+.. program:: libra_client create
 
 create
 ^^^^^^
@@ -88,7 +88,7 @@ Create a load balancer
 
    The virtual IP ID of an existing load balancer to attach to
 
-.. program:: libra_client.py modify
+.. program:: libra_client modify
 
 modify
 ^^^^^^
@@ -107,14 +107,35 @@ Update a load balancer's configuration
 
    A new algorithm for the load balancer
 
-.. program:: libra_client.py list
+.. program:: libra_client list
 
 list
 ^^^^
 
 List all load balancers
 
-.. program:: libra_client.py status
+.. program:: libra_client limits
+
+limits
+^^^^^^
+
+Show the API limits for the user
+
+.. program:: libra_client algorithms
+
+algorithms
+^^^^^^^^^^
+
+Gets a list of supported algorithms
+
+.. program:: libra_client protocols
+
+protocols
+^^^^^^^^^
+
+Gets a list of supported protocols
+
+.. program:: libra_client status
 
 status
 ^^^^^^
@@ -125,7 +146,7 @@ Get the status of a single load balancer
 
    The ID of the load balancer
 
-.. program:: libra_client.py delete
+.. program:: libra_client delete
 
 delete
 ^^^^^^
@@ -136,7 +157,7 @@ Delete a load balancer
 
    The ID of the load balancer
 
-.. program:: libra_client.py node-list
+.. program:: libra_client node-list
 
 node-list
 ^^^^^^^^^
@@ -147,7 +168,7 @@ List the nodes in a load balancer
 
    The ID of the load balancer
 
-.. program:: libra_client.py node-delete
+.. program:: libra_client node-delete
 
 node-delete
 ^^^^^^^^^^^
@@ -162,7 +183,7 @@ Delete a node from the load balancer
 
    The ID of the node to be removed
 
-.. program:: libra_client.py node-add
+.. program:: libra_client node-add
 
 node-add
 ^^^^^^^^
@@ -177,7 +198,7 @@ Add a node to a load balancer
 
    The node address in ip:port format (can be used multiple times to add multiple nodes)
 
-.. program:: libra_client.py node-modify
+.. program:: libra_client node-modify
 
 node-modify
 ^^^^^^^^^^^
@@ -196,7 +217,7 @@ Modify a node's state in a load balancer
 
    The new state of the node (either ENABLED or DISABLED)
 
-.. program:: libra_client.py node-status
+.. program:: libra_client node-status
 
 node-status
 ^^^^^^^^^^^
