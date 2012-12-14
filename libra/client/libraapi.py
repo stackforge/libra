@@ -123,6 +123,8 @@ class LibraAPI(object):
             data['port'] = args.port
         if args.protocol is not None:
             data['protocol'] = args.protocol
+        if args.algorithm is not None:
+            data['algorithm'] = args.algorithm
         for node in args.node:
             addr = node.split(':')
             nodes.append({'address': addr[0], 'port': addr[1],
