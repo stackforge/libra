@@ -20,6 +20,7 @@ class DummyCreateArgs(object):
         self.node = ['10.1.1.1:80', '10.1.1.2:81']
         self.port = None
         self.protocol = None
+        self.algorithm = None
         self.vip = None
 
 class DummyModifyArgs(object):
