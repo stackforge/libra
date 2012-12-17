@@ -1,3 +1,4 @@
+pep8
 pytest
 mock
 httplib2
