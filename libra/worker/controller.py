@@ -105,7 +105,7 @@ class LBaaSController(object):
                 "Missing '%s' element" % self.LBLIST_FIELD
             ).to_json()
 
-        lb_list = self.msg['loadbalancers']
+        lb_list = self.msg[self.LBLIST_FIELD]
 
         for current_lb in lb_list:
             if 'nodes' not in current_lb:

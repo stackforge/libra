@@ -28,7 +28,7 @@ class TestWorkerController(unittest.TestCase):
     def testUpdate(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadbalancers': [
+            'loadBalancers': [
                 {
                    'protocol': 'http',
                    'nodes': [
@@ -83,7 +83,7 @@ class TestWorkerController(unittest.TestCase):
     def testCreateMissingNodes(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadbalancers': [ { 'protocol': 'http' } ]
+            'loadBalancers': [ { 'protocol': 'http' } ]
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -92,7 +92,7 @@ class TestWorkerController(unittest.TestCase):
     def testCreateMissingProto(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadbalancers': [
+            'loadBalancers': [
                 {
                    'nodes': [
                         {
@@ -110,7 +110,7 @@ class TestWorkerController(unittest.TestCase):
     def testBadAlgorithm(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadbalancers': [
+            'loadBalancers': [
                 {
                     'protocol': 'http',
                     'algorithm': 'BOGUS',
