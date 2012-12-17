@@ -25,10 +25,19 @@ class TestWorkerController(unittest.TestCase):
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
 
+    def testCaseSensitive(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            'LoAdBaLaNcErS': [ { 'protocol': 'http' } ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
     def testUpdate(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadBalancers': [
+            c.LBLIST_FIELD: [
                 {
                    'protocol': 'http',
                    'nodes': [
@@ -83,7 +92,7 @@ class TestWorkerController(unittest.TestCase):
     def testCreateMissingNodes(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadBalancers': [ { 'protocol': 'http' } ]
+            c.LBLIST_FIELD: [ { 'protocol': 'http' } ]
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -92,7 +101,7 @@ class TestWorkerController(unittest.TestCase):
     def testCreateMissingProto(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadBalancers': [
+            c.LBLIST_FIELD: [
                 {
                    'nodes': [
                         {
@@ -110,7 +119,7 @@ class TestWorkerController(unittest.TestCase):
     def testBadAlgorithm(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'loadBalancers': [
+            c.LBLIST_FIELD: [
                 {
                     'protocol': 'http',
                     'algorithm': 'BOGUS',

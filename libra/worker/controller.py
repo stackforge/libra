@@ -24,14 +24,13 @@ class LBaaSController(object):
     RESPONSE_SUCCESS = "PASS"
     ACTION_FIELD = 'hpcs_action'
     RESPONSE_FIELD = 'hpcs_response'
-    LBLIST_FIELD = 'loadbalancers'
+    LBLIST_FIELD = 'loadBalancers'
 
     def __init__(self, logger, driver, json_msg):
         self.logger = logger
         self.driver = driver
         self.logger.debug("Entered LBaaSController")
-        # Standardize case on JSON elements
-        self.msg = dict((k.lower(), v) for k, v in json_msg.iteritems())
+        self.msg = json_msg
 
     def run(self):
         """
