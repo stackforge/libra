@@ -19,7 +19,7 @@ import sys
 
 from libra.mgm.drivers.base import MgmDriver
 
-API_VERSION = 'v1'
+API_VERSION = 'v1.2'
 
 
 class HPRestDriver(MgmDriver):
