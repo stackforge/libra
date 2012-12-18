@@ -212,7 +212,12 @@ class Server(object):
         for address in addresses:
             if not address['addr'].startswith('10.'):
                 break
-        body['address'] = address['addr']
+        body['publicIpAddr'] = address['addr']
+        body['floatingIpAddr'] = address['addr']
+        body['az'] = self.args.az
+        body['type'] = "basename: {0}, image: {1}".format(
+            self.args.node_basename, self.args.nova_image
+        )
         return body
 
     def find_unknown(self, name, nova):
@@ -270,8 +275,9 @@ class Server(object):
                 self.logger.warning('Aborting node building')
                 return
             body = self.build_node_data(data)
-            self.logger.info('Adding node {name} on {ip}'
-                             .format(name=body['name'], ip=body['address']))
+            self.logger.info('Adding node {name} on {ip}'.format(
+                name=body['name'], ip=body['publicIpAddr'])
+            )
             status, response = api.add_node(body)
             if not status:
                 self.logger.error(
@@ -312,6 +318,11 @@ def main():
     options.parser.add_argument(
         '--datadir', dest='datadir',
         help='directory to store data files'
+    )
+    options.parser.add_argument(
+        '--az', type=int,
+        help='The az number the node will reside in (to be passed to the API'
+             ' server)'
     )
     options.parser.add_argument(
         '--nodes', type=int, default=1,
@@ -377,7 +388,7 @@ def main():
     args = options.run()
 
     required_args = [
-        'datadir',
+        'datadir', 'az',
         'nova_image', 'nova_image_size', 'nova_secgroup', 'nova_keyname',
         'nova_tenant', 'nova_region', 'nova_user', 'nova_pass', 'nova_auth_url'
     ]
