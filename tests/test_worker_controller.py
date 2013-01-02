@@ -1,20 +1,18 @@
 import logging
-import mock_objects
-import unittest
+import testtools
+import tests.mock_objects
 from libra.worker.controller import LBaaSController as c
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 
-class TestWorkerController(unittest.TestCase):
+class TestWorkerController(testtools.TestCase):
     def setUp(self):
+        super(TestWorkerController, self).setUp()
         self.logger = logging.getLogger('test_worker_controller')
-        self.lh = mock_objects.MockLoggingHandler()
+        self.lh = tests.mock_objects.MockLoggingHandler()
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(self.lh)
-        self.driver = HAProxyDriver('mock_objects.FakeOSServices')
-
-    def tearDown(self):
-        pass
+        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices')
 
     def testBadAction(self):
         msg = {

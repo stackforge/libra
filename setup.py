@@ -14,23 +14,10 @@
 
 import sys
 import setuptools
-from setuptools.command.test import test as TestCommand
 from libra.openstack.common import setup
 
 requires = setup.parse_requirements()
 tests_requires = setup.parse_requirements(['tools/test-requires'])
-
-
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
-        import pytest
-        pytest.main(self.test_args)
 
 ci_cmdclass = {}
 
@@ -57,8 +44,6 @@ try:
     ci_cmdclass['build_sphinx_latex'] = local_BuildDoc_latex
 except Exception:
     pass
-
-ci_cmdclass['test'] = PyTest
 
 setup_reqs = ['Sphinx']
 

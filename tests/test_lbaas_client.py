@@ -1,9 +1,9 @@
-import unittest
 import json
 import mock
 import httplib2
 import sys
 import novaclient
+import testtools
 from StringIO import StringIO
 from libra.client.libraapi import LibraAPI
 
@@ -44,15 +44,13 @@ class MockLibraAPI(LibraAPI):
         """ Store the put data, no need to execute the httplib """
         self.putdata = kwargs['body']
 
-class TestLBaaSClientLibraAPI(unittest.TestCase):
+class TestLBaaSClientLibraAPI(testtools.TestCase):
     def setUp(self):
         """ Fake a login with token """
+        super(TestLBaaSClientLibraAPI, self).setUp()
         self.api = MockLibraAPI('username', 'password', 'tenant', 'auth_test', 'region')
         self.api.nova.management_url = "http://example.com"
         self.api.nova.auth_token = "token"
-
-    def tearDown(self):
-        pass
 
     def testListLb(self):
         """ Test the table generated from the LIST function """
@@ -169,9 +167,9 @@ class TestLBaaSClientLibraAPI(unittest.TestCase):
         mock_request = mock.Mock(return_value=(fake_response, fake_body))
         with mock.patch.object(httplib2.Http, "request", mock_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
-                with self.assertRaises(novaclient.exceptions.ClientException):
-                    args = DummyArgs()
-                    self.api.delete_lb(args)
+                args = DummyArgs()
+                self.assertRaises(novaclient.exceptions.ClientException,
+                                  self.api.delete_lb, args)
 
     def testCreateLb(self):
         """

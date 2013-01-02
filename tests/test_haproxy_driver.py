@@ -1,13 +1,12 @@
-import unittest
+import testtools
+import tests.mock_objects
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 
-class TestHAProxyDriver(unittest.TestCase):
+class TestHAProxyDriver(testtools.TestCase):
     def setUp(self):
-        self.driver = HAProxyDriver('mock_objects.FakeOSServices')
-
-    def tearDown(self):
-        pass
+        super(TestHAProxyDriver, self).setUp()
+        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices')
 
     def testInit(self):
         """ Test the HAProxy init() method """
@@ -29,8 +28,8 @@ class TestHAProxyDriver(unittest.TestCase):
         self.assertEqual(self.driver._config[proto]['bind_port'], 443)
 
     def testAddTCPRequiresPort(self):
-        with self.assertRaises(Exception):
-            self.driver.add_protocol('tcp', None)
+        e = self.assertRaises(Exception, self.driver.add_protocol, 'tcp', None)
+        self.assertEqual("Port is required for TCP protocol.", e.message)
 
     def testAddServer(self):
         """ Test the HAProxy add_server() method """
@@ -55,5 +54,5 @@ class TestHAProxyDriver(unittest.TestCase):
         self.assertEqual(self.driver._config[proto]['algorithm'], 'roundrobin')
         self.driver.set_algorithm(proto, self.driver.LEASTCONN)
         self.assertEqual(self.driver._config[proto]['algorithm'], 'leastconn')
-        with self.assertRaises(Exception):
-            self.driver.set_algorithm(proto, 99)
+        e = self.assertRaises(Exception, self.driver.set_algorithm, proto, 99)
+        self.assertEqual("Invalid algorithm: http", e.message)

@@ -1,4 +1,4 @@
-import unittest
+import testtools
 import logging
 import mock
 import httplib2
@@ -16,28 +16,24 @@ mock_bad_request = mock.Mock(return_value=(fake_bad_response, ""))
 mock_del_request = mock.Mock(return_value=(fake_del_response, ""))
 
 
-class TestLBaaSMgmTask(unittest.TestCase):
+class TestLBaaSMgmTask(testtools.TestCase):
     def setUp(self):
+        super(TestLBaaSMgmTask, self).setUp()
         self.logger = logging.getLogger('lbass_mgm_test')
         self.lh = mock_objects.MockLoggingHandler()
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(self.lh)
 
-    def tearDown(self):
-        pass
 
-
-class TestLBaaSMgmNova(unittest.TestCase):
+class TestLBaaSMgmNova(testtools.TestCase):
     def setUp(self):
+        super(TestLBaaSMgmNova, self).setUp()
         self.api = Node(
             "username", "password", "auth_test", "tenant1", "region1",
             "default", "default", '1234', '100'
         )
         self.api.nova.management_url = "http://example.com"
         self.api.nova.auth_token = "token"
-
-    def tearDown(self):
-        pass
 
     def testCreateNode(self):
         with mock.patch.object(httplib2.Http, "request", mock_request):
@@ -48,8 +44,7 @@ class TestLBaaSMgmNova(unittest.TestCase):
     def testCreateNodeFail(self):
         with mock.patch.object(httplib2.Http, "request", mock_bad_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
-                with self.assertRaises(BuildError):
-                    data = self.api.build()
+                self.assertRaises(BuildError, self.api.build)
 
     def testDeleteNodeFail(self):
         with mock.patch.object(httplib2.Http, "request", mock_bad_request):
