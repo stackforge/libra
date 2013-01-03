@@ -7,10 +7,6 @@ environment.
 Tools
 -----
 
-  * libra_client
-
-    Python utility designed to communicate with Atlas API based LBaaS systems.
-
   * libra_pool_mgm
 
     Python daemon that manages a pool of Nova instances.

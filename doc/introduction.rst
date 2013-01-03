@@ -5,7 +5,6 @@ Libra is a Load Balancer as a Service (LBaaS) system originally designed by
 Hewlett-Packard Cloud Services.  It consists of three of the core components
 required to get LBaaS working:
 
-* A command line client
 * A node pool manager to keep a warm spare pool of load balancers ready
 * A node worker to asyncronusly communicate to the API server
 

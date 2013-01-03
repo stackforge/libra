@@ -5,7 +5,6 @@ Load Balancer as a Service Device Tools
    :maxdepth: 3
 
    introduction
-   client/index
    worker/index
    pool_mgm/index
    config

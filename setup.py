@@ -61,7 +61,6 @@ setuptools.setup(
         'console_scripts': [
             'libra_worker = libra.worker.main:main',
             'libra_pool_mgm = libra.mgm.mgm:main',
-            'libra_client = libra.client.client:main',
             'libra_statsd = libra.statsd.main:main',
         ]
     },
