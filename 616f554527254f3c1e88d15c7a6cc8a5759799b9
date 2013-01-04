@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: linuxjedi <andrew@linuxjedi.co.uk>
+Code-Review+2: linuxjedi <andrew@linuxjedi.co.uk>
+Submitted-by: Jenkins
+Submitted-at: Fri, 04 Jan 2013 16:29:00 +0000
+Reviewed-on: https://review.openstack.org/18964
+Project: stackforge/libra
+Branch: refs/heads/master
