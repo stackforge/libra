@@ -19,18 +19,10 @@ from libra.openstack.common import setup
 requires = setup.parse_requirements()
 tests_requires = setup.parse_requirements(['tools/test-requires'])
 
-ci_cmdclass = {}
+ci_cmdclass = setup.get_cmdclass()
 
 try:
     from sphinx.setup_command import BuildDoc
-
-    class local_BuildDoc(BuildDoc):
-        def run(self):
-            builders = ['html', 'man']
-            for builder in builders:
-                self.builder = builder
-                self.finalize_options()
-                BuildDoc.run(self)
 
     class local_BuildDoc_latex(BuildDoc):
         def run(self):
@@ -40,12 +32,9 @@ try:
                 self.finalize_options()
                 BuildDoc.run(self)
 
-    ci_cmdclass['build_sphinx'] = local_BuildDoc
     ci_cmdclass['build_sphinx_latex'] = local_BuildDoc_latex
 except Exception:
     pass
-
-setup_reqs = ['Sphinx']
 
 # Get the version number
 execfile('libra/__init__.py')
@@ -67,7 +56,6 @@ setuptools.setup(
     cmdclass=ci_cmdclass,
     tests_require=tests_requires,
     install_requires=requires,
-    setup_requires=setup_reqs,
     data_files=[
         ('share/libra/', ['etc/sample_libra.cfg'])
     ]

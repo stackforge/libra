@@ -1,5 +1,6 @@
 pep8
 mock
 httplib2
+sphinx>=1.1.2
 testrepository>=0.0.8
 testtools>=0.9.22

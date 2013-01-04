@@ -5,7 +5,9 @@
 .cache
 .testrepository
 .tox
+AUTHORS
 build
+ChangeLog
 debian/files
 debian/libra
 debian/libra.debhelper.log
