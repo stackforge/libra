@@ -1,5 +1,5 @@
 eventlet
 gearman
 python-daemon
-requests
+requests>=1.0.0
 python_novaclient

@@ -19,7 +19,7 @@ import sys
 
 from libra.mgm.drivers.base import MgmDriver
 
-API_VERSION = 'v1.2'
+API_VERSION = 'v1'
 
 
 class HPRestDriver(MgmDriver):
@@ -88,8 +88,8 @@ class HPRestDriver(MgmDriver):
         if r.status_code != 200:
             self.logger.error('Server returned error {code}'
                               .format(code=r.status_code))
-            return False, r.json
-        return True, r.json
+            return False, r.json()
+        return True, r.json()
 
     def _post(self, url, node_data):
         try:
@@ -102,5 +102,5 @@ class HPRestDriver(MgmDriver):
         if r.status_code != 200:
             self.logger.error('Server returned error {code}'
                               .format(code=r.status_code))
-            return False, r.json
-        return True, r.json
+            return False, r.json()
+        return True, r.json()
