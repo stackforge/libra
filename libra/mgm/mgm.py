@@ -312,7 +312,7 @@ class Server(object):
 def main():
     options = Options('mgm', 'Node Management Daemon')
     options.parser.add_argument(
-        '--api_server', action='append', metavar='HOST:POST',
+        '--api_server', action='append', metavar='HOST:PORT',
         help='a list of API servers to connect to (for HP REST API driver)'
     )
     options.parser.add_argument(
