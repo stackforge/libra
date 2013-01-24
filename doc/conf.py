@@ -50,13 +50,13 @@ copyright = u'2012, Andrew Hutchings, David Shrewsbury'
 # built documents.
 #
 # The short X.Y version.
-version = "%d-%02d-%02d-alpha1" % (
+version = "%d-%02d-%02d-beta" % (
     datetime.datetime.now().year,
     datetime.datetime.now().month,
     datetime.datetime.now().day
 )
 # The full version, including alpha/beta/rc tags.
-release = "%d-%02d-%02d-alpha1" % (
+release = "%d-%02d-%02d-beta" % (
     datetime.datetime.now().year,
     datetime.datetime.now().month,
     datetime.datetime.now().day
