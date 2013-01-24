@@ -45,7 +45,7 @@ setuptools.setup(
     version=__version__,
     author="David Shrewsbury <shrewsbury.dave@gmail.com>, \
         Andrew Hutchings <andrew@linuxjedi.co.uk>",
-    packages=setuptools.find_packages(exclude=["*.tests"]),
+    packages=setuptools.find_packages(exclude=["tests", "*.tests"]),
     entry_points={
         'console_scripts': [
             'libra_worker = libra.worker.main:main',
