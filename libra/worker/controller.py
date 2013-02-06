@@ -163,7 +163,7 @@ class LBaaSController(object):
                 return self.msg
 
             for lb_node in current_lb['nodes']:
-                port, address = None, None
+                port, address, weight = None, None, None
 
                 if 'port' in lb_node:
                     port = lb_node['port']
@@ -175,10 +175,14 @@ class LBaaSController(object):
                 else:
                     return BadRequest("Missing 'address' element.").to_json()
 
+                if 'weight' in lb_node:
+                    weight = lb_node['weight']
+
                 try:
                     self.driver.add_server(current_lb['protocol'],
                                            address,
-                                           port)
+                                           port,
+                                           weight)
                 except NotImplementedError:
                     self.logger.error(
                         "Selected driver does not support adding a server."

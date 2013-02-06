@@ -125,6 +125,8 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def add_server(self, protocol, host, port, weight=1):
         proto = protocol.lower()
+        if weight is None:
+            weight = 1
 
         try:
             weight = int(weight)
