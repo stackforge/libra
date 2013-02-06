@@ -48,7 +48,7 @@ class LoadBalancerDriver(object):
         """ Add a supported protocol and listening port for the instance. """
         raise NotImplementedError()
 
-    def add_server(self, protocol, host, port):
+    def add_server(self, protocol, host, port, weight):
         """ Add a server for the protocol for which we will proxy. """
         raise NotImplementedError()
 

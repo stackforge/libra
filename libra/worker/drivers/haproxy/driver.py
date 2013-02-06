@@ -92,9 +92,9 @@ class HAProxyDriver(LoadBalancerDriver):
             if proto == 'http':
                 output.append('    cookie SERVERID rewrite')
 
-            for (addr, port) in protocfg['servers']:
-                output.append('    server server%d %s:%s' %
-                              (serv_num, addr, port))
+            for (addr, port, weight) in protocfg['servers']:
+                output.append('    server server%d %s:%s weight %d' %
+                              (serv_num, addr, port, weight))
                 serv_num += 1
 
         return '\n'.join(output) + '\n'
@@ -123,11 +123,20 @@ class HAProxyDriver(LoadBalancerDriver):
         else:
             self._bind(proto, '0.0.0.0', port)
 
-    def add_server(self, protocol, host, port):
+    def add_server(self, protocol, host, port, weight=1):
         proto = protocol.lower()
+
+        try:
+            weight = int(weight)
+        except ValueError:
+            raise Exception("Non-integer 'weight' value: '%s'" % weight)
+
+        if weight > 256:
+            raise Exception("Server 'weight' %d exceeds max of 256" % weight)
+
         if 'servers' not in self._config[proto]:
             self._config[proto]['servers'] = []
-        self._config[proto]['servers'].append((host, port))
+        self._config[proto]['servers'].append((host, port, weight))
 
     def set_algorithm(self, protocol, algo):
         proto = protocol.lower()

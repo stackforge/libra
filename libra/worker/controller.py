@@ -75,7 +75,7 @@ class LBaaSController(object):
         version this worker supports.
         """
         # Version of the JSON message format that this worker understands.
-        msg_fmt_version = "1.0"
+        msg_fmt_version = "1.1"
         self.msg['version'] = msg_fmt_version
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
