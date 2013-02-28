@@ -1,7 +1,6 @@
 fixtures>=0.3.12
 pep8
 mock
-httplib2
 pyflakes>=0.6.1
 python-subunit
 sphinx>=1.1.2
