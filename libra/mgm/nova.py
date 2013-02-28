@@ -103,9 +103,9 @@ class Node(object):
                 nid=node_id, exc=sys.exc_info()[0]
             )
 
-        if resp['status'] != '204':
+        if resp.status_code != 204:
             return False, 'Error deleting node {nid} status {stat}'.format(
-                node=node_id, stat=resp['status']
+                nid=node_id, stat=resp.status_code
             )
 
         return True, ''
@@ -150,9 +150,9 @@ class Node(object):
         args = {'name': node_name}
         url = "/servers?{0}".format(urllib.urlencode(args))
         resp, body = self.nova.get(url)
-        if resp['status'] not in ['200', '203']:
+        if resp.status_code not in [200, 203]:
             msg = "Error {0} searching for node with name {1}".format(
-                resp['status'], node_name
+                resp.status_code, node_name
             )
             raise NotFound(msg)
         if len(body['servers']) != 1:
@@ -165,9 +165,9 @@ class Node(object):
         args = {'name': image_name}
         url = "/images?{0}".format(urllib.urlencode(args))
         resp, body = self.nova.get(url)
-        if resp['status'] not in ['200', '203']:
+        if resp.status_code not in [200, 203]:
             msg = "Error {0} searching for image with name {1}".format(
-                resp['status'], image_name
+                resp.status_code, image_name
             )
             raise NotFound(msg)
         if len(body['images']) != 1:
@@ -179,9 +179,9 @@ class Node(object):
         """ tries to find a flavor from the name """
         url = "/flavors"
         resp, body = self.nova.get(url)
-        if resp['status'] not in ['200', '203']:
+        if resp.status_code not in [200, 203]:
             msg = "Error {0} searching for flavor with name {1}".format(
-                resp['status'], flavor_name
+                resp.status_code, flavor_name
             )
             raise NotFound(msg)
         for flavor in body['flavors']:

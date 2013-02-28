@@ -127,10 +127,10 @@ class Server(object):
             )
             return
 
-        if resp['status'] not in('200', '203'):
+        if resp.status_code not in('200', '203'):
             self.logger.error(
                 'Error geting status from Nova, error {0}'
-                .format(resp['status'])
+                .format(resp.status_code)
             )
             return
         status = status['server']
