@@ -127,7 +127,7 @@ class Server(object):
             )
             return
 
-        if resp.status_code not in('200', '203'):
+        if resp.status_code not in(200, 203):
             self.logger.error(
                 'Error geting status from Nova, error {0}'
                 .format(resp.status_code)
