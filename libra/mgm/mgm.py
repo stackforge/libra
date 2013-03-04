@@ -425,7 +425,7 @@ def main():
         server.main()
     else:
         context = daemon.DaemonContext(
-            working_directory='/etc/haproxy',
+            working_directory='/',
             umask=0o022,
             pidfile=daemon.pidfile.TimeoutPIDLockFile(args.pid),
             files_preserve=[logger.handlers[0].stream]
