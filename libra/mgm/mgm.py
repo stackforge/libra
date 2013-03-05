@@ -24,7 +24,7 @@ import threading
 
 from novaclient import exceptions
 from libra.openstack.common import importutils
-from libra.mgm.nova import Node, BuildError
+from libra.mgm.nova import Node, BuildError, NotFound
 from libra.common.options import Options, setup_logging
 from libra.mgm.drivers.base import known_drivers
 from libra.mgm.node_list import NodeList, AccessDenied
@@ -113,7 +113,7 @@ class Server(object):
         self.logger.info('Retrying node {0}'.format(node_id))
         try:
             resp, status = nova.status(node_id)
-        except exceptions.NotFound:
+        except NotFound:
             self.logger.info(
                 'Node {0} no longer exists, removing from list'
                 .format(node_id)
@@ -230,7 +230,7 @@ class Server(object):
             node_id = nova.get_node(name)
             self.logger.info('Storing node to try again later')
             self.node_list.add(node_id)
-        except exceptions.NotFound:
+        except NotFound:
             # Node really didn't build
             return
         except exceptions.ClientException as exc:
