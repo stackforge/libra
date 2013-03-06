@@ -127,10 +127,10 @@ class Server(object):
             )
             return
 
-        if resp['status'] not in('200', '203'):
+        if resp.status_code not in(200, 203):
             self.logger.error(
                 'Error geting status from Nova, error {0}'
-                .format(resp['status'])
+                .format(resp.status_code)
             )
             return
         status = status['server']
@@ -312,7 +312,7 @@ class Server(object):
 def main():
     options = Options('mgm', 'Node Management Daemon')
     options.parser.add_argument(
-        '--api_server', action='append', metavar='HOST:POST',
+        '--api_server', action='append', metavar='HOST:PORT',
         help='a list of API servers to connect to (for HP REST API driver)'
     )
     options.parser.add_argument(
