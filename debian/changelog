@@ -1,3 +1,15 @@
+libra (1.1-1) UNRELEASED; urgency=low
+
+  * Fix NotFound exception catching [bug 1147011]
+  * Set pool mgr working directory to /. [bug 1135014]
+  * One place missed
+  * Removed use of older-version response status checking from nova + mgm code, replaced with requests-bas
+  * Re-enable pyflakes.
+  * Fix tests directory for Debian packaging
+  * Fixed minor typo in pool_mgm --help output
+
+ -- David Shrewsbury <shrewsbury.dave@gmail.com>  Tue, 6 Mar 2013 14:30:00 +0000
+
 libra (1.0-1) UNRELEASED; urgency=low
 
   * Initial release.
