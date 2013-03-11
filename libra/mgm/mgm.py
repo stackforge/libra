@@ -14,6 +14,7 @@
 
 import daemon
 import daemon.pidfile
+import daemon.runner
 import grp
 import pwd
 import signal
@@ -21,6 +22,7 @@ import time
 import sys
 import os
 import threading
+import lockfile
 
 from novaclient import exceptions
 from libra.openstack.common import importutils
@@ -424,10 +426,14 @@ def main():
     if args.nodaemon:
         server.main()
     else:
+        pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
+        if daemon.runner.is_pidfile_stale(pidfile):
+            logger.warning("Cleaning up stale PID file")
+            pidfile.break_lock()
         context = daemon.DaemonContext(
             working_directory='/',
             umask=0o022,
-            pidfile=daemon.pidfile.TimeoutPIDLockFile(args.pid),
+            pidfile=pidfile,
             files_preserve=[logger.handlers[0].stream]
         )
         if args.user:
@@ -445,7 +451,15 @@ def main():
             except KeyError:
                 logger.critical("Invalid group: %s" % args.group)
                 return 1
-        with context:
-            server.main()
+        try:
+            context.open()
+        except lockfile.LockTimeout:
+            logger.critical(
+                "Failed to lock pidfile %s, another instance running?",
+                args.pid
+            )
+            return 1
+
+        server.main()
 
     return 0

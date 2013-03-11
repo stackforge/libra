@@ -14,6 +14,8 @@
 
 import daemon
 import daemon.pidfile
+import daemon.runner
+import lockfile
 import gearman.errors
 import grp
 import json
@@ -96,9 +98,13 @@ def main():
     if args.nodaemon:
         start(logger, args.server)
     else:
+        pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
+        if daemon.runner.is_pidfile_stale(pidfile):
+            logger.warning("Cleaning up stale PID file")
+            pidfile.break_lock()
         context = daemon.DaemonContext(
             umask=0o022,
-            pidfile=daemon.pidfile.TimeoutPIDLockFile(args.pid),
+            pidfile=pidfile,
             files_preserve=[logger.handlers[0].stream]
         )
         if args.user:
@@ -117,5 +123,12 @@ def main():
                 logger.critical("Invalid group: %s" % args.group)
                 return 1
 
-        with context:
-            start(logger, args.server)
+        try:
+            context.open()
+        except lockfile.LockTimeout:
+            logger.critical(
+                "Failed to lock pidfile %s, another instance running?",
+                args.pid
+            )
+
+        start(logger, args.server)
