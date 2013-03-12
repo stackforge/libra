@@ -76,20 +76,25 @@ class Server(object):
     def failed_nodes(self):
         """ check list of failures """
         with self.rlock:
-            self.logger.info('Checking log of failed node uploads')
-            nodes = self.node_list.get()
-            if len(nodes) == 0:
-                self.logger.info('Node log empty')
-            else:
-                api = self.driver_class(self.args.api_server, self.logger)
-                if api.is_online():
-                    self.logger.info(
-                        'Connected to {url}'.format(url=api.get_url())
-                    )
-                    for node in nodes:
-                        self.retest_node(node, api)
+            try:
+                self.logger.info('Checking log of failed node uploads')
+                nodes = self.node_list.get()
+                if len(nodes) == 0:
+                    self.logger.info('Node log empty')
                 else:
-                    self.logger.error('No working API server found')
+                    api = self.driver_class(self.args.api_server, self.logger)
+                    if api.is_online():
+                        self.logger.info(
+                            'Connected to {url}'.format(url=api.get_url())
+                        )
+                        for node in nodes:
+                            self.retest_node(node, api)
+                    else:
+                        self.logger.error('No working API server found')
+            except Exception:
+                self.logger.exception(
+                    'Uncaught exception during failed node check'
+                )
             self.reset_failed_scheduler()
 
     def retest_node(self, node_id, api):
@@ -168,28 +173,32 @@ class Server(object):
     def check_nodes(self):
         """ check if known nodes are used """
         with self.rlock:
-            self.logger.info('Checking if new nodes are needed')
-            api = self.driver_class(self.args.api_server, self.logger)
-            if api.is_online():
-                self.logger.info(
-                    'Connected to {url}'.format(url=api.get_url())
-                )
-                free_count = api.get_free_count()
-                if free_count is None:
-                    self.reset_scheduler()
-                    return
-                if free_count < self.args.nodes:
-                    # we need to build new nodes
-                    nodes_required = self.args.nodes - free_count
+            try:
+                self.logger.info('Checking if new nodes are needed')
+                api = self.driver_class(self.args.api_server, self.logger)
+                if api.is_online():
                     self.logger.info(
-                        'Building {nodes} nodes'
-                        .format(nodes=nodes_required)
+                        'Connected to {url}'.format(url=api.get_url())
                     )
-                    self.build_nodes(nodes_required, api)
+                    free_count = api.get_free_count()
+                    if free_count is None:
+                        self.reset_scheduler()
+                        return
+                    if free_count < self.args.nodes:
+                        # we need to build new nodes
+                        nodes_required = self.args.nodes - free_count
+                        self.logger.info(
+                            'Building {nodes} nodes'
+                            .format(nodes=nodes_required)
+                        )
+                        self.build_nodes(nodes_required, api)
+                    else:
+                        self.logger.info('No new nodes required')
                 else:
-                    self.logger.info('No new nodes required')
-            else:
-                self.logger.error('No working API server found')
+                    self.logger.error('No working API server found')
+            except Exception:
+                self.logger.exception('Uncaught exception during node check')
+
             self.reset_scheduler()
 
     def reset_scheduler(self):
