@@ -24,7 +24,12 @@ class LBaaSController(object):
     RESPONSE_SUCCESS = "PASS"
     ACTION_FIELD = 'hpcs_action'
     RESPONSE_FIELD = 'hpcs_response'
+    ERROR_FIELD = 'hpcs_error'
     LBLIST_FIELD = 'loadBalancers'
+    OBJ_STORE_TYPE_FIELD = 'hpcs_object_store_type'
+    OBJ_STORE_BASEPATH_FIELD = 'hpcs_object_store_basepath'
+    OBJ_STORE_ENDPOINT_FIELD = 'hpcs_object_store_endpoint'
+    OBJ_STORE_TOKEN_FIELD = 'hpcs_object_store_token'
 
     def __init__(self, logger, driver, json_msg):
         self.logger = logger
@@ -56,6 +61,8 @@ class LBaaSController(object):
                 return self._action_delete()
             elif action == 'DISCOVER':
                 return self._action_discover()
+            elif action == 'ARCHIVE':
+                return self._action_archive()
             else:
                 self.logger.error("Invalid `%s` value: %s" %
                                   (self.ACTION_FIELD, action))
@@ -261,6 +268,66 @@ class LBaaSController(object):
         except Exception as e:
             self.logger.error("DELETE failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+        else:
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
+        return self.msg
+
+    def _action_archive(self):
+        """ Archive LB log files. """
+
+        valid_methods = ['swift']
+        method = None
+        params = {}
+
+        if self.OBJ_STORE_TYPE_FIELD not in self.msg:
+            return BadRequest(
+                "Missing '%s' element" % self.OBJ_STORE_TYPE_FIELD
+            ).to_json()
+        else:
+            method = self.msg[self.OBJ_STORE_TYPE_FIELD].lower()
+
+        # Validate method type
+        if method not in valid_methods:
+            return BadRequest(
+                "'%s' is not a valid store type" % method
+            ).to_json()
+
+        # Get parameters for Swift storage
+        if method == 'swift':
+            if self.OBJ_STORE_BASEPATH_FIELD not in self.msg:
+                return BadRequest(
+                    "Missing '%s' element" % self.OBJ_STORE_BASEPATH_FIELD
+                ).to_json()
+            if self.OBJ_STORE_ENDPOINT_FIELD not in self.msg:
+                return BadRequest(
+                    "Missing '%s' element" % self.OBJ_STORE_ENDPOINT_FIELD
+                ).to_json()
+            if self.OBJ_STORE_TOKEN_FIELD not in self.msg:
+                return BadRequest(
+                    "Missing '%s' element" % self.OBJ_STORE_TOKEN_FIELD
+                ).to_json()
+            if self.LBLIST_FIELD not in self.msg:
+                return BadRequest(
+                    "Missing '%s' element" % self.LBLIST_FIELD
+                ).to_json()
+
+            lb_list = self.msg[self.LBLIST_FIELD]
+            params['protocol'] = lb_list[0]['protocol']
+            params['basepath'] = self.msg[self.OBJ_STORE_BASEPATH_FIELD]
+            params['endpoint'] = self.msg[self.OBJ_STORE_ENDPOINT_FIELD]
+            params['token'] = self.msg[self.OBJ_STORE_TOKEN_FIELD]
+
+        try:
+            self.driver.archive(method, params)
+        except NotImplementedError:
+            error = "Selected driver does not support ARCHIVE action."
+            self.logger.error(error)
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = error
+        except Exception as e:
+            self.logger.error("ARCHIVE failed: %s, %s" % (e.__class__, e))
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = str(e)
         else:
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg

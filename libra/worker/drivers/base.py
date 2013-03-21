@@ -75,3 +75,7 @@ class LoadBalancerDriver(object):
     def get_stats(self, protocol):
         """ Get load balancer statistics for specified protocol. """
         raise NotImplementedError()
+
+    def archive(self, method, params):
+        """ Archive the load balancer logs using the specified method. """
+        raise NotImplementedError()

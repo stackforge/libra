@@ -2,6 +2,7 @@ import logging
 import testtools
 import tests.mock_objects
 from libra.worker.controller import LBaaSController as c
+from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 
@@ -141,3 +142,90 @@ class TestWorkerController(testtools.TestCase):
         response = controller.run()
         self.assertIn('version', response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+
+    def testArchiveMissingMethod(self):
+        msg = {
+            c.ACTION_FIELD: 'ARCHIVE'
+        }
+        null_driver = LoadBalancerDriver()
+        controller = c(self.logger, null_driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+    def testArchiveInvalidMethod(self):
+        msg = {
+            c.ACTION_FIELD: 'ARCHIVE',
+            c.OBJ_STORE_TYPE_FIELD: 'bad'
+        }
+        null_driver = LoadBalancerDriver()
+        controller = c(self.logger, null_driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+    def testArchiveSwiftRequiredParams(self):
+        null_driver = LoadBalancerDriver()
+
+        # Missing basepath field
+        msg = {
+            c.ACTION_FIELD: 'ARCHIVE',
+            c.OBJ_STORE_TYPE_FIELD: 'Swift',
+            c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
+            c.OBJ_STORE_TOKEN_FIELD: "XXXX",
+            c.LBLIST_FIELD: [{'protocol': 'http'}]
+        }
+        controller = c(self.logger, null_driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+        # Missing endpoint field
+        msg = {
+            c.ACTION_FIELD: 'ARCHIVE',
+            c.OBJ_STORE_TYPE_FIELD: 'Swift',
+            c.OBJ_STORE_BASEPATH_FIELD: "/lbaaslogs",
+            c.OBJ_STORE_TOKEN_FIELD: "XXXX",
+            c.LBLIST_FIELD: [{'protocol': 'http'}]
+        }
+        controller = c(self.logger, null_driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+        # Missing token field
+        msg = {
+            c.ACTION_FIELD: 'ARCHIVE',
+            c.OBJ_STORE_TYPE_FIELD: 'Swift',
+            c.OBJ_STORE_BASEPATH_FIELD: "/lbaaslogs",
+            c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
+            c.LBLIST_FIELD: [{'protocol': 'http'}]
+        }
+        controller = c(self.logger, null_driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+        # Missing load balancer field
+        msg = {
+            c.ACTION_FIELD: 'ARCHIVE',
+            c.OBJ_STORE_TYPE_FIELD: 'Swift',
+            c.OBJ_STORE_BASEPATH_FIELD: "/lbaaslogs",
+            c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
+            c.OBJ_STORE_TOKEN_FIELD: "XXXX"
+        }
+        controller = c(self.logger, null_driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+
+    def testArchiveNotImplemented(self):
+        msg = {
+            c.ACTION_FIELD: 'ARCHIVE',
+            c.OBJ_STORE_TYPE_FIELD: 'Swift',
+            c.OBJ_STORE_BASEPATH_FIELD: "/lbaaslogs",
+            c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
+            c.OBJ_STORE_TOKEN_FIELD: "XXXX",
+            c.LBLIST_FIELD: [{'protocol': 'http'}]
+        }
+        null_driver = LoadBalancerDriver()
+        controller = c(self.logger, null_driver, msg)
+        response = controller.run()
+        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
+        self.assertIn(c.ERROR_FIELD, response)
+        self.assertEquals(response[c.ERROR_FIELD],
+                          "Selected driver does not support ARCHIVE action.")
