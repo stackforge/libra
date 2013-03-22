@@ -171,7 +171,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_TYPE_FIELD: 'Swift',
             c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
             c.OBJ_STORE_TOKEN_FIELD: "XXXX",
-            c.LBLIST_FIELD: [{'protocol': 'http'}]
+            c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
@@ -183,7 +183,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_TYPE_FIELD: 'Swift',
             c.OBJ_STORE_BASEPATH_FIELD: "/lbaaslogs",
             c.OBJ_STORE_TOKEN_FIELD: "XXXX",
-            c.LBLIST_FIELD: [{'protocol': 'http'}]
+            c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
@@ -195,7 +195,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_TYPE_FIELD: 'Swift',
             c.OBJ_STORE_BASEPATH_FIELD: "/lbaaslogs",
             c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
-            c.LBLIST_FIELD: [{'protocol': 'http'}]
+            c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
@@ -220,7 +220,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_BASEPATH_FIELD: "/lbaaslogs",
             c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
             c.OBJ_STORE_TOKEN_FIELD: "XXXX",
-            c.LBLIST_FIELD: [{'protocol': 'http'}]
+            c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
         null_driver = LoadBalancerDriver()
         controller = c(self.logger, null_driver, msg)
