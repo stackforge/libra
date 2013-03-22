@@ -88,3 +88,13 @@ class TestHAProxyDriver(testtools.TestCase):
                 Exception,
                 self.driver.add_server, proto, '1.2.3.4', 7777, "abc")
         self.assertEqual("Non-integer 'weight' value: 'abc'", e.message)
+
+    def testArchive(self):
+        """ Test the HAProxy archive() method """
+
+        # Test an invalid archive method
+        method = 'invalid'
+        e = self.assertRaises(Exception, self.driver.archive, method, None)
+        self.assertEqual(
+            "Driver does not support archive method '%s'" % method,
+            e.message)

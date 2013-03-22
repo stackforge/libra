@@ -3,3 +3,4 @@ gearman
 python-daemon
 requests>=1.0.0
 python_novaclient>=2.11.1
+python_swiftclient>=1.3.0
