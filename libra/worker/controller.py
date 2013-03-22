@@ -312,7 +312,7 @@ class LBaaSController(object):
                 ).to_json()
 
             lb_list = self.msg[self.LBLIST_FIELD]
-            params['protocol'] = lb_list[0]['protocol']
+            params['proto'] = lb_list[0]['protocol']
             params['lbid'] = lb_list[0]['id']
             params['basepath'] = self.msg[self.OBJ_STORE_BASEPATH_FIELD]
             params['endpoint'] = self.msg[self.OBJ_STORE_ENDPOINT_FIELD]

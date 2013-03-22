@@ -51,6 +51,27 @@ class UbuntuServices(ServicesBase):
             raise Exception("%s does not exist. Start failed." %
                             self._haproxy_pid)
 
+    def sudo_copy(self, from_file, to_file):
+        cmd = "/usr/bin/sudo -n /bin/cp %s %s" % (from_file, to_file)
+        try:
+            subprocess.check_output(cmd.split(),
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            raise Exception("Failed to copy file: %s\n%s"
+                            % (e, e.output.rstrip('\n')))
+
+    def sudo_chown(self, file, user, group):
+        if group is None:
+            cmd = "/usr/bin/sudo -n /bin/chown %s %s" % (user, file)
+        else:
+            cmd = "/usr/bin/sudo -n /bin/chown %s:%s %s" % (user, group, file)
+        try:
+            subprocess.check_output(cmd.split(),
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            raise Exception("Failed to change file ownership: %s\n%s"
+                            % (e, e.output.rstrip('\n')))
+
     def write_config(self, config_str):
         """
         Generate the new config and replace the current config file.
