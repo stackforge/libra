@@ -39,7 +39,7 @@ def check_request_status(job_request):
 
 def main():
     hostname = socket.gethostname()
-    task = "lbaas-1.0-%s" % hostname
+    task = hostname
     client = JSONGearmanClient(['localhost:4730'])
     data = """
 {

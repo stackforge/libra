@@ -22,6 +22,7 @@ import daemon.pidfile
 import daemon.runner
 import grp
 import pwd
+import getpass
 
 from libra.openstack.common import importutils
 from libra.common.options import Options, setup_logging
@@ -112,7 +113,18 @@ def main():
 
     if args.driver == 'haproxy':
         logger.info("Selected HAProxy service: %s" % args.haproxy_service)
-        driver = driver_class(haproxy_services[args.haproxy_service])
+        if args.user:
+            user = args.user
+        else:
+            user = getpass.getuser()
+
+        if args.group:
+            group = args.group
+        else:
+            group = None
+
+        driver = driver_class(haproxy_services[args.haproxy_service],
+                              user, group)
     else:
         driver = driver_class()
 

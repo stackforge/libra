@@ -6,7 +6,8 @@ from libra.worker.drivers.haproxy.driver import HAProxyDriver
 class TestHAProxyDriver(testtools.TestCase):
     def setUp(self):
         super(TestHAProxyDriver, self).setUp()
-        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices')
+        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices',
+                                    None, None)
 
     def testInit(self):
         """ Test the HAProxy init() method """
@@ -88,3 +89,13 @@ class TestHAProxyDriver(testtools.TestCase):
                 Exception,
                 self.driver.add_server, proto, '1.2.3.4', 7777, "abc")
         self.assertEqual("Non-integer 'weight' value: 'abc'", e.message)
+
+    def testArchive(self):
+        """ Test the HAProxy archive() method """
+
+        # Test an invalid archive method
+        method = 'invalid'
+        e = self.assertRaises(Exception, self.driver.archive, method, None)
+        self.assertEqual(
+            "Driver does not support archive method '%s'" % method,
+            e.message)

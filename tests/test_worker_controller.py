@@ -13,7 +13,8 @@ class TestWorkerController(testtools.TestCase):
         self.lh = tests.mock_objects.MockLoggingHandler()
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(self.lh)
-        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices')
+        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices',
+                                    None, None)
 
     def testBadAction(self):
         msg = {
