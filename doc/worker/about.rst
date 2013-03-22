@@ -40,7 +40,7 @@ prompted for a password. It is suggested that you run the worker as
 the `haproxy` user and `haproxy` group on Ubuntu systems. Then add the
 following line to /etc/sudoers::
 
-    %haproxy ALL = NOPASSWD: /usr/sbin/service, /bin/cp, /bin/mv, /bin/rm, /usr/bin/socat
+    %haproxy ALL = NOPASSWD: /usr/sbin/service, /bin/cp, /bin/mv, /bin/rm, /bin/chown, /usr/bin/socat
 
 The above lets everyone in the *haproxy* group run those commands
 as root without being prompted for a password.

@@ -45,3 +45,11 @@ class ServicesBase:
     def get_stats(self):
         """ Get the stats from HAProxy. """
         raise NotImplementedError()
+
+    def sudo_copy(self, from_file, to_file):
+        """ Do a privileged file copy. """
+        raise NotImplementedError()
+
+    def sudo_chown(self, file, user, group):
+        """ Do a privileged file ownership change. """
+        raise NotImplementedError()
