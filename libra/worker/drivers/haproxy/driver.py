@@ -12,6 +12,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import gzip
+import md5
+import os
+import re
+from datetime import datetime
+from swiftclient import client as sc
+
 from libra.openstack.common import importutils
 from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.services_base import ServicesBase
@@ -43,7 +50,6 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('global')
         output.append('    daemon')
         output.append('    log /dev/log local0')
-        output.append('    log /dev/log local1 notice')
         output.append('    maxconn 4096')
         output.append('    user haproxy')
         output.append('    group haproxy')
@@ -98,6 +104,77 @@ class HAProxyDriver(LoadBalancerDriver):
                 serv_num += 1
 
         return '\n'.join(output) + '\n'
+
+    def _archive_swift(self, endpoint, token, basepath, lbid, proto):
+        """
+        Archive HAProxy log files into swift.
+
+        endpoint - Object store endpoint
+        token - Authorization token
+        basepath - Container base path
+        lbid - Load balancer ID
+        proto - Protocol of the load balancer we are archiving
+
+        Note: It should be acceptable for exceptions to be thrown here as
+        the controller should wrap these up nicely in a message back to the
+        API server.
+        """
+
+        proto = proto.lower()
+
+        reallog = '/mnt/log/haproxy.log'
+
+        if not os.path.exists(reallog):
+            raise Exception('No HAProxy logs found')
+
+        # Extract contents from the log based on protocol. This is
+        # because each protocol (tcp or http) represents a separate
+        # load balancer in Libra. See _config_to_string() for the
+        # frontend and backend names we search for below.
+
+        filtered_log = '/tmp/haproxy-' + proto + '.log'
+        fh = open(filtered_log, 'wb')
+        for line in open(reallog, 'rb'):
+            if re.search(proto + '-in', line):
+                fh.write(line)
+            elif re.search(proto + '-servers', line):
+                fh.write(line)
+        fh.close()
+
+        # Compress the filtered log and generate the MD5 checksum value.
+        # We generate object name using UTC timestamp. The MD5 checksum of
+        # the compressed file is used to guarantee Swift properly receives
+        # the file contents.
+
+        ts = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+        objname = 'haproxy-' + ts + '.log.gz'
+        compressed_file = '/tmp/' + objname
+
+        gzip_in = open(filtered_log, 'rb')
+        gzip_out = gzip.open(compressed_file, 'wb')
+        gzip_out.writelines(gzip_in)
+        gzip_out.close()
+        gzip_in.close()
+
+        etag = md5.new((compressed_file, 'rb').read()).hexdigest()
+
+        # We now have a file to send to Swift for storage. We'll connect
+        # using the pre-authorized token passed to use for the given endpoint.
+        # Then make sure that we have a proper container name for this load
+        # balancer, and place the compressed file in that container. Creating
+        # containers is idempotent so no need to check if it already exists.
+
+        container = '/'.join([basepath, lbid])
+        conn = sc.Connection(preauthurl=endpoint, preauthtoken=token)
+        conn.put_container(container)
+        logfh = open(compressed_file, 'rb')
+        conn.put_object(container=container,
+                        obj=objname,
+                        etag=etag,
+                        contents=logfh)
+        logfh.close()
+        os.remove(compressed_file)
+        os.remove(filtered_log)
 
     ####################
     # Driver API Methods
@@ -166,3 +243,25 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def get_stats(self, protocol):
         return self.ossvc.get_stats(protocol)
+
+    def archive(self, method, params):
+        """
+        Implementation of the archive() API call.
+
+        method
+            Method we use for archiving the files.
+
+        params
+            Dictionary with parameters needed for archiving. The keys of
+            the dictionary will vary based on the value of 'method'.
+        """
+
+        if method == 'swift':
+            return self._archive_swift(params['endpoint'],
+                                       params['token'],
+                                       params['basepath'],
+                                       params['lbid'],
+                                       params['proto'])
+        else:
+            raise Exception("Driver does not support archive method '%s'" %
+                            method)
