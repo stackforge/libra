@@ -1,6 +1,6 @@
 import logging
 import testtools
-from tests import mock_objects
+from libra.tests import mock_objects
 from libra.worker.controller import LBaaSController as c
 from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
@@ -13,7 +13,7 @@ class TestWorkerController(testtools.TestCase):
         self.lh = mock_objects.MockLoggingHandler()
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(self.lh)
-        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices')
+        self.driver = HAProxyDriver('libra.tests.mock_objects.FakeOSServices')
 
     def testBadAction(self):
         msg = {
