@@ -2,7 +2,7 @@
 
 import json
 import socket
-from gearman import GearmanClient, DataEncoder
+from gearman import GearmanClient, DataEncoder, JOB_UNKNOWN
 
 
 class JSONDataEncoder(DataEncoder):

@@ -12,4 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-__version__ = "2.0-alpha"
+import pbr.version
+
+__version__ = pbr.version.VersionInfo('libra')
