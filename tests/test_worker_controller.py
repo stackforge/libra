@@ -27,7 +27,7 @@ class TestWorkerController(testtools.TestCase):
     def testCaseSensitive(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'LoAdBaLaNcErS': [ { 'protocol': 'http' } ]
+            'LoAdBaLaNcErS': [{'protocol': 'http'}]
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -38,8 +38,8 @@ class TestWorkerController(testtools.TestCase):
             c.ACTION_FIELD: 'UPDATE',
             c.LBLIST_FIELD: [
                 {
-                   'protocol': 'http',
-                   'nodes': [
+                    'protocol': 'http',
+                    'nodes': [
                         {
                             'address': '10.0.0.1',
                             'port': 80
@@ -91,7 +91,7 @@ class TestWorkerController(testtools.TestCase):
     def testCreateMissingNodes(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            c.LBLIST_FIELD: [ { 'protocol': 'http' } ]
+            c.LBLIST_FIELD: [{'protocol': 'http'}]
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -102,7 +102,7 @@ class TestWorkerController(testtools.TestCase):
             c.ACTION_FIELD: 'UPDATE',
             c.LBLIST_FIELD: [
                 {
-                   'nodes': [
+                    'nodes': [
                         {
                             'address': '10.0.0.1',
                             'port': 80
@@ -137,7 +137,7 @@ class TestWorkerController(testtools.TestCase):
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
 
     def testDiscover(self):
-        msg = { c.ACTION_FIELD: 'DISCOVER' }
+        msg = {c.ACTION_FIELD: 'DISCOVER'}
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
         self.assertIn('version', response)
