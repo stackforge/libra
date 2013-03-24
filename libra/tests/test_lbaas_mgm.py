@@ -8,7 +8,7 @@ import mock_objects
 from libra.mgm.nova import Node, BuildError
 
 fake_body = open(
-    os.path.join(os.path.dirname(__file__), "fake_body.json")).read()
+    os.path.join(os.path.dirname(__file__), "fake_body.json"), 'r').read()
 
 
 class TestResponse(requests.Response):

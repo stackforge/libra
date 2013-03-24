@@ -5,7 +5,7 @@ from libra.worker.drivers.haproxy.driver import HAProxyDriver
 class TestHAProxyDriver(testtools.TestCase):
     def setUp(self):
         super(TestHAProxyDriver, self).setUp()
-        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices')
+        self.driver = HAProxyDriver('libra.tests.mock_objects.FakeOSServices')
 
     def testInit(self):
         """ Test the HAProxy init() method """
