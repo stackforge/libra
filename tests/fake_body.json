@@ -1,0 +1,60 @@
+{
+    "server": {
+        "accessIPv4": "", 
+        "accessIPv6": "", 
+        "addresses": {}, 
+        "adminPass": "u2LKPA73msRTxDMC", 
+        "config_drive": "", 
+        "created": "2012-10-10T11:55:55Z", 
+        "flavor": {
+            "id": "100", 
+            "links": [
+                {
+                    "href": "https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/flavors/100", 
+                    "rel": "bookmark"
+                }
+            ]
+        }, 
+        "hostId": "", 
+        "id": 417773, 
+        "image": {
+            "id": "8419", 
+            "links": [
+                {
+                    "href": "https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/images/8419", 
+                    "rel": "bookmark"
+                }
+            ]
+        }, 
+        "key_name": "default", 
+        "links": [
+            {
+                "href": "https://az-1.region-a.geo-1.compute.hpcloudsvc.com/v1.1/58012755801586/servers/417773", 
+                "rel": "self"
+            }, 
+            {
+                "href": "https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/servers/417773", 
+                "rel": "bookmark"
+            }
+        ], 
+        "metadata": {}, 
+        "name": "lbass_0", 
+        "security_groups": [
+            {
+                "id": 4008, 
+                "links": [
+                    {
+                        "href": "https://az-1.region-a.geo-1.compute.hpcloudsvc.com/v1.1/58012755801586/os-security-groups/4008", 
+                        "rel": "bookmark"
+                    }
+                ], 
+                "name": "default"
+            }
+        ], 
+        "status": "ACTIVE", 
+        "tenant_id": "58012755801586", 
+        "updated": "2012-10-10T11:55:55Z", 
+        "user_id": "18290556240782", 
+        "uuid": "14984389-8cc5-4780-be64-2d31ace662ad"
+    }
+}

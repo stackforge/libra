@@ -1,13 +1,14 @@
 import testtools
 import logging
 import mock
+import os
 import requests
-import json
 
 import mock_objects
 from libra.mgm.nova import Node, BuildError
 
-fake_body = json.dumps({u'server': {u'status': u'ACTIVE', u'updated': u'2012-10-10T11:55:55Z', u'hostId': u'', u'user_id': u'18290556240782', u'name': u'lbass_0', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/v1.1/58012755801586/servers/417773', u'rel': u'self'}, {u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/servers/417773', u'rel': u'bookmark'}], u'created': u'2012-10-10T11:55:55Z', u'tenant_id': u'58012755801586', u'image': {u'id': u'8419', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/images/8419', u'rel': u'bookmark'}]}, u'adminPass': u'u2LKPA73msRTxDMC', u'uuid': u'14984389-8cc5-4780-be64-2d31ace662ad', u'accessIPv4': u'', u'metadata': {}, u'accessIPv6': u'', u'key_name': u'default', u'flavor': {u'id': u'100', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/58012755801586/flavors/100', u'rel': u'bookmark'}]}, u'config_drive': u'', u'id': 417773, u'security_groups': [{u'name': u'default', u'links': [{u'href': u'https://az-1.region-a.geo-1.compute.hpcloudsvc.com/v1.1/58012755801586/os-security-groups/4008', u'rel': u'bookmark'}], u'id': 4008}], u'addresses': {}}})
+fake_body = open(
+    os.path.join((os.path.dirname(__file__), "fake_body.json"))).read()
 
 
 class TestResponse(requests.Response):
