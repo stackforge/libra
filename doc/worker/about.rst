@@ -77,12 +77,7 @@ directory where the PID file will be (:option:`--pid <libra_worker.py -p>`
 option) and the directory where the log files will be written
 (:option:`--logfile <libra_worker.py -l>` option) exists and is writable
 by the user/group specified with the :option:`--user <libra_worker.py --user>`
-and :option:`--group <libra_worker.py --group>` options. Also, the
-Python module used to start the daemon process does not like it when the PID
-file already exists at startup.
-
-    **IF THE WORKER IMMEDIATELY EXITS WHEN STARTED IN DAEMON MODE, AND NO ERROR
-    MESSAGES ARE IN THE LOG, ONE OF THESE REASONS IS THE MOST LIKELY CAUSE!**
+and :option:`--group <libra_worker.py --group>` options.
 
 You can verify that the worker is running by using the sample Gearman
 client in the bin/ directory::

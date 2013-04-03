@@ -73,8 +73,9 @@ LoadBalancerDriver Class
 
    Generally, an appliance driver should queue up any configuration changes
    made via these API calls until the :py:meth:`create` method is called.
-   The :py:meth:`suspend`, :py:meth:`enable`, and :py:meth:`delete` methods
-   should take immediate action.
+   The :py:meth:`suspend`, :py:meth:`enable`, :py:meth:`delete`,
+   :py:meth:`get_stats()` and :py:meth:`archive` methods should take
+   immediate action.
 
    .. py:method:: init()
 
@@ -93,6 +94,8 @@ LoadBalancerDriver Class
    .. py:method:: delete()
 
    .. py:method:: get_stats()
+
+   .. py:method:: archive()
 
 Known Load Balancer Drivers Dictionary
 --------------------------------------
