@@ -239,7 +239,7 @@ Example Request
   {
     "hpcs_action": "ARCHIVE",
     "hpcs_object_store_basepath": "lbaaslogs",
-    "hpcs_object_store_endpoint": "https://example.com/v1/80074562416143",
+    "hpcs_object_store_endpoint": "https://example.com/v1/100",
     "hpcs_object_store_token": "MY_AUTH_TOKEN",
     "hpcs_object_store_type": "swift",
     "loadbalancers": [
@@ -259,7 +259,7 @@ Example Response
   {
     "hpcs_action": "ARCHIVE",
     "hpcs_object_store_basepath": "lbaaslogs",
-    "hpcs_object_store_endpoint": "https://example.com/v1/80074562416143",
+    "hpcs_object_store_endpoint": "https://example.com/v1/100",
     "hpcs_object_store_token": "MY_AUTH_TOKEN",
     "hpcs_object_store_type": "swift",
     "loadbalancers": [
@@ -268,7 +268,7 @@ Example Response
             "name": "lb #1",
             "protocol": "HTTP"
         }
-    ]
+    ],
     "hpcs_response": "FAIL",
     "hpcs_error": "Some error string explaining the failure."
   }
