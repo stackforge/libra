@@ -61,5 +61,3 @@ class MockLoggingHandler(logging.Handler):
             'error': [],
             'critical': [],
         }
-
-

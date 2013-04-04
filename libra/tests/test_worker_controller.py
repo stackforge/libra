@@ -1,6 +1,6 @@
 import logging
 import testtools
-import tests.mock_objects
+import libra.tests.mock_objects
 from libra.worker.controller import LBaaSController as c
 from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
@@ -10,10 +10,10 @@ class TestWorkerController(testtools.TestCase):
     def setUp(self):
         super(TestWorkerController, self).setUp()
         self.logger = logging.getLogger('test_worker_controller')
-        self.lh = tests.mock_objects.MockLoggingHandler()
+        self.lh = libra.tests.mock_objects.MockLoggingHandler()
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(self.lh)
-        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices',
+        self.driver = HAProxyDriver('libra.tests.mock_objects.FakeOSServices',
                                     None, None)
 
     def testBadAction(self):
@@ -28,7 +28,7 @@ class TestWorkerController(testtools.TestCase):
     def testCaseSensitive(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            'LoAdBaLaNcErS': [ { 'protocol': 'http' } ]
+            'LoAdBaLaNcErS': [{'protocol': 'http'}]
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -39,8 +39,8 @@ class TestWorkerController(testtools.TestCase):
             c.ACTION_FIELD: 'UPDATE',
             c.LBLIST_FIELD: [
                 {
-                   'protocol': 'http',
-                   'nodes': [
+                    'protocol': 'http',
+                    'nodes': [
                         {
                             'address': '10.0.0.1',
                             'port': 80
@@ -92,7 +92,7 @@ class TestWorkerController(testtools.TestCase):
     def testCreateMissingNodes(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
-            c.LBLIST_FIELD: [ { 'protocol': 'http' } ]
+            c.LBLIST_FIELD: [{'protocol': 'http'}]
         }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
@@ -103,7 +103,7 @@ class TestWorkerController(testtools.TestCase):
             c.ACTION_FIELD: 'UPDATE',
             c.LBLIST_FIELD: [
                 {
-                   'nodes': [
+                    'nodes': [
                         {
                             'address': '10.0.0.1',
                             'port': 80
@@ -138,7 +138,9 @@ class TestWorkerController(testtools.TestCase):
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
 
     def testDiscover(self):
-        msg = { c.ACTION_FIELD: 'DISCOVER' }
+        msg = {
+            c.ACTION_FIELD: 'DISCOVER'
+        }
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
         self.assertIn('version', response)

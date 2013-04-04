@@ -21,7 +21,8 @@ class TestLBStatistics(testtools.TestCase):
     def testSetBytesIn(self):
         self.stats.bytes_in = 99L
         self.assertEquals(self.stats.bytes_in, 99L)
-        e = self.assertRaises(TypeError, setattr, self.stats, 'bytes_in', "NaN")
+        e = self.assertRaises(TypeError, setattr, self.stats,
+                              'bytes_in', "NaN")
         self.assertEqual("Must be a long integer: 'NaN'", e.message)
 
     def testSetBytesOut(self):

@@ -1,12 +1,11 @@
 import testtools
-import tests.mock_objects
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 
 class TestHAProxyDriver(testtools.TestCase):
     def setUp(self):
         super(TestHAProxyDriver, self).setUp()
-        self.driver = HAProxyDriver('tests.mock_objects.FakeOSServices',
+        self.driver = HAProxyDriver('libra.tests.mock_objects.FakeOSServices',
                                     None, None)
 
     def testInit(self):
@@ -80,14 +79,12 @@ class TestHAProxyDriver(testtools.TestCase):
         """ Test setting string server weights """
         proto = 'http'
         self.driver.add_protocol(proto, None)
-        e = self.assertRaises(
-                Exception,
-                self.driver.add_server, proto, '1.2.3.4', 7777, 257)
+        e = self.assertRaises(Exception, self.driver.add_server,
+                              proto, '1.2.3.4', 7777, 257)
         self.assertEqual("Server 'weight' 257 exceeds max of 256", e.message)
 
-        e = self.assertRaises(
-                Exception,
-                self.driver.add_server, proto, '1.2.3.4', 7777, "abc")
+        e = self.assertRaises(Exception, self.driver.add_server,
+                              proto, '1.2.3.4', 7777, "abc")
         self.assertEqual("Non-integer 'weight' value: 'abc'", e.message)
 
     def testArchive(self):
