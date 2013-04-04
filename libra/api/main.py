@@ -16,6 +16,8 @@ import daemon
 import daemon.pidfile
 import daemon.runner
 import grp
+import lockfile
+import os
 import pwd
 
 from libra.common.options import Options, setup_logging
@@ -35,7 +37,7 @@ def main():
     server = APIServer(logger, args)
 
     if args.nodaemon:
-        server.main(task_list)
+        server.main()
     else:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
         if daemon.runner.is_pidfile_stale(pidfile):
