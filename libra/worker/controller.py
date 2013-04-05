@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from libra import __version__ as libra_version
 from libra.common.faults import BadRequest
 from libra.worker.drivers.base import LoadBalancerDriver
 
@@ -78,12 +79,10 @@ class LBaaSController(object):
         """
         Return service discovery information.
 
-        This message type is currently used to report which message
-        version this worker supports.
+        This message type is currently used to report the Libra version,
+        which can be used to determine which messages are supported.
         """
-        # Version of the JSON message format that this worker understands.
-        msg_fmt_version = "1.1"
-        self.msg['version'] = msg_fmt_version
+        self.msg['version'] = libra_version
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
 

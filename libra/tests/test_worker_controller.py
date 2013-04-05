@@ -1,6 +1,7 @@
 import logging
 import testtools
 import libra.tests.mock_objects
+from libra import __version__ as libra_version
 from libra.worker.controller import LBaaSController as c
 from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
@@ -145,6 +146,7 @@ class TestWorkerController(testtools.TestCase):
         response = controller.run()
         self.assertIn('version', response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEquals(response['version'], libra_version)
 
     def testArchiveMissingMethod(self):
         msg = {
