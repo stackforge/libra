@@ -273,3 +273,36 @@ Example Response
     "hpcs_error": "Some error string explaining the failure."
   }
 
+
+STATS Message
+-------------
+
+The STATS message queries the worker for load balancer statistics. Currently,
+this doesn't do more than verify that the HAProxy process is running and we
+can successfully query its statistics socket.
+
+Required Fields
+^^^^^^^^^^^^^^^
+
+* hpcs_action
+
+Example Request
+^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+  {
+    "hpcs_action": "STATS"
+  }
+
+Example Response
+^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+  {
+    "hpcs_action": "ARCHIVE",
+    "hpcs_response": "FAIL",
+    "hpcs_error": "Some error string explaining the failure."
+  }
+
