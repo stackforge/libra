@@ -12,13 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import csv
 import os
 import subprocess
 
-from libra.common.exc import ServiceUnavailable
 from libra.common.lbstats import LBStatistics
 from libra.worker.drivers.haproxy.services_base import ServicesBase
+from libra.worker.drivers.haproxy.query import HAProxyQuery
 
 
 class UbuntuServices(ServicesBase):
@@ -141,32 +140,13 @@ class UbuntuServices(ServicesBase):
         """
 
         if not os.path.exists(self._haproxy_pid):
-            raise ServiceUnavailable()
+            raise Exception("HAProxy is not running.")
 
         stats = LBStatistics()
+        query = HAProxyQuery('/var/run/haproxy-stats.socket')
 
-        cmd = 'echo "show stat" | ' \
-              'sudo -n /usr/bin/socat stdio /var/run/haproxy-stats.socket'
-        try:
-            csv_output = subprocess.check_output(cmd, shell=True)
-        except subprocess.CalledProcessError as e:
-            raise Exception("Failed to get statistics: %s" % e)
-
-        # Remove leading '# ' from string and trailing newlines
-        csv_output = csv_output[2:].rstrip()
-        # Turn string into a list, removing last two empty lines
-        csv_lines = csv_output.split('\n')
-
-        proxy_name = "%s-in" % protocol.lower()
-        service_name = "FRONTEND"
-
-        reader = csv.DictReader(csv_lines)
-        for row in reader:
-            if row['pxname'] == proxy_name and row['svname'] == service_name:
-                if row['bout']:
-                    stats.bytes_out = long(row['bout'])
-                if row['bin']:
-                    stats.bytes_in = long(row['bin'])
-                break
+        # TODO: Do something with the returned results. For now, we are
+        # basically just treating this as a 'ping' to the process.
+        query.show_info()
 
         return stats

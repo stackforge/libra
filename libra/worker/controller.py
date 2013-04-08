@@ -64,6 +64,8 @@ class LBaaSController(object):
                 return self._action_discover()
             elif action == 'ARCHIVE':
                 return self._action_archive()
+            elif action == 'STATS':
+                return self._action_stats()
             else:
                 self.logger.error("Invalid `%s` value: %s" %
                                   (self.ACTION_FIELD, action))
@@ -326,6 +328,24 @@ class LBaaSController(object):
             self.msg[self.ERROR_FIELD] = error
         except Exception as e:
             self.logger.error("ARCHIVE failed: %s, %s" % (e.__class__, e))
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = str(e)
+        else:
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
+        return self.msg
+
+    def _action_stats(self):
+        """ Get load balancer statistics. """
+        try:
+            # TODO: Do something with the returned statistics
+            self.driver.get_stats(protocol=None)
+        except NotImplementedError:
+            error = "Selected driver does not support STATS action."
+            self.logger.error(error)
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = error
+        except Exception as e:
+            self.logger.error("STATS failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
         else:
