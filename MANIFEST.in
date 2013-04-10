@@ -6,5 +6,4 @@ exclude .gitreview
 global-exclude *.pyc
 
 graft doc
-graft tools
 graft etc
