@@ -38,4 +38,5 @@ More Documentation
 
 You can build the complete documentation with:
 
+   $ pip install Sphinx
    $ python setup.py build_sphinx
