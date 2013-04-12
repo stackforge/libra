@@ -165,12 +165,19 @@ fi
 ##############
 # Update Libra
 ##############
-pkglocation="/home/ubuntu"
 pkgversion="libra-2.0"
-echo "Updating Libra to ${pkgversion}" | tee -a ${LOG}
+pkglocation="/tmp"
+tarball="http://tarball.openstack.org/libra/${pkgversion}.tar.gz"
+
+echo "Downloading ${pkgversion} tarball to ${pkglocation}" | tee -a ${LOG}
 
 cd $pkglocation
 if [ $? -ne 0 ]; then echo "cd to ${pkglocation} failed" | tee -a ${LOG}; exit 1; fi
+curl -Osf ${tarball}
+if [ $? -ne 0 ]; then echo "Failed to download ${tarball}" | tee -a ${LOG}; exit 1; fi
+
+echo "Updating Libra to ${pkgversion}" | tee -a ${LOG}
+
 tar zxf ${pkgversion}.tar.gz 2>&1 >> ${LOG}
 if [ $? -ne 0 ]; then echo "tar failed" | tee -a ${LOG}; exit 1; fi
 cd ${pkgversion}
