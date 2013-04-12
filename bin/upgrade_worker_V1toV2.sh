@@ -166,8 +166,9 @@ fi
 # Update Libra
 ##############
 pkgversion="libra-2.0"
+pkgname="libra-2.0.alpha.8.gc80bedd" # name of directory created from tarball 
 pkglocation="/tmp"
-tarball="http://tarball.openstack.org/libra/${pkgversion}.tar.gz"
+tarball="http://tarballs.openstack.org/libra/${pkgversion}.tar.gz"
 
 echo "Downloading ${pkgversion} tarball to ${pkglocation}" | tee -a ${LOG}
 
@@ -180,8 +181,8 @@ echo "Updating Libra to ${pkgversion}" | tee -a ${LOG}
 
 tar zxf ${pkgversion}.tar.gz 2>&1 >> ${LOG}
 if [ $? -ne 0 ]; then echo "tar failed" | tee -a ${LOG}; exit 1; fi
-cd ${pkgversion}
-if [ $? -ne 0 ]; then echo "cd to ${pkgversion} failed" | tee -a ${LOG}; exit 1; fi
+cd ${pkgname}
+if [ $? -ne 0 ]; then echo "cd to ${pkgname} failed" | tee -a ${LOG}; exit 1; fi
 python setup.py install --install-layout=deb 2>&1 >> ${LOG}
 if [ $? -ne 0 ]; then echo "python install failed" | tee -a ${LOG}; exit 1; fi
 
