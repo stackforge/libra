@@ -18,7 +18,7 @@ import os.path
 import sys
 import ConfigParser
 
-from libra import __version__
+from libra import __version__, __release__
 from logging_handler import CompressedTimedRotatingFileHandler
 
 """
@@ -115,6 +115,10 @@ class Options(object):
             help='print version and exit'
         )
         self.parser.add_argument(
+            '--release', dest='release', action='store_true',
+            help='print full release version info and exit'
+        )
+        self.parser.add_argument(
             '-n', '--nodaemon', dest='nodaemon', action='store_true',
             help='do not run in daemon mode'
         )
@@ -158,6 +162,9 @@ class Options(object):
         args = self.parser.parse_args()
         if args.version:
             print("Libra toolset version %s" % __version__)
+            sys.exit(0)
+        if args.release:
+            print("Libra toolset release %s" % __release__)
             sys.exit(0)
         return args
 
