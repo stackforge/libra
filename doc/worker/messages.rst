@@ -181,7 +181,11 @@ The DISCOVER message allows a sender (i.e., API server) to discover the version
 of a running worker process. The version can then be used to decide which
 messages are supported.
 
-A **version** field will be returned in the JSON message.
+A **version** field will be returned in the JSON message. It will be in the
+format of <major>.<minor>.
+
+A **release** field will also be returned in the JSON message. It contains
+more complete versioning information as returned from a 'git describe'.
 
 Required Fields
 ^^^^^^^^^^^^^^^
@@ -205,6 +209,7 @@ Example Response
   {
     "hpcs_action": "DISCOVER",
     "version": "1.0",
+    "release": "1.0.alpha.3.gca84083",
     "hpcs_response": "PASS"
   }
 

@@ -13,6 +13,7 @@
 # under the License.
 
 from libra import __version__ as libra_version
+from libra import __release__ as libra_release
 from libra.common.faults import BadRequest
 from libra.worker.drivers.base import LoadBalancerDriver
 
@@ -85,6 +86,7 @@ class LBaaSController(object):
         which can be used to determine which messages are supported.
         """
         self.msg['version'] = libra_version
+        self.msg['release'] = libra_release
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
 

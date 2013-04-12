@@ -2,6 +2,7 @@ import logging
 import testtools
 import libra.tests.mock_objects
 from libra import __version__ as libra_version
+from libra import __release__ as libra_release
 from libra.worker.controller import LBaaSController as c
 from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
@@ -145,8 +146,10 @@ class TestWorkerController(testtools.TestCase):
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
         self.assertIn('version', response)
+        self.assertIn('release', response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
         self.assertEquals(response['version'], libra_version)
+        self.assertEquals(response['release'], libra_release)
 
     def testArchiveMissingMethod(self):
         msg = {
