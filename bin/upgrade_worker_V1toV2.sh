@@ -167,7 +167,7 @@ fi
 ##############
 pkgversion="libra-2.0"
 pkglocation="/tmp"
-tarball="http://tarball.openstack.org/libra/${pkgversion}.tar.gz"
+tarball="http://tarballs.openstack.org/libra/${pkgversion}.tar.gz"
 
 echo "Downloading ${pkgversion} tarball to ${pkglocation}" | tee -a ${LOG}
 
