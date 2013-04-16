@@ -1,4 +1,4 @@
-# Copyright 2012 Hewlett-Packard Development Company, L.P.
+# Copyright 2013 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -16,66 +16,48 @@ import daemon
 import daemon.pidfile
 import daemon.runner
 import lockfile
-import gearman.errors
 import grp
-import json
 import os
 import pwd
-import socket
 import time
 
-from libra.common.json_gearman import JSONGearmanWorker
 from libra.common.options import Options, setup_logging
+from libra.openstack.common import importutils
+from libra.statsd.drivers.base import known_drivers
+from libra.statsd.scheduler import Sched
 
 
-class CustomJSONGearmanWorker(JSONGearmanWorker):
-    """ Custom class we will use to pass arguments to the Gearman task. """
-    logger = None
-
-
-def handler(worker, job):
-    """ Main Gearman worker task. """
-    logger = worker.logger
-    logger.debug("Received JSON message: %s" % json.dumps(job.data, indent=4))
-    return {"OK"}
-
-
-def start(logger, servers):
+def start(logger, args, drivers):
     """ Start the main server processing. """
 
-    hostname = socket.gethostname()
-    task_name = "lbaas-statistics"
-    worker = CustomJSONGearmanWorker(servers)
-    worker.set_client_id(hostname)
-    worker.register_task(task_name, handler)
-    worker.logger = logger
-
-    retry = True
-
-    while retry:
-        try:
-            worker.work()
-        except KeyboardInterrupt:
-            retry = False
-        except gearman.errors.ServerUnavailable:
-            logger.error("[statsd] Job server(s) went away. Reconnecting.")
-            time.sleep(60)
-            retry = True
-        except Exception as e:
-            logger.critical("[statsd] Exception: %s, %s" % (e.__class__, e))
-            retry = False
-
-    logger.info("[statsd] Statistics process terminated.")
+    scheduler = Sched(logger, args, drivers)
+    scheduler.start()
+    while True:
+        time.sleep(1)
 
 
 def main():
     """ Main Python entry point for the statistics daemon. """
+    drivers = []
 
     options = Options('statsd', 'Statistics Daemon')
+    options.parser.add_argument(
+        '--driver', dest='driver',
+        choices=known_drivers.keys(), default='dummy',
+        help='type of device to use'
+    )
     options.parser.add_argument(
         '--server', dest='server', action='append', metavar='HOST:PORT',
         default=[],
         help='add a Gearman job server to the connection list'
+    )
+    options.parser.add_argument(
+        '--ping_interval', type=int, default=60,
+        help='how often to ping load balancers (in seconds)'
+    )
+    options.parser.add_argument(
+        '--api_server', action='append', metavar='HOST:PORT', default=[],
+        help='a list of API servers to connect to'
     )
 
     args = options.run()
@@ -93,10 +75,28 @@ def main():
         svr_list = args.server.split()
         args.server = svr_list
 
+    if not args.api_server:
+        # NOTE(shrews): Can't set a default in argparse method because the
+        # value is appended to the specified default.
+        args.api_server.append('localhost:8889')
+    elif not isinstance(args.api_server, list):
+        # NOTE(shrews): The Options object cannot intelligently handle
+        # creating a list from an option that may have multiple values.
+        # We convert it to the expected type here.
+        svr_list = args.api_server.split()
+        args.api_server = svr_list
+
     logger.info("Job server list: %s" % args.server)
+    logger.info("Selected drivers: {0}".format(args.driver))
+    if not isinstance(args.driver, list):
+        args.driver = args.driver.split()
+    for driver in args.driver:
+        drivers.append(importutils.import_class(
+            known_drivers[driver]
+        ))
 
     if args.nodaemon:
-        start(logger, args.server)
+        start(logger, args, drivers)
     else:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
         if daemon.runner.is_pidfile_stale(pidfile):
@@ -131,4 +131,4 @@ def main():
                 args.pid
             )
 
-        start(logger, args.server)
+        start(logger, args, drivers)
