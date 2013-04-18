@@ -20,6 +20,10 @@ from libra.statsd.admin_api import AdminAPI
 from libra.statsd.gearman import GearJobs
 
 
+class NodeNotFound(Exception):
+    pass
+
+
 class Sched(object):
     def __init__(self, logger, args, drivers):
         self.logger = logger
@@ -78,18 +82,34 @@ class Sched(object):
             failed_nodes = gearman.send_pings(node_list)
             failed = len(failed_nodes)
             if failed > 0:
-                self._send_fails(lb_list, failed_nodes)
+                self._send_fails(lb_list, failed_nodes, lb_list)
         else:
             self.logger.error('No working API server found')
             return (0, 0)
 
         return pings, failed
 
-    def _send_fails(self, failed_nodes):
-        # TODO: add message and more node details
+    def _send_fails(self, failed_nodes, node_list):
         for node in failed_nodes:
+            data = self._get_node(node, node_list)
+            message = (
+                'Load balancer failed\n'
+                'ID: {0}\n'
+                'IP: {0}\n'
+                'tenant: {0}\n'.format(
+                    data['id'], data['floatingIPAddr'],
+                    data['loadBalancers'][0]['hpcs_tenantid']
+                )
+            )
             for driver in self.drivers:
-                driver.send_alert('Node failed with IP {0}', node)
+                driver.send_alert(message)
+
+    def _get_node(self, node, node_list):
+        for n in node_list:
+            if n['name'] == node:
+                return n
+
+        raise NodeNotFound
 
     def start_ping_sched(self):
         self.logger.info('LB ping check timer sleeping for {secs} seconds'
