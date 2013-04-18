@@ -56,6 +56,11 @@ def main():
         help='how often to ping load balancers (in seconds)'
     )
     options.parser.add_argument(
+        '--repair_interval', type=int, default=180,
+        help='how often to check if a load balancer has been repaired (in '
+             'seconds)'
+    )
+    options.parser.add_argument(
         '--api_server', action='append', metavar='HOST:PORT', default=[],
         help='a list of API servers to connect to'
     )

@@ -25,3 +25,6 @@ class AlertDriver(object):
 
     def send_alert(self, message, device_id):
         raise NotImplementedError()
+
+    def send_repair(self, message, device_id):
+        raise NotImplementedError()

@@ -16,4 +16,7 @@ from libra.statsd.drivers.base import AlertDriver
 
 class DummyDriver(AlertDriver):
     def send_alert(self, message, device_id):
-        self.logger.info('Dummy alert send of {0}'.format(message))
+        self.logger.info('Dummy alert of: {0}'.format(message))
+
+    def send_repair(self, message, dervice_id):
+        self.logger.info('Dummy repair of: {0}'.format(message))
