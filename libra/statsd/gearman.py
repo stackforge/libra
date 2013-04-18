@@ -45,3 +45,29 @@ class GearJobs(object):
                 continue
 
         return failed_list
+
+    def send_repair(self, node_list):
+        list_of_jobs = []
+        repaired_list = []
+        job_data = {"hpcs_action": "STATS"}
+        for node in node_list:
+            list_of_jobs.append(dict(task=str(node), data=job_data))
+        submitted_pings = self.gm_client.submit_multiple_jobs(
+            list_of_jobs, background=False, wait_until_complete=True,
+            poll_timeout=5.0
+        )
+        for ping in submitted_pings:
+            if ping.state == 'UNKNOWN':
+                # TODO: Gearman server failed, ignoring for now
+                self.logger.error('Gearman Job server fail')
+                continue
+            elif ping.timed_out:
+                # Ping timeout
+                continue
+            elif ping.result['hpcs_response'] == 'FAIL':
+                # Error returned by Gearman
+                continue
+            else:
+                repaired_list.append(ping.job.task)
+
+        return repaired_list
