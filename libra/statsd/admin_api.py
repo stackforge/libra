@@ -15,6 +15,7 @@
 import requests
 import random
 import sys
+import json
 
 
 class AdminAPI(object):
@@ -52,11 +53,35 @@ class AdminAPI(object):
             marker = marker + limit
         return lb_list
 
+    def fail_device(self, device_id):
+        body = {
+            "status": "ERROR",
+            "statusDescription": "Load balancer failed ping test"
+        }
+        self._put(
+            '{url}/devices/{device_id}'.format(
+                url=self.url, device_id=device_id
+            ), body
+        )
+
     def _get_node_list(self, limit, marker):
         return self._get(
             '{url}/devices?marker={marker}&limit={limit}'
             .format(url=self.url, marker=marker, limit=limit)
         )
+
+    def _put(self, url, data):
+        try:
+            r = requests.put(url, data=json.dumps(data), verify=False)
+        except requests.exceptions.RequestException:
+            self.logger.exception('Exception communicating to server')
+            return False, None
+
+        if r.status_code != 200:
+            self.logger.error('Server returned error {code}'
+                              .format(code=r.status_code))
+            return False, r.json()
+        return True, r.json()
 
     def _get(self, url):
         try:

@@ -12,8 +12,11 @@
 # License for the specific language governing permissions and limitations
 
 from libra.statsd.drivers.base import AlertDriver
+from libra.statsd.admin_api import AdminAPI
 
 
-class DummyDriver(AlertDriver):
+class HPRestDriver(AlertDriver):
     def send_alert(self, message, device_id):
-        self.logger.info('Dummy alert send of {0}'.format(message))
+        api = AdminAPI(self.args.api_server, self.logger)
+        if api.is_online():
+            api.fail_device(device_id)

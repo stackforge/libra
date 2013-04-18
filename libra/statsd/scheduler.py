@@ -95,14 +95,14 @@ class Sched(object):
             message = (
                 'Load balancer failed\n'
                 'ID: {0}\n'
-                'IP: {0}\n'
-                'tenant: {0}\n'.format(
+                'IP: (1}\n'
+                'tenant: {2}\n'.format(
                     data['id'], data['floatingIPAddr'],
                     data['loadBalancers'][0]['hpcs_tenantid']
                 )
             )
             for driver in self.drivers:
-                driver.send_alert(message)
+                driver.send_alert(message, data['id'])
 
     def _get_node(self, node, node_list):
         for n in node_list:
