@@ -12,8 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import gearman
-
 from libra.common.json_gearman import JSONGearmanClient
 
 
@@ -27,23 +25,23 @@ class GearJobs(object):
         failed_list = []
         job_data = {"hpcs_action": "STATS"}
         for node in node_list:
-            list_of_jobs.append(dict(task=node, data=job_data))
+            list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(
             list_of_jobs, background=False, wait_until_complete=True,
             poll_timeout=5.0
         )
         for ping in submitted_pings:
-            if ping.state == gearman.JOB_UNKNOWN:
+            if ping.state == 'UNKNOWN':
                 # TODO: Gearman server failed, ignoring for now
                 self.logger.error('Gearman Job server fail')
                 continue
             if ping.timed_out:
                 # Ping timeout
-                failed_list.append(ping['task'])
+                failed_list.append(ping.job.task)
                 continue
             if ping.result['hpcs_response'] == 'FAIL':
                 # Error returned by Gearman
-                failed_list.append(ping['task'])
+                failed_list.append(ping.job.task)
                 continue
 
         return failed_list

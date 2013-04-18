@@ -82,7 +82,7 @@ class Sched(object):
             failed_nodes = gearman.send_pings(node_list)
             failed = len(failed_nodes)
             if failed > 0:
-                self._send_fails(lb_list, failed_nodes, lb_list)
+                self._send_fails(failed_nodes, lb_list)
         else:
             self.logger.error('No working API server found')
             return (0, 0)
@@ -95,14 +95,15 @@ class Sched(object):
             message = (
                 'Load balancer failed\n'
                 'ID: {0}\n'
-                'IP: (1}\n'
+                'IP: {1}\n'
                 'tenant: {2}\n'.format(
-                    data['id'], data['floatingIPAddr'],
+                    data['id'], data['floatingIpAddr'],
                     data['loadBalancers'][0]['hpcs_tenantid']
                 )
             )
             for driver in self.drivers:
-                driver.send_alert(message, data['id'])
+                instance = driver(self.logger)
+                instance.send_alert(message, data['id'])
 
     def _get_node(self, node, node_list):
         for n in node_list:

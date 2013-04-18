@@ -18,6 +18,10 @@ import sys
 import json
 
 
+class APIError(Exception):
+    pass
+
+
 class AdminAPI(object):
     def __init__(self, addresses, logger):
         self.logger = logger
@@ -42,7 +46,9 @@ class AdminAPI(object):
         limit = 20
         lb_list = []
         while True:
-            nodes = self._get_node_list(limit, marker)
+            success, nodes = self._get_node_list(limit, marker)
+            if not success:
+                raise APIError
             # if we hit an empty device list we have hit end of list
             if not len(nodes['devices']):
                 break
