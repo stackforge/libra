@@ -59,6 +59,21 @@ def main():
         '--api_server', action='append', metavar='HOST:PORT', default=[],
         help='a list of API servers to connect to'
     )
+    # Datadog plugin options
+    options.parser.add_argument(
+        '--datadog_api_key', help='API key for datadog alerting'
+    )
+    options.parser.add_argument(
+        '--datadog_app_key', help='Application key for datadog alerting'
+    )
+    options.parser.add_argument(
+        '--datadog_message_tail',
+        help='Text to add at the end of a Datadog alert'
+    )
+    options.parser.add_argument(
+        '--datadog_tags',
+        help='A space separated list of tags for Datadog alerts'
+    )
 
     args = options.run()
 

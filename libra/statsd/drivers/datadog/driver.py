@@ -11,15 +11,17 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 
-known_drivers = {
-    'dummy': 'libra.statsd.drivers.dummy.driver.DummyDriver',
-    'datadog': 'libra.statsd.driver.dummy.driver.DatadogDriver'
-}
+from libra.statsd.drivers.base import AlertDriver
+from dogapi import dog_http_api as api
 
 
-class AlertDriver(object):
-    def __init__(self, logger):
-        self.logger = logger
-
-    def send_alert(self):
-        raise NotImplementedError()
+class DatadogDriver(AlertDriver):
+    def send_alert(self, message):
+        api.api_key = self.args.datadog_apikey
+        api.application_key = self.args.datadog_appkey
+        title = 'Load balancer failure'
+        text = 'Load balancer failed with message {0} {1}'.format(
+            message, self.args.datadog_message_tail
+        )
+        tags = self.args.datadog_tags.split()
+        api.event_with_response(title, text, tags=tags, alert_type='error')
