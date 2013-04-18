@@ -16,9 +16,12 @@ from dogapi import dog_http_api as api
 
 
 class DatadogDriver(AlertDriver):
+    def __init__(self, logger, args):
+        api.api_key = args.datadog_api_key
+        api.application_key = args.datadog_app_key
+        super(DatadogDriver, self).__init__(logger, args)
+
     def send_alert(self, message, device_id):
-        api.api_key = self.args.datadog_api_key
-        api.application_key = self.args.datadog_app_key
         title = 'Load balancer failure'
         text = 'Load balancer failed with message {0} {1}'.format(
             message, self.args.datadog_message_tail
@@ -26,5 +29,16 @@ class DatadogDriver(AlertDriver):
         tags = self.args.datadog_tags.split()
         resp = api.event_with_response(
             title, text, tags=tags, alert_type='error'
+        )
+        self.logger.info('Datadog alert response: {0}'.format(resp))
+
+    def send_repair(self, message, device_id):
+        title = 'Load balancer recovered'
+        text = 'Load balancer recovered with message {0} {1}'.format(
+            message, self.args.datadog_message_tail
+        )
+        tags = self.args.datadog_tags.split()
+        resp = api.event_with_response(
+            title, text, tags=tags, alert_type='success'
         )
         self.logger.info('Datadog alert response: {0}'.format(resp))

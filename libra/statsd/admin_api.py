@@ -40,8 +40,6 @@ class AdminAPI(object):
         self.online = False
 
     def get_ping_list(self):
-        # TODO: we need an error list to ping (maybe separate sched?) with
-        # all clear
         marker = 0
         limit = 20
         lb_list = []
@@ -59,10 +57,39 @@ class AdminAPI(object):
             marker = marker + limit
         return lb_list
 
+    def get_repair_list(self):
+        marker = 0
+        limit = 20
+        lb_list = []
+        while True:
+            success, nodes = self._get_node_list(limit, marker)
+            if not success:
+                raise APIError
+            # if we hit an empty device list we have hit end of list
+            if not len(nodes['devices']):
+                break
+
+            for device in nodes['devices']:
+                if device['status'] == 'ERROR':
+                    lb_list.append(device)
+            marker = marker + limit
+        return lb_list
+
     def fail_device(self, device_id):
         body = {
             "status": "ERROR",
             "statusDescription": "Load balancer failed ping test"
+        }
+        self._put(
+            '{url}/devices/{device_id}'.format(
+                url=self.url, device_id=device_id
+            ), body
+        )
+
+    def repair_device(self, device_id):
+        body = {
+            "status": "ONLINE",
+            "statusDescription": "Load balancer repaired"
         }
         self._put(
             '{url}/devices/{device_id}'.format(

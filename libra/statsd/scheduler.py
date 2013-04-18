@@ -29,14 +29,15 @@ class Sched(object):
         self.logger = logger
         self.args = args
         self.drivers = drivers
-        self.rlock = threading.RLock()
         self.ping_timer = None
+        self.repair_timer = None
 
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
 
     def start(self):
         self.ping_lbs()
+        self.repair_lbs()
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -46,6 +47,8 @@ class Sched(object):
     def shutdown(self, error):
         if self.ping_timer:
             self.ping_timer.cancel()
+        if self.repair_timer:
+            self.repair_timer.cancel()
 
         if not error:
             self.logger.info('Safely shutting down')
@@ -54,14 +57,25 @@ class Sched(object):
             self.logger.info('Shutting down due to error')
             sys.exit(1)
 
+    def repair_lbs(self):
+        tested = 0
+        repaired = 0
+        try:
+            tested, repaired = self._exec_repair()
+        except Exception:
+            self.logger.exception('Uncaught exception during LB repair')
+        # Need to restart timer after every ping cycle
+        self.logger.info('{tested} loadbalancers tested, {repaired} repaired'
+                         .format(tested=tested, repaired=repaired))
+        self.start_repair_sched()
+
     def ping_lbs(self):
         pings = 0
         failed = 0
-        with self.rlock:
-            try:
-                pings, failed = self._exec_ping()
-            except Exception:
-                self.logger.exception('Uncaught exception during LB ping')
+        try:
+            pings, failed = self._exec_ping()
+        except Exception:
+            self.logger.exception('Uncaught exception during LB ping')
         # Need to restart timer after every ping cycle
         self.logger.info('{pings} loadbalancers pinged, {failed} failed'
                          .format(pings=pings, failed=failed))
@@ -89,6 +103,28 @@ class Sched(object):
 
         return pings, failed
 
+    def _exec_repair(self):
+        tested = 0
+        repaired = 0
+        node_list = []
+        self.logger.info('Running repair check')
+        api = AdminAPI(self.args.api_server, self.logger)
+        if api.is_online():
+            lb_list = api.get_repair_list()
+            tested = len(lb_list)
+            for lb in lb_list:
+                node_list.append(lb['name'])
+            gearman = GearJobs(self.logger, self.args)
+            repaired_nodes = gearman.send_repair(node_list)
+            repaired = len(repaired_nodes)
+            if repaired > 0:
+                self._send_repair(repaired_nodes, lb_list)
+        else:
+            self.logger.error('No working API server found')
+            return (0, 0)
+
+        return tested, repaired
+
     def _send_fails(self, failed_nodes, node_list):
         for node in failed_nodes:
             data = self._get_node(node, node_list)
@@ -109,6 +145,27 @@ class Sched(object):
                     )
                 )
                 instance.send_alert(message, data['id'])
+
+    def _send_repair(self, repaired_nodes, node_list):
+        for node in repaired_nodes:
+            data = self._get_node(node, node_list)
+            message = (
+                'Load balancer repaired\n'
+                'ID: {0}\n'
+                'IP: {1}\n'
+                'tenant: {2}\n'.format(
+                    data['id'], data['floatingIpAddr'],
+                    data['loadBalancers'][0]['hpcs_tenantid']
+                )
+            )
+            for driver in self.drivers:
+                instance = driver(self.logger, self.args)
+                self.logger.info(
+                    'Sending repair of {0} to {1}'.format(
+                        node, instance.__class__.__name__
+                    )
+                )
+                instance.send_repair(message, data['id'])
 
     def _get_node(self, node, node_list):
         for n in node_list:

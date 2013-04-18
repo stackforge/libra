@@ -20,3 +20,8 @@ class HPRestDriver(AlertDriver):
         api = AdminAPI(self.args.api_server, self.logger)
         if api.is_online():
             api.fail_device(device_id)
+
+    def send_repair(self, message, device_id):
+        api = AdminAPI(self.args.api_server, self.logger)
+        if api.is_online():
+            api.repair_device(device_id)
