@@ -173,15 +173,23 @@ class HAProxyDriver(LoadBalancerDriver):
         # balancer, and place the compressed file in that container. Creating
         # containers is idempotent so no need to check if it already exists.
 
-        container = '/'.join([basepath, lbid])
-        conn = sc.Connection(preauthurl=endpoint, preauthtoken=token)
-        conn.put_container(basepath)
-        conn.put_container(container)
+        object_path = '/'.join([lbid, objname])
         logfh = open(compressed_file, 'rb')
-        conn.put_object(container=container,
-                        obj=objname,
-                        etag=etag,
-                        contents=logfh)
+
+        try:
+            conn = sc.Connection(preauthurl=endpoint, preauthtoken=token)
+            conn.put_container(basepath)
+            conn.put_object(container=basepath,
+                            obj=object_path,
+                            etag=etag,
+                            contents=logfh)
+        except Exception as e:
+            logfh.close()
+            os.remove(compressed_file)
+            errmsg = "Failure during Swift operations. Swift enabled?"
+            errmsg = errmsg + "\nException was: %s" % e
+            raise Exception(errmsg)
+
         logfh.close()
         os.remove(compressed_file)
 
