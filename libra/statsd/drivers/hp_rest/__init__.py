@@ -10,10 +10,4 @@
 # distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
-
-from libra.statsd.drivers.base import AlertDriver
-
-
-class DummyDriver(AlertDriver):
-    def send_alert(self, message, device_id):
-        self.logger.info('Dummy alert send of {0}'.format(message))
+# under the License.
