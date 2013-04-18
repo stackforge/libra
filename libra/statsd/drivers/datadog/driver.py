@@ -16,12 +16,15 @@ from dogapi import dog_http_api as api
 
 
 class DatadogDriver(AlertDriver):
-    def send_alert(self, message):
-        api.api_key = self.args.datadog_apikey
-        api.application_key = self.args.datadog_appkey
+    def send_alert(self, message, device_id):
+        api.api_key = self.args.datadog_api_key
+        api.application_key = self.args.datadog_app_key
         title = 'Load balancer failure'
         text = 'Load balancer failed with message {0} {1}'.format(
             message, self.args.datadog_message_tail
         )
         tags = self.args.datadog_tags.split()
-        api.event_with_response(title, text, tags=tags, alert_type='error')
+        resp = api.event_with_response(
+            title, text, tags=tags, alert_type='error'
+        )
+        self.logger.info('Datadog alert response: {0}'.format(resp))

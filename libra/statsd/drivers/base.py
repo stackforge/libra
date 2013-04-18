@@ -13,14 +13,15 @@
 
 known_drivers = {
     'dummy': 'libra.statsd.drivers.dummy.driver.DummyDriver',
-    'datadog': 'libra.statsd.driver.dummy.driver.DatadogDriver',
-    'hp_rest': 'libra.statsd.driver.hp_rest.driver.HPRestDriver'
+    'datadog': 'libra.statsd.drivers.datadog.driver.DatadogDriver',
+    'hp_rest': 'libra.statsd.drivers.hp_rest.driver.HPRestDriver'
 }
 
 
 class AlertDriver(object):
-    def __init__(self, logger):
+    def __init__(self, logger, args):
         self.logger = logger
+        self.args = args
 
     def send_alert(self, message, device_id):
         raise NotImplementedError()
