@@ -112,6 +112,9 @@ class Sched(object):
         if api.is_online():
             lb_list = api.get_repair_list()
             tested = len(lb_list)
+            if tested == 0:
+                self.logger.info('No LBs need repair')
+                return (0, 0)
             for lb in lb_list:
                 node_list.append(lb['name'])
             gearman = GearJobs(self.logger, self.args)
