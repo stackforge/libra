@@ -102,7 +102,12 @@ class Sched(object):
                 )
             )
             for driver in self.drivers:
-                instance = driver(self.logger)
+                instance = driver(self.logger, self.args)
+                self.logger.info(
+                    'Sending failure of {0} to {1}'.format(
+                        node, instance.__class__.__name__
+                    )
+                )
                 instance.send_alert(message, data['id'])
 
     def _get_node(self, node, node_list):
