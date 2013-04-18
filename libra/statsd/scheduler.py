@@ -180,3 +180,10 @@ class Sched(object):
         self.ping_timer = threading.Timer(self.args.ping_interval,
                                           self.ping_lbs, ())
         self.ping_timer.start()
+
+    def start_repair_sched(self):
+        self.logger.info('LB repair check timer sleeping for {secs} seconds'
+                         .format(secs=self.args.repair_interval))
+        self.repair_timer = threading.Timer(self.args.repair_interval,
+                                          self.repair_lbs, ())
+        self.repair_timer.start()
