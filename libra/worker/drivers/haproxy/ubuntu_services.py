@@ -95,14 +95,7 @@ class UbuntuServices(ServicesBase):
 
         # Copy any existing configuration file to a backup.
         if os.path.exists(self._config_file):
-            copy_cmd = "/usr/bin/sudo -n /bin/cp %s %s" % (self._config_file,
-                                                           self._backup_config)
-            try:
-                subprocess.check_output(copy_cmd.split(),
-                                        stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError as e:
-                raise Exception("Failed to copy configuration file: %s\n%s"
-                                % (e, e.output.rstrip('\n')))
+            self.sudo_copy(self._config_file, self._backup_config)
 
         # Move the temporary config file to production version.
         move_cmd = "/usr/bin/sudo -n /bin/mv %s %s" % (tmpfile,
