@@ -13,17 +13,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pecan import conf
 
-# TODO replace this with something better 
+# TODO replace this with something better
 conn_string = '''mysql://%s:%s@%s/%s''' % (
-    conf.database.username, 
-    conf.database.password, 
-    conf.database.host, 
+    conf.database.username,
+    conf.database.password,
+    conf.database.host,
     conf.database.schema
 )
 
@@ -37,29 +36,22 @@ class LibraDeclarativeBase(DeclarativeBase):
     """overriding DeclarativeBase so that we can add our own default functions
     """
     add_to_json = []
-    
-    #TODO make this actually work .. needs some thought 
+    #TODO make this actually work .. needs some thought
     def update_from_json(self, input_json):
         """updates a record from an inputed json file"""
         for feild in input_json.iterkeys():
             self.feild = input_json[feild]
-        
     
     def output_to_json(self):
         """serializes an objects data into json so that it can be used as the gearman
-        client payload.  
-        
-        """
+        client payload."""
         output = {}
         for col in self.add_to_json:
             output[col] = self.col
-        
         return json.loads(output)
 
 class Device(LibraDeclarativeBase):
-    """
-    
-    """
+    """device model"""
     __tablename__ = 'devices'
     #column definitions
     az = Column(u'az', INTEGER(), nullable=False)
@@ -72,24 +64,21 @@ class Device(LibraDeclarativeBase):
     status = Column(u'status', VARCHAR(length=128), nullable=False)
     type = Column(u'type', VARCHAR(length=128), nullable=False)
     updated = Column(u'updated', TIMESTAMP(), nullable=False)
-    
-    
+
+
     @static
     def find_free_device()
         """queries for free and clear device
-        
+
         sql form java api 
             SELECT * FROM devices WHERE loadbalancers = " + EMPTY_LBIDS + " AND status = '" + Device.STATUS_OFFLINE + "'" ;
-     
         """
         return session.query(Device)\
                 .filter_by(loadbalancers="",status="OFFLINE")\
                 .first()
-        
+
 class LoadBalancer(LibraDeclarativeBase):
-    """
-    
-    """
+    """load balancer model"""
     __tablename__ = 'loadbalancers'
     #column definitions
     algorithm = Column(u'algorithm', VARCHAR(length=80), nullable=False)
@@ -103,31 +92,25 @@ class LoadBalancer(LibraDeclarativeBase):
     status = Column(u'status', VARCHAR(length=50), nullable=False)
     tenantid = Column(u'tenantid', VARCHAR(length=128), nullable=False)
     updated = Column(u'updated', TIMESTAMP(), nullable=False)
-    
     nodes = relationship('Node', backref=backref('loadbalancers', order_by=Node.id))
-    
-    
-    
+
     add_to_json = [
         'id',
         'name',
         'device',
         'algorithm',
         'port',
-        'protocal', 
-        'status', 
-        'tenantid', 
+        'protocal',
+        'status',
+        'tenantid',
         'updated',
         'created',
         'nodes'
     ]
 
-    
-          
+
 class Node(LibraDeclarativeBase):
-    """
-    
-    """
+    """node model"""
     __tablename__ = 'nodes'
     #column definitions
     address = Column(u'address', VARCHAR(length=128), nullable=False)
@@ -140,22 +123,6 @@ class Node(LibraDeclarativeBase):
     
     loadbalancers = relationship('LoadBalancer', backref=backref('node', order_by=LoadBalancer.id))
 
-# TODO Figure out the best way to get and store / load in the virtual ips
-class VirtualIps(LibraDeclarativeBase):
-    id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
-    address = Column(u'address', VARCHAR(length=128), nullable=False)
-    version = Column(u'version', VARCHAR(length=128), nullable=False)
-    type = Column(u'type', VARCHAR(length=128), nullable=False)
-
-class Version(DeclarativeBase):
-    """
     
-    """
-    __tablename__ = 'versions'
-    #column definitions
-    major = Column(u'major', INTEGER(), primary_key=True, nullable=False)
-    minor = Column(u'minor', INTEGER(), nullable=False)
-
-    
-""" session def"""
+"""session"""
 session = sessionmaker(bind=engine)()

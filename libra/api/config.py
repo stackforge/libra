@@ -15,7 +15,7 @@
 
 # Server Specific Configurations
 server = {
-    'port': '8080',
+    'port': '8887',
     'host': '0.0.0.0'
 }
 
@@ -52,7 +52,7 @@ logging = {
     }
 }
 
-database = { 
+database = {
     'username':'root',
     'password':'testaburger',
     'host':'localhost',
@@ -61,12 +61,4 @@ database = {
 
 gearman = {
     'server':'localhost:4730',
-    
 }
-
-# Custom Configurations must be in Python dictionary format::
-#
-# foo = {'bar':'baz'}
-#
-# All configurations are accessible at::
-# pecan.conf

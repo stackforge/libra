@@ -21,45 +21,45 @@ from api.model.responses import Responses
 
 class ConnectionThrottleController(RestController):
     """functions for /loadbalancers/{loadBalancerId}/connectionthrottle/* routing"""
-    
+
     @expose('json')
     def get(self, load_balancer_id):
         """List connection throttling configuration.
-        
+
         :param load_balancer_id: id of lb 
-        
+
         Url:
-           GET	 /loadbalancers/loadBalancerId/connectionthrottle	 
-        
+           GET /loadbalancers/loadBalancerId/connectionthrottle
+
         Returns: dict
         """
         response.status = 201
         return Responses.LoadBalancers.ConnectionThrottle.get
-        
-    @expose('json')    
+
+    @expose('json')
     def post(self, load_balancer_id, *args):
         """Update throttling configuration.
-        
-        :param load_balancer_id: id of lb 
+
+        :param load_balancer_id: id of lb
         :param *args: holds the posted json or xml
-        
+
         Url:
-           PUT	 /loadbalancers/loadBalancerId/connectionthrottle	 
-        
+           PUT /loadbalancers/loadBalancerId/connectionthrottle
+
         Returns: dict
         """
         response.status = 201
         return Responses.LoadBalancers.ConnectionThrottle.get
-    
+
     @expose()  
     def delete(self, loadbalancer_id):
         """Remove connection throttling configurations.
-        
-        :param load_balancer_id: id of lb 
-        
+
+        :param load_balancer_id: id of lb
+
         Url:
-           DELETE	 /loadbalancers/loadBalancerId/connectionthrottle	 
-        
+           DELETE /loadbalancers/loadBalancerId/connectionthrottle
+
         Returns: void
         """
         response.status = 201

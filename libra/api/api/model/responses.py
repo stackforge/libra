@@ -19,11 +19,9 @@ responder objects for framework.
 class Responses(object):
     """404 - not found"""
     _default = {'status':'404'}
-    
     """not found """
     not_found = {'message':'Object not Found'}
-    
-    """not found """
+    """service_unavailable"""
     service_unavailable = {'message':'Service Unavailable'}
     
     """algorithms response"""
@@ -33,7 +31,6 @@ class Responses(object):
             {'name':'LEAST_CONNECTIONS'}
         ]
     }
-    
     """protocols response"""
     protocols = {
         'protocols':[
@@ -51,14 +48,11 @@ class Responses(object):
             }
         ]
     }
-    
     """class LoadBalancers
-    grouping of lb responses 
+    grouping of lb responses
     """
     class LoadBalancers(object):
-        """LoadBalancers list 
-    
-        """
+        """LoadBalancers list"""
         get = {
             'loadBalancers':[
                 {
@@ -83,9 +77,7 @@ class Responses(object):
                 }
             ]
         }
-    
-        """loadbalancer details
-        """
+        """loadbalancer details"""
         detail = {
             'id':'2000',
             'name':'sample-loadbalancer',
@@ -127,10 +119,7 @@ class Responses(object):
                 'rateInterval':'60'
             }
         }
-    
-        """create loadbalancer response 
-    
-        """
+        """create loadbalancer response"""
         post = {
             'name':'a-new-loadbalancer',
             'id':'144',
@@ -158,7 +147,6 @@ class Responses(object):
                 }
             ]
         }
-        
         """virtualips"""
         virtualips = {
             'virtualIps':[
@@ -170,7 +158,6 @@ class Responses(object):
                 }
             ]
         }
-        
         """usage"""
         usage = {
             'loadBalancerUsageRecords':[
@@ -186,8 +173,6 @@ class Responses(object):
                 }
             ]
         }
-        
-        
         """class HealthMonitor
         monitor responses
         """
@@ -199,7 +184,6 @@ class Responses(object):
                 'timeout':'10',
                 'attemptsBeforeDeactivation':'3'
             }
-            
             """monitor HTTPS response"""
             get_https = {
                'type':'HTTPS',
@@ -208,8 +192,6 @@ class Responses(object):
                'attemptsBeforeDeactivation':'3',
                'path':'/healthcheck'
             }
-        
-        
         """class SessionPersistence
         for managing Session Persistance
         """
@@ -218,8 +200,6 @@ class Responses(object):
             get = {
                 'persistenceType':'HTTP_COOKIE'
             }
-        
-        
         """class Connections
         Throttle Connections responses
         """
@@ -229,13 +209,12 @@ class Responses(object):
                 'maxRequestRate':'50',
                 'rateInterval':'60'
             }
-        
         """class Nodes
-        grouping of node related responses 
+        grouping of node related responses
         """
         class Nodes(object):
             """nodes
-            list of nodes of a specific lb 
+            list of nodes of a specific lb
             """
             get = {
                 'nodes':[
@@ -262,7 +241,6 @@ class Responses(object):
                     },
                 ]
             }
-            
             """node
             a specific node details
             """
@@ -273,10 +251,7 @@ class Responses(object):
                 'condition':'ENABLED',
                 'status':'ONLINE'
             }
-            
-            """nodes create response
-            
-            """
+            """nodes create response"""
             post = {
                 'nodes':[
                     {
@@ -304,7 +279,3 @@ class Responses(object):
                     }
                ]
             }
-            
-            
-            
-            

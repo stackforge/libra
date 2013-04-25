@@ -15,7 +15,6 @@
 
 from pecan import expose, redirect, abort, response
 from pecan.rest import RestController
-#default response objects 
 from api.model.responses import Responses
 
 
@@ -23,44 +22,45 @@ class SessionPersistenceController(RestController):
     """SessionPersistenceController
     functions for /loadbalancers/{loadBalancerId}/sessionpersistence/* routing
     """
-    
+
     @expose('json')
-    def get(self, loadbalancer_id):
-        """get 
-        
-        responds to:
-        GET	 /loadbalancers/loadBalancerId/sessionpersistence	 
-        List session persistence configuration.
-        
-        @notes
-        
+    def get(self, load_balancer_id):
+        """List session persistence configuration.get
+
+        :param load_balancer_id: id of lb
+
+        Url:
+           GET /loadbalancers/{load_balancer_id}/sessionpersistence
+
+        Returns: dict
         """
         response.status = 201
         return Responses.LoadBalancers.SessionPersistence.get
-    
+
     @expose('json')  
-    def post(self, loadbalancer_id):
-        """post
+    def post(self, load_balancer_id):
+        """Enable session persistence.
         
-        responds to:
-        PUT	 /loadbalancers/loadBalancerId/sessionpersistence	 
-        Enable session persistence.
+        :param load_balancer_id: id of lb
         
-        @notes
-        
+        Url:
+            PUT /loadbalancers/{load_balancer_id}/sessionpersistence
+
+        Returns: dict
         """
         response.status = 201
         return Responses.LoadBalancers.SessionPersistence.get
-    
-    @expose('json')   
-    def delete(self, loadbalancer_id):
-        """delete
-        
-        DELETE	 /loadbalancers/loadBalancerId/sessionpersistence	 
-        Disable session persistence.
-        
-        @notes
-        
+
+    @expose('json')
+    def delete(self, load_balancer_id):
+        """Disable session persistence.
+
+        :param load_balancer_id: id of lb
+
+        Url:
+           DELETE /loadbalancers/{load_balancer_id}/sessionpersistence
+
+        Returns: dict
         """
         response.status = 201
 

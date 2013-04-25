@@ -14,13 +14,10 @@
 # under the License.
 
 class Validation(object):
-    """class Validatoin
-        
+    """class Validatoin    
     Validation templates for validict lib
     """
-    
-    """loadbalancer_create
-    """
+    """loadbalancer_create"""
     loadbalancer_create = {
         "name": "a-new-loadbalancer",
         "nodes":[
@@ -34,9 +31,7 @@ class Validation(object):
             }
         ]
      }
-     
-     """nodes_create
-     """
+     """nodes_create"""
      nodes_create = {
         "nodes":[
             {
@@ -56,7 +51,6 @@ class Validation(object):
             }
         ]
     }
-    
     """monitor CONNECT request"""
     monitor_connect = {
         "type": "CONNECT",
@@ -64,8 +58,3 @@ class Validation(object):
         "timeout": "10",
         "attemptsBeforeDeactivation": "3"
     }
-    
-    
-    
-    
-    
