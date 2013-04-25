@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+# Copyright 2013 Hewlett-Packard Development Company, L.P.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+import os
+import sys
+sys.path.append('/home/stack/libra')
+
+from libra.api import config
+from libra.openstack.common import wsgi
+from oslo.config import cfg
+from libra.api import router 
+
+
+if __name__ == '__main__':
+    try:
+        
+        port = cfg.CONF.bind_port
+        host = cfg.CONF.bind_host
+        
+                                       
+        # TODO - David lenwell .. set up logging the right way .. 
+        #logger = setup_logging('libra-api', args)
+        #logging.setup('libra')
+        
+        
+        #LOG.info('Starting Libra API on %s:%s' % (host, port))
+        server = wsgi.run_server(router.API, port)
+        
+        
+    except RuntimeError, e:
+        sys.exit("ERROR: %s" % e)
