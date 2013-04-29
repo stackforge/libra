@@ -38,12 +38,22 @@ def handler(worker, job):
     logger = worker.logger
     driver = worker.driver
 
-    logger.debug("Received JSON message: %s" % json.dumps(job.data, indent=4))
+    # Hide information that should not be logged
+    copy = job.data.copy()
+    if LBaaSController.OBJ_STORE_TOKEN_FIELD in copy:
+        copy[LBaaSController.OBJ_STORE_TOKEN_FIELD] = "*****"
+
+    logger.debug("Received JSON message: %s" % json.dumps(copy, indent=4))
 
     controller = LBaaSController(logger, driver, job.data)
     response = controller.run()
 
-    logger.debug("Return JSON message: %s" % json.dumps(response, indent=4))
+    # Hide information that should not be logged
+    copy = response.copy()
+    if LBaaSController.OBJ_STORE_TOKEN_FIELD in copy:
+        copy[LBaaSController.OBJ_STORE_TOKEN_FIELD] = "*****"
+
+    logger.debug("Return JSON message: %s" % json.dumps(copy, indent=4))
     return response
 
 
