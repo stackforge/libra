@@ -152,8 +152,6 @@ class Sched(object):
     def _send_repair(self, repaired_nodes, node_list):
         for node in repaired_nodes:
             data = self._get_node(node, node_list)
-            if len(data['loadBalancers']) == 0:
-                continue
             message = (
                 'Load balancer repaired\n'
                 'ID: {0}\n'

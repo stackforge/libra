@@ -70,7 +70,8 @@ class AdminAPI(object):
                 break
 
             for device in nodes['devices']:
-                if device['status'] == 'ERROR':
+                if device['status'] == 'ERROR' and \
+                   len(device['loadbalancers']) > 0:
                     lb_list.append(device)
             marker = marker + limit
         return lb_list

@@ -21,8 +21,10 @@ class GearJobs(object):
         self.gm_client = JSONGearmanClient(args.server)
 
     def send_pings(self, node_list):
+        # TODO: lots of duplicated code that needs cleanup
         list_of_jobs = []
         failed_list = []
+        retry_list = []
         job_data = {"hpcs_action": "STATS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
@@ -37,12 +39,36 @@ class GearJobs(object):
                 continue
             if ping.timed_out:
                 # Ping timeout
-                failed_list.append(ping.job.task)
+                retry_list.append(ping.job.task)
                 continue
             if ping.result['hpcs_response'] == 'FAIL':
                 # Error returned by Gearman
                 failed_list.append(ping.job.task)
                 continue
+
+        if len(retry_list) > 0:
+            self.logger.info(
+                "{0} pings timed out, retrying".format(len(retry_list))
+            )
+            for node in node_list:
+                list_of_jobs.append(dict(task=str(node), data=job_data))
+            submitted_pings = self.gm_client.submit_multiple_jobs(
+                list_of_jobs, background=False, wait_until_complete=True,
+                poll_timeout=10.0
+            )
+            for ping in submitted_pings:
+                if ping.state == 'UNKNOWN':
+                    # TODO: Gearman server failed, ignoring for now
+                    self.logger.error('Gearman Job server fail')
+                    continue
+                if ping.timed_out:
+                    # Ping timeout
+                    failed_list.append(ping.job.task)
+                    continue
+                if ping.result['hpcs_response'] == 'FAIL':
+                    # Error returned by Gearman
+                    failed_list.append(ping.job.task)
+                    continue
 
         return failed_list
 
