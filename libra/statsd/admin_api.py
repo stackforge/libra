@@ -71,7 +71,7 @@ class AdminAPI(object):
 
             for device in nodes['devices']:
                 if device['status'] == 'ERROR' and \
-                   len(device['loadbalancers']) > 0:
+                   len(device['loadBalancers']) > 0:
                     lb_list.append(device)
             marker = marker + limit
         return lb_list
