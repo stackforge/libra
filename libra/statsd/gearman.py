@@ -50,7 +50,7 @@ class GearJobs(object):
             self.logger.info(
                 "{0} pings timed out, retrying".format(len(retry_list))
             )
-            for node in node_list:
+            for node in retry_list:
                 list_of_jobs.append(dict(task=str(node), data=job_data))
             submitted_pings = self.gm_client.submit_multiple_jobs(
                 list_of_jobs, background=False, wait_until_complete=True,
