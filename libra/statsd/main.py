@@ -15,9 +15,7 @@
 import daemon
 import daemon.pidfile
 import daemon.runner
-import lockfile
 import grp
-import os
 import pwd
 import time
 
@@ -27,8 +25,13 @@ from libra.statsd.drivers.base import known_drivers
 from libra.statsd.scheduler import Sched
 
 
-def start(logger, args, drivers):
+def start(args, drivers):
     """ Start the main server processing. """
+
+    logger = setup_logging('libra_statsd', args)
+
+    logger.info("Job server list: %s" % args.server)
+    logger.info("Selected drivers: {0}".format(args.driver))
 
     scheduler = Sched(logger, args, drivers)
     scheduler.start()
@@ -82,8 +85,6 @@ def main():
 
     args = options.run()
 
-    logger = setup_logging('libra_statsd', args)
-
     if not args.server:
         # NOTE(shrews): Can't set a default in argparse method because the
         # value is appended to the specified default.
@@ -106,8 +107,6 @@ def main():
         svr_list = args.api_server.split()
         args.api_server = svr_list
 
-    logger.info("Job server list: %s" % args.server)
-    logger.info("Selected drivers: {0}".format(args.driver))
     if not isinstance(args.driver, list):
         args.driver = args.driver.split()
     for driver in args.driver:
@@ -116,39 +115,19 @@ def main():
         ))
 
     if args.nodaemon:
-        start(logger, args, drivers)
+        start(args, drivers)
     else:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
         if daemon.runner.is_pidfile_stale(pidfile):
-            logger.warning("Cleaning up stale PID file")
             pidfile.break_lock()
         context = daemon.DaemonContext(
             umask=0o022,
-            pidfile=pidfile,
-            files_preserve=[logger.handlers[0].stream]
+            pidfile=pidfile
         )
         if args.user:
-            try:
-                context.uid = pwd.getpwnam(args.user).pw_uid
-            except KeyError:
-                logger.critical("Invalid user: %s" % args.user)
-                return 1
-            # NOTE(LinuxJedi): we are switching user so need to switch
-            # the ownership of the log file for rotation
-            os.chown(logger.handlers[0].baseFilename, context.uid, -1)
+            context.uid = pwd.getpwnam(args.user).pw_uid
         if args.group:
-            try:
-                context.gid = grp.getgrnam(args.group).gr_gid
-            except KeyError:
-                logger.critical("Invalid group: %s" % args.group)
-                return 1
+            context.gid = grp.getgrnam(args.group).gr_gid
 
-        try:
-            context.open()
-        except lockfile.LockTimeout:
-            logger.critical(
-                "Failed to lock pidfile %s, another instance running?",
-                args.pid
-            )
-
-        start(logger, args, drivers)
+        context.open()
+        start(args, drivers)

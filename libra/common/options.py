@@ -14,7 +14,9 @@
 import argparse
 import logging
 import logging.handlers
+import os
 import os.path
+import pwd
 import sys
 import ConfigParser
 
@@ -123,6 +125,20 @@ class Options(object):
             help='do not run in daemon mode'
         )
         self.parser.add_argument(
+            '--syslog', dest='syslog', action='store_true',
+            help='use syslog for logging output'
+        )
+        self.parser.add_argument(
+            '--syslog-socket', dest='syslog_socket',
+            default='/dev/log',
+            help='socket to use for syslog connection (default: /dev/log)'
+        )
+        self.parser.add_argument(
+            '--syslog-facility', dest='syslog_facility',
+            default='local7',
+            help='syslog logging facility (default: local7)'
+        )
+        self.parser.add_argument(
             '-d', '--debug', dest='debug', action='store_true',
             help='log debugging output'
         )
@@ -184,7 +200,16 @@ def setup_logging(name, args):
         '%(asctime)-6s: %(name)s - %(levelname)s - %(message)s'
     )
 
-    if logfile:
+    # No timestamp, used with syslog
+    simple_formatter = logging.Formatter(
+        '%(name)s - %(levelname)s - %(message)s'
+    )
+
+    if args.syslog and not args.nodaemon:
+        handler = logging.handlers.SysLogHandler(address=args.syslog_socket,
+                                                 facility=args.syslog_facility)
+        handler.setFormatter(simple_formatter)
+    elif logfile:
         handler = CompressedTimedRotatingFileHandler(
             logfile, when='D', interval=1, backupCount=7
         )
@@ -200,5 +225,11 @@ def setup_logging(name, args):
         logger.setLevel(level=logging.DEBUG)
     elif args.verbose:
         logger.setLevel(level=logging.INFO)
+
+    if logfile and not args.syslog and args.user:
+        # NOTE(LinuxJedi): we are switching user so need to switch
+        # the ownership of the log file for rotation
+        os.chown(logger.handlers[0].baseFilename,
+                 pwd.getpwnam(args.user).pw_uid, -1)
 
     return logger
