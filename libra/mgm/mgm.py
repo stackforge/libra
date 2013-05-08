@@ -22,7 +22,6 @@ import time
 import sys
 import os
 import threading
-import lockfile
 
 from novaclient import exceptions
 from libra.openstack.common import importutils
@@ -33,8 +32,7 @@ from libra.mgm.node_list import NodeList, AccessDenied
 
 
 class Server(object):
-    def __init__(self, logger, args):
-        self.logger = logger
+    def __init__(self, args):
         self.args = args
         self.ct = None
         self.ft = None
@@ -43,10 +41,12 @@ class Server(object):
         try:
             self.node_list = NodeList(self.args.datadir)
         except AccessDenied as exc:
-            self.logger.error(exc)
+            print(str(exc))
             self.shutdown(True)
 
     def main(self):
+        self.logger = setup_logging('libra_mgm', self.args)
+
         self.logger.info(
             'Libra Pool Manager started with a float of {nodes} nodes'
             .format(nodes=self.args.nodes)
@@ -429,46 +429,25 @@ def main():
         svr_list = args.api_server.split()
         args.api_server = svr_list
 
-    logger = setup_logging('libra_mgm', args)
-    server = Server(logger, args)
+    server = Server(args)
 
     if args.nodaemon:
         server.main()
     else:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
         if daemon.runner.is_pidfile_stale(pidfile):
-            logger.warning("Cleaning up stale PID file")
             pidfile.break_lock()
         context = daemon.DaemonContext(
             working_directory='/',
             umask=0o022,
-            pidfile=pidfile,
-            files_preserve=[logger.handlers[0].stream]
+            pidfile=pidfile
         )
         if args.user:
-            try:
-                context.uid = pwd.getpwnam(args.user).pw_uid
-            except KeyError:
-                logger.critical("Invalid user: %s" % args.user)
-                return 1
-            # NOTE(LinuxJedi): we are switching user so need to switch
-            # the ownership of the log file for rotation
-            os.chown(logger.handlers[0].baseFilename, context.uid, -1)
+            context.uid = pwd.getpwnam(args.user).pw_uid
         if args.group:
-            try:
-                context.gid = grp.getgrnam(args.group).gr_gid
-            except KeyError:
-                logger.critical("Invalid group: %s" % args.group)
-                return 1
-        try:
-            context.open()
-        except lockfile.LockTimeout:
-            logger.critical(
-                "Failed to lock pidfile %s, another instance running?",
-                args.pid
-            )
-            return 1
+            context.gid = grp.getgrnam(args.group).gr_gid
 
+        context.open()
         server.main()
 
     return 0

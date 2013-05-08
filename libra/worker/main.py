@@ -16,8 +16,6 @@ import eventlet
 eventlet.monkey_patch()
 
 import daemon
-import lockfile
-import os
 import daemon.pidfile
 import daemon.runner
 import grp
@@ -37,10 +35,7 @@ class EventServer(object):
     non-daemon mode.
     """
 
-    def __init__(self, logger):
-        self.logger = logger
-
-    def main(self, tasks):
+    def main(self, args, tasks):
         """
         Main method of the server.
 
@@ -48,16 +43,22 @@ class EventServer(object):
             A tuple with two items: a function name, and a tuple with
             that function's arguments.
         """
-
         thread_list = []
+        logger = setup_logging('libra_worker', args)
 
-        for task, args in tasks:
-            thread_list.append(eventlet.spawn(task, *args))
+        logger.info("Selected driver: %s" % args.driver)
+        if args.driver == 'haproxy':
+            logger.info("Selected HAProxy service: %s" % args.haproxy_service)
+        logger.info("Job server list: %s" % args.server)
+
+        for task, task_args in tasks:
+            task_args = (logger,) + task_args  # Make the logger the first arg
+            thread_list.append(eventlet.spawn(task, *task_args))
 
         for thd in thread_list:
             thd.wait()
 
-        self.logger.info("Shutting down")
+        logger.info("Shutting down")
 
 
 def main():
@@ -90,8 +91,6 @@ def main():
     )
     args = options.run()
 
-    logger = setup_logging('libra_worker', args)
-
     if not args.server:
         # NOTE(shrews): Can't set a default in argparse method because the
         # value is appended to the specified default.
@@ -107,11 +106,9 @@ def main():
     # along to the Gearman task that will use it to communicate with
     # the device.
 
-    logger.info("Selected driver: %s" % args.driver)
     driver_class = importutils.import_class(known_drivers[args.driver])
 
     if args.driver == 'haproxy':
-        logger.info("Selected HAProxy service: %s" % args.haproxy_service)
         if args.user:
             user = args.user
         else:
@@ -127,52 +124,30 @@ def main():
     else:
         driver = driver_class()
 
-    logger.info("Job server list: %s" % args.server)
-    server = EventServer(logger)
+    server = EventServer()
 
     # Tasks to execute in parallel
     task_list = [
-        (config_thread, (logger, driver, args.server, args.reconnect_sleep))
+        (config_thread, (driver, args.server, args.reconnect_sleep))
     ]
 
     if args.nodaemon:
-        server.main(task_list)
+        server.main(args, task_list)
     else:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
         if daemon.runner.is_pidfile_stale(pidfile):
-            logger.warning("Cleaning up stale PID file")
             pidfile.break_lock()
         context = daemon.DaemonContext(
             working_directory='/etc/haproxy',
             umask=0o022,
-            pidfile=pidfile,
-            files_preserve=[logger.handlers[0].stream]
+            pidfile=pidfile
         )
         if args.user:
-            try:
-                context.uid = pwd.getpwnam(args.user).pw_uid
-            except KeyError:
-                logger.critical("Invalid user: %s" % args.user)
-                return 1
-            # NOTE(LinuxJedi): we are switching user so need to switch
-            # the ownership of the log file for rotation
-            os.chown(logger.handlers[0].baseFilename, context.uid, -1)
+            context.uid = pwd.getpwnam(args.user).pw_uid
         if args.group:
-            try:
-                context.gid = grp.getgrnam(args.group).gr_gid
-            except KeyError:
-                logger.critical("Invalid group: %s" % args.group)
-                return 1
+            context.gid = grp.getgrnam(args.group).gr_gid
 
-        try:
-            context.open()
-        except lockfile.LockTimeout:
-            logger.critical(
-                "Failed to lock pidfile %s, another instance running?",
-                args.pid
-            )
-            return 1
-
-        server.main(task_list)
+        context.open()
+        server.main(args, task_list)
 
     return 0

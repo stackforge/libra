@@ -137,6 +137,18 @@ Worker Command Line Options
       Used to specify the Gearman job server hostname and port. This option
       can be used multiple times to specify multiple job servers.
 
+   .. option:: --syslog
+
+      Send log events to syslog.
+
+   .. option:: --syslog-socket
+
+      Socket to use for the syslog connection. Default is */dev/log*.
+
+   .. option:: --syslog-facility
+
+      Syslog logging facility. Default is *LOCAL7*.
+
    .. option:: --user <USER>
 
       Specifies the user for the process when in daemon mode. Default is the
@@ -263,6 +275,18 @@ Pool Manager Command Line Options
       Name of the PID file to use. Default is:
       */var/run/libra/libra_worker.pid*
 
+   .. option:: --syslog
+
+      Send log events to syslog.
+
+   .. option:: --syslog-socket
+
+      Socket to use for the syslog connection. Default is */dev/log*.
+
+   .. option:: --syslog-facility
+
+      Syslog logging facility. Default is *LOCAL7*.
+
    .. option:: --user <USER>
 
       Specifies the user for the process when in daemon mode. Default is the
@@ -320,3 +344,16 @@ Statsd Command Line Options
    .. option:: --datadog_tags <TAGS>
 
       A list of tags to be used for the datadog driver
+
+   .. option:: --syslog
+
+      Send log events to syslog.
+
+   .. option:: --syslog-socket
+
+      Socket to use for the syslog connection. Default is */dev/log*.
+
+   .. option:: --syslog-facility
+
+      Syslog logging facility. Default is *LOCAL7*.
+
