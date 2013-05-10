@@ -306,8 +306,7 @@ Example Response
 .. code-block:: json
 
   {
-    "hpcs_action": "ARCHIVE",
-    "hpcs_response": "FAIL",
-    "hpcs_error": "Some error string explaining the failure."
+    "hpcs_action": "STATS",
+    "hpcs_response": "PASS"
   }
 
