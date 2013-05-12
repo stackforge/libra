@@ -25,6 +25,9 @@ class FakeOSServices(ServicesBase):
     def remove_configs(self):
         pass
 
+    def sudo_rm(self, file):
+        pass
+
 
 class FakeFaultingOSServices(ServicesBase):
     def service_stop(self):

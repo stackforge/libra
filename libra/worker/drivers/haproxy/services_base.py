@@ -53,3 +53,7 @@ class ServicesBase:
     def sudo_chown(self, file, user, group):
         """ Do a privileged file ownership change. """
         raise NotImplementedError()
+
+    def sudo_rm(self, file):
+        """ Do a privileged file delete. """
+        raise NotImplementedError()

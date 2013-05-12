@@ -71,6 +71,17 @@ class UbuntuServices(ServicesBase):
             raise Exception("Failed to change file ownership: %s\n%s"
                             % (e, e.output.rstrip('\n')))
 
+    def sudo_rm(self, file):
+        if not os.path.exists(file):
+            return
+        cmd = '/usr/bin/sudo -n /bin/rm -f %s' % file
+        try:
+            subprocess.check_output(cmd.split(),
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            raise Exception("Failed to delete %s\n%s"
+                            % (file, e.output.rstrip('\n')))
+
     def write_config(self, config_str):
         """
         Generate the new config and replace the current config file.
@@ -108,12 +119,8 @@ class UbuntuServices(ServicesBase):
 
     def remove_configs(self):
         """ Delete current and backup configs on the local machine. """
-        cmd = '/usr/bin/sudo -n /bin/rm -f %s %s' % (self._config_file,
-                                                     self._backup_config)
-        try:
-            subprocess.check_output(cmd.split())
-        except subprocess.CalledProcessError as e:
-            raise Exception("Failed to delete HAProxy config files: %s" % e)
+        self.sudo_rm(self._config_file)
+        self.sudo_rm(self._backup_config)
 
     def get_stats(self, protocol):
         """
