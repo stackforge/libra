@@ -27,6 +27,7 @@ from libra.worker.drivers.haproxy.services_base import ServicesBase
 class HAProxyDriver(LoadBalancerDriver):
 
     def __init__(self, ossvc, user, group):
+        self.haproxy_log = '/mnt/log/haproxy.log'
         self.user = user
         self.group = group
         ossvc_driver = importutils.import_class(ossvc)
@@ -124,14 +125,12 @@ class HAProxyDriver(LoadBalancerDriver):
 
         proto = proto.lower()
 
-        reallog = '/mnt/log/haproxy.log'
-
-        if not os.path.exists(reallog):
+        if not os.path.exists(self.haproxy_log):
             raise Exception('No HAProxy logs found')
 
         # We need a copy we can read
         reallog_copy = '/tmp/haproxy.log'
-        self.ossvc.sudo_copy(reallog, reallog_copy)
+        self.ossvc.sudo_copy(self.haproxy_log, reallog_copy)
         self.ossvc.sudo_chown(reallog_copy, self.user, self.group)
 
         # Extract contents from the log based on protocol. This is
@@ -257,6 +256,10 @@ class HAProxyDriver(LoadBalancerDriver):
     def delete(self):
         self.ossvc.service_stop()
         self.ossvc.remove_configs()
+        self.ossvc.sudo_rm(self.haproxy_log)
+        # Since haproxy should be logging via syslog, we need a syslog
+        # restart, otherwise the log file will be kept open and not reappear.
+        self.ossvc.syslog_restart()
 
     def get_stats(self, protocol):
         return self.ossvc.get_stats(protocol)

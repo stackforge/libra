@@ -26,6 +26,10 @@ class ServicesBase:
     NOTE: All of these methods must be implemented.
     """
 
+    def syslog_restart(self):
+        """ Restart syslog daemon. """
+        raise NotImplementedError()
+
     def service_stop(self):
         """ Stop the HAProxy service. """
         raise NotImplementedError()
@@ -52,4 +56,8 @@ class ServicesBase:
 
     def sudo_chown(self, file, user, group):
         """ Do a privileged file ownership change. """
+        raise NotImplementedError()
+
+    def sudo_rm(self, file):
+        """ Do a privileged file delete. """
         raise NotImplementedError()
