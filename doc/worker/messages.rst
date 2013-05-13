@@ -11,7 +11,8 @@ Some things in common with all messages:
 
 * The type is determined by the **hpcs_action**
   field of the JSON message, which is required to be present.
-* The casing of the JSON field names or values does not matter.
+* The JSON field names is case-sensitive.
+* The JSON field values is case-insensitive.
 * Extraneous fields are ignored.
 * Every response will return the original message with some additional fields.
 * Every response will include a **hpcs_response** field with a value of either
