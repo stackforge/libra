@@ -82,6 +82,10 @@ def main():
         '--datadog_tags',
         help='A space separated list of tags for Datadog alerts'
     )
+    options.parser.add_argument(
+        '--datadog_env', default='unknown',
+        help='Server enironment'
+    )
 
     args = options.run()
 

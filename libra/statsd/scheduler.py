@@ -90,6 +90,9 @@ class Sched(object):
         if api.is_online():
             lb_list = api.get_ping_list()
             pings = len(lb_list)
+            if pings == 0:
+                self.logger.info('No LBs to ping')
+                return (0, 0)
             for lb in lb_list:
                 node_list.append(lb['name'])
             gearman = GearJobs(self.logger, self.args)
@@ -129,8 +132,15 @@ class Sched(object):
         return tested, repaired
 
     def _send_fails(self, failed_nodes, node_list):
+        api = AdminAPI(self.args.api_server, self.logger)
         for node in failed_nodes:
             data = self._get_node(node, node_list)
+            # device could have been marked offline between getting the list
+            # and testing, check if this is the case
+            status_code, device_status = api.get_device(data['id'])
+            if device_status['status'] != 'ONLINE':
+                continue
+
             message = (
                 'Load balancer failed\n'
                 'ID: {0}\n'
