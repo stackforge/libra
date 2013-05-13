@@ -54,7 +54,7 @@ def handler(worker, job):
         copy[LBaaSController.OBJ_STORE_TOKEN_FIELD] = "*****"
 
     logger.debug("Return JSON message: %s" % json.dumps(copy, indent=4))
-    return response
+    return copy
 
 
 def config_thread(logger, driver, servers, reconnect_sleep):

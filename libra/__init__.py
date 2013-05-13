@@ -14,5 +14,5 @@
 
 import pbr.version
 
-__version__ = pbr.version.VersionInfo('libra')
+__version__ = pbr.version.VersionInfo('libra').version_string()
 __release__ = pbr.version.VersionInfo('libra').release_string()
