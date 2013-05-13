@@ -98,6 +98,13 @@ class AdminAPI(object):
             ), body
         )
 
+    def get_device(self, device_id):
+        return self._get(
+            '{url}/devices/{device_id}'.format(
+                url=self.url, device_id=device_id
+            )
+        )
+
     def _get_node_list(self, limit, marker):
         return self._get(
             '{url}/devices?marker={marker}&limit={limit}'
