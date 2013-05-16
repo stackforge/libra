@@ -14,6 +14,7 @@
 
 from libra import __version__ as libra_version
 from libra import __release__ as libra_release
+from libra.common.exc import DeletedStateError
 from libra.common.faults import BadRequest
 from libra.worker.drivers.base import LoadBalancerDriver
 
@@ -337,7 +338,14 @@ class LBaaSController(object):
         return self.msg
 
     def _action_stats(self):
-        """ Get load balancer statistics. """
+        """
+        Get load balancer statistics.
+
+        We push responsibility for knowing what state a load balancer
+        current is in to the driver. Trying to get statistics for a LB that
+        has been deleted is an error.
+        """
+
         try:
             # TODO: Do something with the returned statistics
             self.driver.get_stats(protocol=None)
@@ -346,6 +354,10 @@ class LBaaSController(object):
             self.logger.error(error)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
+        except DeletedStateError:
+            self.logger.info("Invalid operation STATS on a deleted LB")
+            self.msg['status'] = 'DELETED'
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
             self.logger.error("STATS failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
