@@ -13,11 +13,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import time 
+
 from sqlalchemy import Table, Column, Integer, ForeignKey, create_engine
 from sqlalchemy import INTEGER, VARCHAR, TIMESTAMP, BIGINT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
+import sqlalchemy.types as types
 from pecan import conf
+
 
 # TODO replace this with something better
 conn_string = '''mysql://%s:%s@%s/%s''' % (
@@ -40,12 +44,20 @@ loadbalancers_devices = Table(
 )
 
 
+class FormatedDateTime(types.TypeDecorator):
+    '''formats date to match iso 8601 standards 
+    '''
+    impl = types.DateTime
+    def process_result_value(self, value, dialect):
+        return value.strftime('%Y-%m-%dT%H:%M:%S')
+
+
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'
     #column definitions
     az = Column(u'az', INTEGER(), nullable=False)
-    created = Column(u'created', TIMESTAMP(), nullable=False)
+    created = Column(u'created', FormatedDateTime(), nullable=False)
     floatingIpAddr = Column(
         u'floatingIpAddr', VARCHAR(length=128), nullable=False
     )
@@ -54,7 +66,7 @@ class Device(DeclarativeBase):
     publicIpAddr = Column(u'publicIpAddr', VARCHAR(length=128), nullable=False)
     status = Column(u'status', VARCHAR(length=128), nullable=False)
     type = Column(u'type', VARCHAR(length=128), nullable=False)
-    updated = Column(u'updated', TIMESTAMP(), nullable=False)
+    updated = Column(u'updated', FormatedDateTime(), nullable=False)
 
     def find_free_device(self):
         """queries for free and clear device
@@ -73,7 +85,6 @@ class LoadBalancer(DeclarativeBase):
     __tablename__ = 'loadbalancers'
     #column definitions
     algorithm = Column(u'algorithm', VARCHAR(length=80), nullable=False)
-    created = Column(u'created', TIMESTAMP(), nullable=False)
     errmsg = Column(u'errmsg', VARCHAR(length=128))
     id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
     name = Column(u'name', VARCHAR(length=128), nullable=False)
@@ -81,7 +92,8 @@ class LoadBalancer(DeclarativeBase):
     protocol = Column(u'protocol', VARCHAR(length=128), nullable=False)
     status = Column(u'status', VARCHAR(length=50), nullable=False)
     tenantid = Column(u'tenantid', VARCHAR(length=128), nullable=False)
-    updated = Column(u'updated', TIMESTAMP(), nullable=False)
+    updated = Column(u'updated', FormatedDateTime(), nullable=False)
+    created = Column(u'created', FormatedDateTime(), nullable=False)
     nodes = relationship(
         'Node', backref=backref('loadbalancers', order_by='Node.id')
     )
@@ -89,8 +101,7 @@ class LoadBalancer(DeclarativeBase):
         'Device', secondary=loadbalancers_devices, backref='loadbalancers',
         lazy='joined'
     )
-
-
+    
 class Node(DeclarativeBase):
     """node model"""
     __tablename__ = 'nodes'
