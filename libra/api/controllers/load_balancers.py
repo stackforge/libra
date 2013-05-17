@@ -111,8 +111,13 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.id == load_balancer_id).\
-                first()._asdict()
+                first()
 
+            if not load_balancers:
+                response.status = 400
+                return dict(status=400, message="load balancer not found")
+
+            load_balancers = load_balancers._asdict()
             virtualIps = session.query(
                 Device.id, Device.floatingIpAddr
             ).join(LoadBalancer.devices).\
@@ -144,12 +149,8 @@ class LoadBalancersController(RestController):
                 del node['enabled']
                 load_balancers['nodes'].append(node)
 
-        if load_balancers is None:
-            response.status = 400
-            return Responses.not_found
-        else:
-            response.status = 200
-            return load_balancers
+        response.status = 200
+        return load_balancers
 
     @expose('json')
     def post(self, load_balancer_id=None, **kwargs):

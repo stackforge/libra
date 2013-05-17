@@ -27,7 +27,7 @@ app = {
     'template_path': '%(confdir)s/api/templates',
     'debug': True,
     'errors': {
-        404: '/error/404',
+        404: '/notfound',
         '__force_dict__': True
     }
 }

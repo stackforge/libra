@@ -25,7 +25,11 @@ class RootController(object):
     def _default(self):
         """default route.. acts as catch all for any wrong urls.
            For now it returns a 404 because no action is defined for /"""
-        response.status = 201
+        response.status = 404
+        return Responses._default
+
+    @expose('json')
+    def notfound(self):
         return Responses._default
 
     @expose('json')
@@ -37,7 +41,7 @@ class RootController(object):
 
         Returns: dict
         """
-        response.status = 201
+        response.status = 200
         return Responses.protocols
 
     @expose('json')
@@ -49,7 +53,7 @@ class RootController(object):
 
         Returns: dict
         """
-        response.status = 201
+        response.status = 200
         return Responses.algorithms
 
     #pecan uses this controller class for urls that start with /loadbalancers
