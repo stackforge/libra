@@ -71,6 +71,11 @@ class GearJobs(object):
                     failed_list.append(ping.job.task)
                     continue
                 if ping.result['hpcs_response'] == 'FAIL':
+                    if (
+                        'status' in ping.result and
+                        ping.result['status'] == 'DELETED'
+                    ):
+                        continue
                     # Error returned by Gearman
                     failed_list.append(ping.job.task)
                     continue
