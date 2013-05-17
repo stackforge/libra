@@ -145,8 +145,10 @@ class LoadBalancersController(RestController):
                 load_balancers['nodes'].append(node)
 
         if load_balancers is None:
+            response.status = 400
             return Responses.not_found
         else:
+            response.status = 200
             return load_balancers
 
     @expose('json')
