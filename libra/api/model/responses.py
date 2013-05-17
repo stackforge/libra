@@ -20,7 +20,7 @@ responder objects for framework.
 
 class Responses(object):
     """404 - not found"""
-    _default = {'status': '404'}
+    _default = {'status': '404', 'message': 'Object not Found'}
 
     """not found """
     not_found = {'message': 'Object not Found'}
