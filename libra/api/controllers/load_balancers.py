@@ -115,6 +115,7 @@ class LoadBalancersController(RestController):
 
             if not load_balancers:
                 response.status = 400
+                session.rollback()
                 return dict(status=400, message="load balancer not found")
 
             load_balancers = load_balancers._asdict()
@@ -149,6 +150,7 @@ class LoadBalancersController(RestController):
                 del node['enabled']
                 load_balancers['nodes'].append(node)
 
+        session.commit()
         response.status = 200
         return load_balancers
 

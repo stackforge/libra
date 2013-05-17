@@ -71,9 +71,11 @@ class NodesController(RestController):
                 first()
 
         if node_response is None:
+            session.rollback()
             response.status = 400
             return dict(status=400, message='node not found')
         else:
+            session.commit()
             response.status = 200
             return node_response
 

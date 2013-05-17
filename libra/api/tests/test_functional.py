@@ -21,7 +21,7 @@ class TestRootController(FunctionalTest):
 
     def test_get(self):
         response = self.app.get('/', expect_errors=True)
-        assert response.status_int == 404
+        assert response.status_int == 200
 
     def test_search(self):
 #       Lets get post sorted before enabling this

@@ -54,6 +54,40 @@ class Responses(object):
         ]
     }
 
+    versions = {
+        "versions": [
+            {
+                "id": "v1.1",
+                "updated": "2012-12-18T18:30:02.25Z",
+                "status": "CURRENT",
+                "links": [
+                    {
+                        "rel": "self",
+                        "href": "http://wiki.openstack.org/Atlas-LB"
+                    }
+                ]
+            }
+        ]
+    }
+
+    v1_1 = {
+        "version": {
+            "id": "v1.1",
+            "updated": "2012-12-18T18:30:02.25Z",
+            "status": "CURRENT",
+            "links": [
+                {
+                    "rel": "self",
+                    "href": "http://wiki.openstack.org/Atlas-LB"
+                }
+            ],
+            "media-types": [
+                {
+                    "base": "application/json"
+                }
+            ]
+        }
+    }
     """class LoadBalancers
     grouping of lb responses
     """
