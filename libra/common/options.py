@@ -16,7 +16,6 @@ import logging
 import logging.handlers
 import os
 import os.path
-import pwd
 import sys
 import ConfigParser
 
@@ -225,11 +224,5 @@ def setup_logging(name, args):
         logger.setLevel(level=logging.DEBUG)
     elif args.verbose:
         logger.setLevel(level=logging.INFO)
-
-    if logfile and not args.syslog and args.user:
-        # NOTE(LinuxJedi): we are switching user so need to switch
-        # the ownership of the log file for rotation
-        os.chown(logger.handlers[0].baseFilename,
-                 pwd.getpwnam(args.user).pw_uid, -1)
 
     return logger
