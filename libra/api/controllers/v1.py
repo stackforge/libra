@@ -14,33 +14,41 @@
 # under the License.
 
 from pecan import expose, response
-from v1 import V1Controller
+from load_balancers import LoadBalancersController
 from libra.api.model.responses import Responses
 
 
-class RootController(object):
-    """root control object."""
-
-    @expose('json')
-    def _default(self):
-        """default route.. acts as catch all for any wrong urls.
-           For now it returns a 404 because no action is defined for /"""
-        response.status = 404
-        return Responses._default
-
-    @expose()
-    def _lookup(self, primary_key, *remainder):
-        if primary_key == 'v1.1':
-            return V1Controller(), remainder
-        else:
-            response.status = 404
-            return Responses._default
-
-    @expose('json')
-    def notfound(self):
-        return Responses._default
+class V1Controller(object):
+    """v1 control object."""
 
     @expose('json')
     def index(self):
         response.status = 200
         return Responses.versions
+
+    @expose('json')
+    def protocols(self):
+        """Lists all supported load balancing protocols.
+
+        Url:
+           GET /protocols
+
+        Returns: dict
+        """
+        response.status = 200
+        return Responses.protocols
+
+    @expose('json')
+    def algorithms(self):
+        """List all supported load balancing algorithms.
+
+        Url:
+           GET /algorithms
+
+        Returns: dict
+        """
+        response.status = 200
+        return Responses.algorithms
+
+    #pecan uses this controller class for urls that start with /loadbalancers
+    loadbalancers = LoadBalancersController()
