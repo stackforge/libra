@@ -35,7 +35,8 @@ app = {
 logging = {
     'loggers': {
         'root': {'level': 'INFO', 'handlers': ['console']},
-        'api': {'level': 'DEBUG', 'handlers': ['console']}
+        'api': {'level': 'DEBUG', 'handlers': ['console']},
+        'wsme': {'level': 'DEBUG', 'handlers': ['console']}
     },
     'handlers': {
         'console': {
@@ -50,6 +51,10 @@ logging = {
                        '[%(threadName)s] %(message)s')
         }
     }
+}
+
+wsme = {
+    'debug': True
 }
 
 database = {

@@ -15,12 +15,10 @@
 
 #import gearman.errors
 
-import json
-#import socket
-#import time
 # pecan imports
 from pecan import expose, abort, response
 from pecan.rest import RestController
+import wsmeext.pecan as wsme_pecan
 # other controllers
 from nodes import NodesController
 from health_monitor import HealthMonitorController
@@ -31,6 +29,8 @@ from connection_throttle import ConnectionThrottleController
 from libra.api.model.responses import Responses
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
+from libra.api.model.lbaas import loadbalancers_devices
+from libra.api.model.validators import LBPost
 from libra.api.library.gearman_client import gearman_client
 
 
@@ -154,8 +154,8 @@ class LoadBalancersController(RestController):
         response.status = 200
         return load_balancers
 
-    @expose('json')
-    def post(self, load_balancer_id=None, **kwargs):
+    @wsme_pecan.wsexpose([LBPost], int, body=[LBPost])
+    def post(self, load_balancer_id=None, body=None):
         """Accepts edit if load_balancer_id isn't blank or create load balancer
         posts.
 
@@ -177,25 +177,23 @@ class LoadBalancersController(RestController):
         # tenantid
         tenant_id = 80074562416143
 
-        # load input
-        data = json.loads(kwargs['data'])
-        # TODO validate input data
-
         # if we don't have an id then we want to create a new lb
         if not load_balancer_id:
             lb = LoadBalancer()
 
             # find free device
-            device = Device.find_free_device()
+            device = session.query(Device).\
+                filter(~Device.id.in_(
+                    session.query(loadbalancers_devices.c.device)
+                )).\
+                filter(Device.status == "OFFLINE").\
+                first()
 
             if device is None:
                 response.status = 503
                 return Responses.service_unavailable
 
-            lb.device = device.id
             lb.tenantid = tenant_id
-
-            lb.update_from_json(data)
 
             # write to database
             session.add(lb)
@@ -216,8 +214,6 @@ class LoadBalancersController(RestController):
             if lb is None:
                 response.status = 400
                 return Responses.not_found
-
-            lb.update_from_json(data)
 
         try:
             session.flush()

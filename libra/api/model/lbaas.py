@@ -66,17 +66,6 @@ class Device(DeclarativeBase):
     type = Column(u'type', VARCHAR(length=128), nullable=False)
     updated = Column(u'updated', FormatedDateTime(), nullable=False)
 
-    def find_free_device(self):
-        """queries for free and clear device
-
-        sql form java api
-            SELECT * FROM devices WHERE loadbalancers = " + EMPTY_LBIDS + " AND
-            status = '" + Device.STATUS_OFFLINE + "'" ;
-        """
-        return session.query(Device).\
-            filter_by(loadbalancers="", status="OFFLINE").\
-            first()
-
 
 class LoadBalancer(DeclarativeBase):
     """load balancer model"""
