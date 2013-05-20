@@ -15,20 +15,42 @@
 
 from wsme import types as wtypes
 from wsme import wsattr
+from wsme.types import Base
 
 
-class LBNode(object):
+class LBNode(Base):
     port = wsattr(int, mandatory=True)
     address = wsattr(wtypes.text, mandatory=True)
     condition = wtypes.text
 
 
-class LBVip(object):
+class LBVip(Base):
     id = wsattr(int, mandatory=True)
 
 
-class LBPost(object):
+class LBPost(Base):
     name = wsattr(wtypes.text, mandatory=True)
-    nodes = wsattr([LBNode], mandatory=True)
+    nodes = wsattr(['LBNode'], mandatory=True)
     protocol = wtypes.text
-    virtualIps = [LBVip]
+    algorithm = wtypes.text
+    port = int
+    virtualIps = wsattr(['LBVip'])
+
+
+class LBVipResp(Base):
+    id = int
+    address = wtypes.text
+    type = wtypes.text
+    ipVersion = wtypes.text
+
+class LBResp(Base):
+    id = int
+    name = wtypes.text
+    protocol = wtypes.text
+    port = int
+    algorithm = wtypes.text
+    status = wtypes.text
+    created = wtypes.text
+    updated = wtypes.text
+    virtualIps = wsattr(['LBVipResp'])
+    nodes = wsattr(['LBNode'])
