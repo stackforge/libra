@@ -19,6 +19,7 @@
 from pecan import expose, abort, response
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
+from wsme.exc import ClientSideError
 # other controllers
 from nodes import NodesController
 from health_monitor import HealthMonitorController
@@ -30,7 +31,7 @@ from libra.api.model.responses import Responses
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
 from libra.api.model.lbaas import loadbalancers_devices
-from libra.api.model.validators import LBPost
+from libra.api.model.validators import LBPost, LBResp, LBVipResp, LBNode
 from libra.api.library.gearman_client import gearman_client
 
 
@@ -154,7 +155,7 @@ class LoadBalancersController(RestController):
         response.status = 200
         return load_balancers
 
-    @wsme_pecan.wsexpose([LBPost], int, body=[LBPost])
+    @wsme_pecan.wsexpose(LBResp, int, body=LBPost, status=202)
     def post(self, load_balancer_id=None, body=None):
         """Accepts edit if load_balancer_id isn't blank or create load balancer
         posts.
@@ -177,6 +178,9 @@ class LoadBalancersController(RestController):
         # tenantid
         tenant_id = 80074562416143
 
+        # TODO: check if tenant is overlimit (return a 413 for that)
+        # TODO: check if we have been supplied with too many nodes
+        device = None
         # if we don't have an id then we want to create a new lb
         if not load_balancer_id:
             lb = LoadBalancer()
@@ -194,6 +198,25 @@ class LoadBalancersController(RestController):
                 return Responses.service_unavailable
 
             lb.tenantid = tenant_id
+            lb.name = body.name
+            if body.protocol and body.protocol.lower() == 'HTTP':
+                lb.protocol = 'HTTP'
+            else:
+                lb.protocol = 'TCP'
+
+            if body.port:
+                lb.port = body['port']
+            else:
+                lb.port = 80
+
+            lb.status = 'BUILD'
+
+            if body.algorithm:
+                lb.algorithm = body.algorithm.upper()
+            else:
+                lb.algorithm = 'ROUND_ROBIN'
+
+            lb.devices.device = device.id
 
             # write to database
             session.add(lb)
@@ -203,10 +226,10 @@ class LoadBalancersController(RestController):
 
             # now save the loadbalancer_id to the device and switch its status
             # to online
-            device.loadbalancers = lb.id
             device.status = "ONLINE"
 
         else:
+            # TODO: not tested this bit yet
             # grab the lb
             lb = session.query(LoadBalancer)\
                 .filter_by(id=load_balancer_id).first()
@@ -215,21 +238,53 @@ class LoadBalancersController(RestController):
                 response.status = 400
                 return Responses.not_found
 
+        session.flush()
+            # TODO: write nodes to table too
+
+        job_data = {
+            'hpcs_action': 'UPDATE',
+            'loadbalancers': []
+        }
+        for node in body.nodes:
+            node_data = {'port': node.port, 'address': node.address}
+            if node.condition:
+                node_data['condition'] = node.condition
+            job_data['loadbalancers'].append(node_data)
         try:
-            session.flush()
-
             # trigger gearman client to create new lb
-            result = gearman_client.submit_job('UPDATE', lb.output_to_json())
-
+            result = gearman_client.submit_job(
+                device.name, job_data, background=True
+            )
             # do something with result
             if result:
                 pass
-
-            response.status = 200
-            return self.get()
+            return_data = LBResp()
+            return_data.id = lb.id
+            return_data.name = lb.name
+            return_data.protocol = lb.protocol
+            return_data.port = lb.port
+            return_data.algorithm = lb.algorithm
+            return_data.status = lb.status
+            return_data.created = lb.created
+            return_data.updated = lb.updated
+            vip_resp = LBVipResp(
+                address=device.floatingIpAddr, id=device.id,
+                type='PUBLIC', ipVersion='IPV4'
+            )
+            return_data.virtualIps = [vip_resp]
+            return_data.nodes = []
+            for node in body.nodes:
+                out_node = LBNode(
+                    port=node.port, address=node.address,
+                    condition=node.condition
+                )
+                return_data.nodes.append(out_node)
+            # TODO: session.commit()
+            return return_data
         except:
-            response.status = 503
-            return Responses.service_unavailable
+            errstr = 'Error communicating with load balancer pool'
+            session.rollback()
+            raise ClientSideError(errstr)
 
     @expose()
     def delete(self, load_balancer_id):
