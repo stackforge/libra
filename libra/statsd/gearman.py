@@ -51,6 +51,7 @@ class GearJobs(object):
                 failed_list.append(ping.job.task)
                 continue
 
+        list_of_jobs = []
         if len(retry_list) > 0:
             self.logger.info(
                 "{0} pings timed out, retrying".format(len(retry_list))
