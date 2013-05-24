@@ -26,6 +26,7 @@ app = {
     'static_root': '%(confdir)s/public',
     'template_path': '%(confdir)s/api/templates',
     'debug': True,
+    'enable_acl': False,  # enables keystone auth
     'errors': {
         404: '/notfound',
         '__force_dict__': True

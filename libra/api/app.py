@@ -11,16 +11,18 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-
+from oslo.config import cfg
 from pecan import make_app
+from pecan import conf as pecan_config
 from libra.api import model
+from libra.api import acl
 
 
 def setup_app(config):
 
     model.init_model()
 
-    return make_app(
+    app = make_app(
         config.app.root,
         static_root=config.app.static_root,
         template_path=config.app.template_path,
@@ -32,3 +34,9 @@ def setup_app(config):
             'guess_content_type_from_ext',
             True),
     )
+
+    # to dissable keystone auth simply edit etc/libra_api.py enable_acl
+    if pecan_config.app.enable_acl:
+        return acl.install(app, cfg.CONF)
+
+    return app
