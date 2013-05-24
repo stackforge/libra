@@ -13,12 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Server Specific Configurations
-server = {
-    'port': '8080',
-    'host': '0.0.0.0'
-}
-
 # Pecan Application Configurations
 app = {
     'root': 'libra.api.controllers.root.RootController',
@@ -32,41 +26,20 @@ app = {
     }
 }
 
-logging = {
-    'loggers': {
-        'root': {'level': 'INFO', 'handlers': ['console']},
-        'api': {'level': 'DEBUG', 'handlers': ['console']},
-        'wsme': {'level': 'DEBUG', 'handlers': ['console']}
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple'
-        }
-    },
-    'formatters': {
-        'simple': {
-            'format': ('%(asctime)s %(levelname)-5.5s [%(name)s]'
-                       '[%(threadName)s] %(message)s')
-        }
-    }
-}
-
 wsme = {
     'debug': True
 }
 
-database = {
-    'username': 'root',
-    'password': 'testaburger',
-    'host': 'localhost',
-    'schema': 'lbaas'
-}
+#database = {
+#    'username': 'root',
+#    'password': 'testaburger',
+#    'host': 'localhost',
+#    'schema': 'lbaas'
+#}
 
-gearman = {
-    'server': ['localhost:4730'],
-}
+#gearman = {
+#    'server': ['localhost:4730'],
+#}
 
 # Custom Configurations must be in Python dictionary format::
 #
