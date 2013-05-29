@@ -13,11 +13,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from pecan import expose, response
+from pecan import expose, response, request
 from pecan.rest import RestController
 #default response objects
 from libra.api.model.lbaas import LoadBalancer, Node, session
 from libra.api.model.responses import Responses
+from libra.api.acl import get_limited_to_project
 
 
 class NodesController(RestController):
@@ -37,7 +38,7 @@ class NodesController(RestController):
 
         Returns: dict
         """
-        tenant_id = 80074562416143
+        tenant_id = get_limited_to_project(request.headers)
 
         if not load_balancer_id:
             response.status = 400

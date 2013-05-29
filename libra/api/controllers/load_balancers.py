@@ -16,7 +16,7 @@
 #import gearman.errors
 
 # pecan imports
-from pecan import expose, abort, response
+from pecan import expose, abort, response, request
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
@@ -33,6 +33,7 @@ from libra.api.model.lbaas import LoadBalancer, Device, Node, session
 from libra.api.model.lbaas import loadbalancers_devices
 from libra.api.model.validators import LBPost, LBResp, LBVipResp, LBNode
 from libra.api.library.gearman_client import gearman_client
+from libra.api.acl import get_limited_to_project
 
 
 class LoadBalancersController(RestController):
@@ -89,9 +90,7 @@ class LoadBalancersController(RestController):
 
         Returns: dict
         """
-        # have not implimented the keystone middleware so we don't know the
-        # tenantid
-        tenant_id = 80074562416143
+        tenant_id = get_limited_to_project(request.headers)
 
         # if we don't have an id then we want a list of them own by this tenent
         if not load_balancer_id:
@@ -174,9 +173,7 @@ class LoadBalancersController(RestController):
 
         Returns: dict
         """
-        # have not implimented the keystone middleware so we don't know the
-        # tenantid
-        tenant_id = 80074562416143
+        tenant_id = get_limited_to_project(request.headers)
 
         # TODO: check if tenant is overlimit (return a 413 for that)
         # TODO: check if we have been supplied with too many nodes
