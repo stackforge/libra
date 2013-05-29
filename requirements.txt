@@ -10,4 +10,3 @@ pecan
 sqlalchemy>=0.8.0
 wsme>=0.5b2
 MySQL-python
-python-keystoneclient>=0.2.3

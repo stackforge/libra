@@ -12,19 +12,18 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from keystoneclient.middleware import auth_token
+import ConfigParser
+import importlib
 
 
 def install(app, args):
     """Install ACL check on application."""
-    conf = {
-        'auth_host': args.keystone_host,
-        'auth_port': args.keystone_port,
-        'auth_protocol': args.keystone_protocol,
-        'certfile': args.keystone_certfile,
-        'keyfile': args.keystone_keyfile
-    }
-    return auth_token.AuthProtocol(app, conf)
+    config = ConfigParser.SafeConfigParser()
+    config.read([args.config])
+    module_details = args.keystone_module.split(':')
+    keystone = importlib.import_module(module_details[0])
+    auth_class = getattr(keystone, module_details[1])
+    return auth_class(app, config._sections['keystone'])
 
 
 def get_limited_to_project(headers):

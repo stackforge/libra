@@ -107,19 +107,9 @@ def main():
         help='Gearman job servers'
     )
     options.parser.add_argument(
-        '--keystone_host', help='Keystone host'
-    )
-    options.parser.add_argument(
-        '--keystone_port', help='Keystone port', type=int
-    )
-    options.parser.add_argument(
-        '--keystone_protocol', help='Keystone protocol', default='https'
-    )
-    options.parser.add_argument(
-        '--keystone_certfile', help='Keystone certificate file'
-    )
-    options.parser.add_argument(
-        '--keystone_keyfile', help='Keystone key file'
+        '--keystone_module',
+        default='keystoneclient.middleware.auth_token:AuthProtocol',
+        help='A colon separated module and class for keystone middleware'
     )
 
     args = options.run()
@@ -127,11 +117,6 @@ def main():
     required_args = [
         'db_user', 'db_pass', 'db_host', 'db_schema'
     ]
-    if not args.disable_keystone:
-        required_args = required_args + [
-            'keystone_host', 'keystone_port', 'keystone_certfile',
-            'keystone_keyfile'
-        ]
 
     missing_args = 0
     for req in required_args:
