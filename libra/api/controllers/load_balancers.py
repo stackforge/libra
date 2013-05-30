@@ -14,7 +14,7 @@
 # under the License.
 
 #import gearman.errors
-
+import logging
 # pecan imports
 from pecan import expose, abort, response, request
 from pecan.rest import RestController
@@ -32,7 +32,7 @@ from libra.api.model.responses import Responses
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
 from libra.api.model.lbaas import loadbalancers_devices
 from libra.api.model.validators import LBPost, LBResp, LBVipResp, LBNode
-from libra.api.library.gearman_client import gearman_client
+from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 
 
@@ -196,10 +196,10 @@ class LoadBalancersController(RestController):
 
             lb.tenantid = tenant_id
             lb.name = body.name
-            if body.protocol and body.protocol.lower() == 'HTTP':
-                lb.protocol = 'HTTP'
-            else:
+            if body.protocol and body.protocol.lower() == 'TCP':
                 lb.protocol = 'TCP'
+            else:
+                lb.protocol = 'HTTP'
 
             if body.port:
                 lb.port = body['port']
@@ -240,17 +240,23 @@ class LoadBalancersController(RestController):
 
         job_data = {
             'hpcs_action': 'UPDATE',
-            'loadbalancers': []
+            'loadBalancers': [{
+                 'name': lb.name,
+                 'protocol': lb.protocol,
+                 'nodes': []
+            }]
         }
         for node in body.nodes:
-            node_data = {'port': node.port, 'address': node.address}
+            node_data = {
+                'port': node.port, 'address': node.address,'weight': '1'
+            }
             if node.condition:
                 node_data['condition'] = node.condition
-            job_data['loadbalancers'].append(node_data)
+            job_data['loadBalancers'][0]['nodes'].append(node_data)
         try:
             # trigger gearman client to create new lb
-            result = gearman_client.submit_job(
-                device.name, job_data, background=True
+            result = submit_job(
+                'UPDATE', device.name, job_data, lb.id
             )
             # do something with result
             if result:
@@ -276,9 +282,11 @@ class LoadBalancersController(RestController):
                     condition=node.condition
                 )
                 return_data.nodes.append(out_node)
-            # TODO: session.commit()
+            session.commit()
             return return_data
         except:
+            logger = logging.getLogger(__name__)
+            logger.exception('Error communicating with load balancer pool')
             errstr = 'Error communicating with load balancer pool'
             session.rollback()
             raise ClientSideError(errstr)
