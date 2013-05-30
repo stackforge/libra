@@ -213,13 +213,22 @@ class LoadBalancersController(RestController):
             else:
                 lb.algorithm = 'ROUND_ROBIN'
 
-            lb.devices.device = device.id
-
+            lb.devices = [device]
             # write to database
             session.add(lb)
             session.flush()
             #refresh the lb record so we get the id back
             session.refresh(lb)
+            for node in body.nodes:
+                if node.condition == 'DISABLED':
+                    enabled = 0
+                else:
+                    enabled = 1
+                out_node = Node(
+                    lbid=lb.id, port=node.port, address=node.address,
+                    enabled=enabled, status='ONLINE', weight=0
+                )
+                session.add(out_node)
 
             # now save the loadbalancer_id to the device and switch its status
             # to online
@@ -291,7 +300,7 @@ class LoadBalancersController(RestController):
             session.rollback()
             raise ClientSideError(errstr)
 
-    @expose()
+    @expose('json')
     def delete(self, load_balancer_id):
         """Remove a load balancer from the account.
 
@@ -306,27 +315,39 @@ class LoadBalancersController(RestController):
 
         Returns: None
         """
+        tenant_id = get_limited_to_project(request.headers)
+        print tenant_id
         # grab the lb
-        lb = session.query(LoadBalancer)\
-            .filter_by(id=load_balancer_id).first()
+        lb = session.query(LoadBalancer).\
+            filter(LoadBalancer.id==load_balancer_id).\
+            filter(LoadBalancer.tenantid==tenant_id).first()
 
         if lb is None:
             response.status = 400
             return Responses.not_found
 
         try:
+            session.query(Node).filter(Node.lbid==load_balancer_id).delete()
+            lb.status = 'DELETED'
+            loadbalancers_devices.delete().where(loadbalancers_devices.c.loadbalancer==load_balancer_id)
+            device = session.query(
+                Device.id, Device.status
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == load_balancer_id).\
+                first()
+            device.status = 'OFFLINE'
             session.flush()
-
             # trigger gearman client to create new lb
             #result = gearman_client.submit_job('DELETE', lb.output_to_json())
 
             response.status = 200
 
-            session.delete(lb)
             session.commit()
 
             return self.get()
         except:
+            logger = logging.getLogger(__name__)
+            logger.exception('Error communicating with load balancer pool')
             response.status = 503
             return Responses.service_unavailable
 
