@@ -154,8 +154,8 @@ class LoadBalancersController(RestController):
         response.status = 200
         return load_balancers
 
-    @wsme_pecan.wsexpose(LBResp, int, body=LBPost, status=202)
-    def post(self, load_balancer_id=None, body=None):
+    @wsme_pecan.wsexpose(LBResp, body=LBPost, status=202)
+    def post(self, body=None):
         """Accepts edit if load_balancer_id isn't blank or create load balancer
         posts.
 
@@ -178,10 +178,10 @@ class LoadBalancersController(RestController):
         # TODO: check if tenant is overlimit (return a 413 for that)
         # TODO: check if we have been supplied with too many nodes
         device = None
+        old_lb = None
         # if we don't have an id then we want to create a new lb
-        if not load_balancer_id:
-            lb = LoadBalancer()
-
+        lb = LoadBalancer()
+        if not body.virtualIps:
             # find free device
             device = session.query(Device).\
                 filter(~Device.id.in_(
@@ -189,60 +189,78 @@ class LoadBalancersController(RestController):
                 )).\
                 filter(Device.status == "OFFLINE").\
                 first()
-
-            if device is None:
-                response.status = 503
+        else:
+            virtual_id = body.virtualIps[0].id
+            # This is an additional load balancer
+            device = session.query(
+                Device
+            ).filter(Device.id == virtual_id).\
+                first()
+            old_lb = session.query(
+                LoadBalancer
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.tenantid == tenant_id).\
+                filter(Device.id == virtual_id).\
+                first()
+            print old_lb
+            if old_lb is None:
+                response.status = 400
+                return Responses.service_unavailable
+            if old_lb.protocol == 'HTTP' and (body.protocol is None or body.protocol == 'HTTP'):
+                # Error here, can have only one HTTP
+                response.status = 400
+                return Responses.service_unavailable
+            elif old_lb.protocol == 'TCP' and body.protocol == 'TCP':
+                # Error here, can have only one TCP
+                response.status = 400
                 return Responses.service_unavailable
 
-            lb.tenantid = tenant_id
-            lb.name = body.name
-            if body.protocol and body.protocol.lower() == 'TCP':
-                lb.protocol = 'TCP'
-            else:
-                lb.protocol = 'HTTP'
+        if device is None:
+            response.status = 503
+            return Responses.service_unavailable
 
-            if body.port:
-                lb.port = body['port']
-            else:
-                lb.port = 80
-
-            lb.status = 'BUILD'
-
-            if body.algorithm:
-                lb.algorithm = body.algorithm.upper()
-            else:
-                lb.algorithm = 'ROUND_ROBIN'
-
-            lb.devices = [device]
-            # write to database
-            session.add(lb)
-            session.flush()
-            #refresh the lb record so we get the id back
-            session.refresh(lb)
-            for node in body.nodes:
-                if node.condition == 'DISABLED':
-                    enabled = 0
-                else:
-                    enabled = 1
-                out_node = Node(
-                    lbid=lb.id, port=node.port, address=node.address,
-                    enabled=enabled, status='ONLINE', weight=0
-                )
-                session.add(out_node)
-
-            # now save the loadbalancer_id to the device and switch its status
-            # to online
-            device.status = "ONLINE"
-
+        lb.tenantid = tenant_id
+        lb.name = body.name
+        if body.protocol and body.protocol.lower() == 'tcp':
+            lb.protocol = 'TCP'
         else:
-            # TODO: not tested this bit yet
-            # grab the lb
-            lb = session.query(LoadBalancer)\
-                .filter_by(id=load_balancer_id).first()
+            lb.protocol = 'HTTP'
 
-            if lb is None:
-                response.status = 400
-                return Responses.not_found
+        if body.port:
+            lb.port = body.port
+        else:
+            if lb.protocol == 'HTTP':
+                lb.port = 80
+            else:
+                lb.port = 443
+
+        lb.status = 'BUILD'
+
+        if body.algorithm:
+            lb.algorithm = body.algorithm.upper()
+        else:
+            lb.algorithm = 'ROUND_ROBIN'
+
+        lb.devices = [device]
+        # write to database
+        session.add(lb)
+        session.flush()
+        #refresh the lb record so we get the id back
+        session.refresh(lb)
+        for node in body.nodes:
+            if node.condition == 'DISABLED':
+                enabled = 0
+            else:
+                enabled = 1
+            out_node = Node(
+                lbid=lb.id, port=node.port, address=node.address,
+                enabled=enabled, status='ONLINE', weight=0
+            )
+            session.add(out_node)
+
+        # now save the loadbalancer_id to the device and switch its status
+        # to online
+        device.status = "ONLINE"
 
         session.flush()
             # TODO: write nodes to table too
@@ -252,6 +270,7 @@ class LoadBalancersController(RestController):
             'loadBalancers': [{
                 'name': lb.name,
                 'protocol': lb.protocol,
+                'port': lb.port,
                 'nodes': []
             }]
         }
@@ -262,6 +281,26 @@ class LoadBalancersController(RestController):
             if node.condition:
                 node_data['condition'] = node.condition
             job_data['loadBalancers'][0]['nodes'].append(node_data)
+
+        if old_lb:
+            old_nodes = session.query(Node).\
+                filter(Node.lbid == old_lb.id).all()
+            old_lb_data = {
+                'name': old_lb.name,
+                'protocol': old_lb.protocol,
+                'port': old_lb.port,
+                'nodes': []
+            }
+            for node in old_nodes:
+                if node.enabled:
+                    condition = 'ENABLED'
+                else:
+                    condition = 'DISABLED'
+                old_lb_data['nodes'].append({
+                    'port': node.port, 'address': node.address,
+                    'weight': node.weight, 'condition': condition
+                })
+            job_data['loadBalancers'].append(old_lb_data)
         try:
             # trigger gearman client to create new lb
             result = submit_job(
@@ -329,13 +368,15 @@ class LoadBalancersController(RestController):
         try:
             session.query(Node).filter(Node.lbid == load_balancer_id).delete()
             lb.status = 'DELETED'
-            loadbalancers_devices.delete().\
-                where(loadbalancers_devices.c.loadbalancer == load_balancer_id)
             device = session.query(
                 Device.id, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == load_balancer_id).\
                 first()
+            session.execute(loadbalancers_devices.delete().\
+                where(
+                    loadbalancers_devices.c.loadbalancer == load_balancer_id
+                ))
             device.status = 'OFFLINE'
             session.flush()
             # trigger gearman client to create new lb
