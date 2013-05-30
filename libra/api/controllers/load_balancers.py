@@ -357,7 +357,6 @@ class LoadBalancersController(RestController):
         Returns: None
         """
         tenant_id = get_limited_to_project(request.headers)
-        print tenant_id
         # grab the lb
         lb = session.query(LoadBalancer).\
             filter(LoadBalancer.id == load_balancer_id).\
