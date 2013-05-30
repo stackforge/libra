@@ -11,6 +11,8 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import eventlet
+eventlet.monkey_patch()
 import daemon
 import daemon.pidfile
 import daemon.runner
@@ -22,8 +24,8 @@ import os
 from libra.api import config as api_config
 from libra.api import model
 from libra.api import acl
-from wsgiref.simple_server import make_server
 from libra.common.options import Options, setup_logging
+from eventlet import wsgi
 
 
 def get_pecan_config():
@@ -159,8 +161,7 @@ def main():
     logger = setup_logging('', args)
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
-    srv = make_server(args.host, args.port, api)
     sys.stderr = LogStdout(logger)
-    srv.serve_forever()
+    wsgi.server(eventlet.listen((args.host, args.port)), api)
 
     return 0
