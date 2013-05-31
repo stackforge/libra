@@ -13,9 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from pecan import expose, response
+from pecan import response
 from pecan.rest import RestController
-from libra.api.model.responses import Responses
 
 
 class SessionPersistenceController(RestController):
@@ -23,7 +22,6 @@ class SessionPersistenceController(RestController):
     functions for /loadbalancers/{loadBalancerId}/sessionpersistence/* routing
     """
 
-    @expose('json')
     def get(self, load_balancer_id):
         """List session persistence configuration.get
 
@@ -35,9 +33,8 @@ class SessionPersistenceController(RestController):
         Returns: dict
         """
         response.status = 201
-        return Responses.LoadBalancers.SessionPersistence.get
+        return None
 
-    @expose('json')
     def post(self, load_balancer_id):
         """Enable session persistence.
 
@@ -49,9 +46,8 @@ class SessionPersistenceController(RestController):
         Returns: dict
         """
         response.status = 201
-        return Responses.LoadBalancers.SessionPersistence.get
+        return None
 
-    @expose('json')
     def delete(self, load_balancer_id):
         """Disable session persistence.
 

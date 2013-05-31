@@ -13,16 +13,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from pecan import expose, response
+from pecan import response
 from pecan.rest import RestController
-
-from libra.api.model.responses import Responses
 
 
 class HealthMonitorController(RestController):
     """functions for /loadbalancers/{loadBalancerId}/healthmonitor/* routing"""
 
-    @expose('json')
     def get(self, load_balancer_id):
         """Retrieve the health monitor configuration, if one exists.
 
@@ -34,9 +31,8 @@ class HealthMonitorController(RestController):
         Returns: dict
         """
         response.status = 201
-        return Responses.LoadBalancers.get
+        return None
 
-    @expose('json')
     def post(self, load_balancer_id, *args):
         """Update the settings for a health monitor.
 
@@ -49,9 +45,8 @@ class HealthMonitorController(RestController):
         Returns: dict
         """
         response.status = 201
-        return Responses.LoadBalancers.get
+        return None
 
-    @expose()
     def delete(self, load_balancer_id):
         """Remove the health monitor.
 

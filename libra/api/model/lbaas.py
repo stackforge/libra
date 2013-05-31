@@ -50,6 +50,13 @@ class FormatedDateTime(types.TypeDecorator):
         return value.strftime('%Y-%m-%dT%H:%M:%S')
 
 
+class Limits(DeclarativeBase):
+    __tablename__ = 'global_limits'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    name = Column(u'name', VARCHAR(length=128), nullable=False)
+    value = Column(u'value', BIGINT(), nullable=False)
+
+
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'

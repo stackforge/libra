@@ -13,17 +13,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from pecan import expose, response
+from pecan import response
 from pecan.rest import RestController
-
-from libra.api.model.responses import Responses
 
 
 class ConnectionThrottleController(RestController):
     """functions for /loadbalancers/{loadBalancerId}/connectionthrottle/*
     routing"""
 
-    @expose('json')
     def get(self, load_balancer_id):
         """List connection throttling configuration.
 
@@ -35,9 +32,8 @@ class ConnectionThrottleController(RestController):
         Returns: dict
         """
         response.status = 201
-        return Responses.LoadBalancers.ConnectionThrottle.get
+        return None
 
-    @expose('json')
     def post(self, load_balancer_id, *args):
         """Update throttling configuration.
 
@@ -50,9 +46,8 @@ class ConnectionThrottleController(RestController):
         Returns: dict
         """
         response.status = 201
-        return Responses.LoadBalancers.ConnectionThrottle.get
+        return None
 
-    @expose()
     def delete(self, loadbalancer_id):
         """Remove connection throttling configurations.
 

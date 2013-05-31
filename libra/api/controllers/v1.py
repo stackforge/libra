@@ -15,6 +15,7 @@
 
 from pecan import expose, response
 from load_balancers import LoadBalancersController
+from limits import LimitsController
 from libra.api.model.responses import Responses
 
 
@@ -52,3 +53,4 @@ class V1Controller(object):
 
     #pecan uses this controller class for urls that start with /loadbalancers
     loadbalancers = LoadBalancersController()
+    limits = LimitsController()

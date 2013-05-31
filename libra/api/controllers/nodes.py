@@ -17,7 +17,6 @@ from pecan import expose, response, request
 from pecan.rest import RestController
 #default response objects
 from libra.api.model.lbaas import LoadBalancer, Node, session
-from libra.api.model.responses import Responses
 from libra.api.acl import get_limited_to_project
 
 
@@ -97,7 +96,7 @@ class NodesController(RestController):
         node
         """
         response.status = 201
-        return Responses.LoadBalancers.Nodes.get
+        return None
 
     @expose()
     def delete(self, load_balancer_id, node_id):

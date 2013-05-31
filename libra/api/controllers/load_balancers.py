@@ -1,4 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
 # Copyright 2013 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,41 +12,27 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-#import gearman.errors
 import logging
 # pecan imports
 from pecan import expose, abort, response, request
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
-from wsme.exc import ClientSideError
+from wsme.exc import ClientSideError, InvalidInput
+from wsme import Unset
 # other controllers
 from nodes import NodesController
 from health_monitor import HealthMonitorController
 from session_persistence import SessionPersistenceController
 from connection_throttle import ConnectionThrottleController
-#from sqlalchemy.orm import aliased
-# default response objects
-from libra.api.model.responses import Responses
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
-from libra.api.model.lbaas import loadbalancers_devices
+from libra.api.model.lbaas import loadbalancers_devices, Limits
 from libra.api.model.validators import LBPost, LBResp, LBVipResp, LBNode
 from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 
 
 class LoadBalancersController(RestController):
-    """functions for /loadbalancer routing"""
-    loadbalancer_status = (
-        'ACTIVE',
-        'BUILD',
-        'PENDING_UPDATE',
-        'PENDING_DELETE',
-        'DELETED',
-        'SUSPENDED',
-        'ERROR'
-    )
-
     """nodes subclass linking
     controller class for urls that look like
     /loadbalancers/{loadBalancerId}/nodes/*
@@ -73,7 +58,7 @@ class LoadBalancersController(RestController):
     connectionthrottle = ConnectionThrottleController()
 
     @expose('json')
-    def get(self, load_balancer_id=None):
+    def get(self, load_balancer_id=None, command=None):
         """Fetches a list of load balancers or the details of one balancer if
         load_balancer_id is not empty.
 
@@ -90,11 +75,15 @@ class LoadBalancersController(RestController):
 
         Returns: dict
         """
+        if command == 'virtualips':
+            return self.virtualips(load_balancer_id)
+        elif command:
+            abort(404)
+
         tenant_id = get_limited_to_project(request.headers)
 
         # if we don't have an id then we want a list of them own by this tenent
         if not load_balancer_id:
-            #return Responses.LoadBalancers.get
             load_balancers = {'loadBalancers': session.query(
                 LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                 LoadBalancer.port, LoadBalancer.algorithm,
@@ -102,7 +91,6 @@ class LoadBalancersController(RestController):
                 LoadBalancer.updated
             ).filter_by(tenantid=tenant_id).all()}
         else:
-            #return Responses.LoadBalancers.detail
             load_balancers = session.query(
                 LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                 LoadBalancer.port, LoadBalancer.algorithm,
@@ -116,7 +104,10 @@ class LoadBalancersController(RestController):
             if not load_balancers:
                 response.status = 400
                 session.rollback()
-                return dict(status=400, message="load balancer not found")
+                return dict(
+                    faultcode='Client',
+                    faultstring="Load Balancer ID not found"
+                )
 
             load_balancers = load_balancers._asdict()
             virtualIps = session.query(
@@ -174,9 +165,30 @@ class LoadBalancersController(RestController):
         Returns: dict
         """
         tenant_id = get_limited_to_project(request.headers)
+        if body.nodes == Unset:
+            raise ClientSideError(
+                'At least one backend node needs to be supplied'
+            )
 
-        # TODO: check if tenant is overlimit (return a 413 for that)
-        # TODO: check if we have been supplied with too many nodes
+        lblimit = session.query(Limits.value).\
+            filter(Limits.name == 'maxLoadBalancers').scalar()
+        nodelimit = session.query(Limits.value).\
+            filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
+        count = session.query(LoadBalancer).\
+            filter(LoadBalancer.tenantid == tenant_id).count()
+
+        # TODO: this should probably be a 413, not sure how to do that yet
+        if count >= lblimit:
+            raise ClientSideError(
+                'Account has hit limit of {0} Load Balancers'.
+                format(lblimit)
+            )
+        if len(body.nodes) > nodelimit:
+            raise ClientSideError(
+                'Too many backend nodes supplied (limit is {0}'.
+                format(nodelimit)
+            )
+
         device = None
         old_lb = None
         # if we don't have an id then we want to create a new lb
@@ -203,22 +215,39 @@ class LoadBalancersController(RestController):
                 filter(Device.id == virtual_id).\
                 first()
             if old_lb is None:
-                response.status = 400
-                return Responses.service_unavailable
-            if old_lb.protocol == 'HTTP' and (
-                body.protocol is None or body.protocol == 'HTTP'
-            ):
-                # Error here, can have only one HTTP
-                response.status = 400
-                return Responses.service_unavailable
-            elif old_lb.protocol == 'TCP' and body.protocol == 'TCP':
-                # Error here, can have only one TCP
-                response.status = 400
-                return Responses.service_unavailable
+                raise InvalidInput(
+                    'virtualIps', virtual_id, 'Invalid virtual IP provided'
+                )
+
+            if body.protocol == Unset or body.protocol.lower() == 'HTTP':
+                old_count = session.query(
+                    LoadBalancer
+                ).join(LoadBalancer.devices).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(Device.id == virtual_id).\
+                    filter(LoadBalancer.protocol == 'HTTP').\
+                    count()
+                if old_count:
+                    # Error here, can have only one HTTP
+                    raise ClientSideError(
+                        'Only one HTTP load balancer allowed per device'
+                    )
+            elif body.protocol.lower() == 'TCP':
+                old_count = session.query(
+                    LoadBalancer
+                ).join(LoadBalancer.devices).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(Device.id == virtual_id).\
+                    filter(LoadBalancer.protocol == 'TCP').\
+                    count()
+                if old_count:
+                    # Error here, can have only one TCP
+                    raise ClientSideError(
+                        'Only one TCP load balancer allowed per device'
+                    )
 
         if device is None:
-            response.status = 503
-            return Responses.service_unavailable
+            raise RuntimeError('No devices available')
 
         lb.tenantid = tenant_id
         lb.name = body.name
@@ -265,7 +294,6 @@ class LoadBalancersController(RestController):
         device.status = "ONLINE"
 
         session.flush()
-            # TODO: write nodes to table too
 
         job_data = {
             'hpcs_action': 'UPDATE',
@@ -356,6 +384,8 @@ class LoadBalancersController(RestController):
 
         Returns: None
         """
+        # TODO: send gearman message (use PENDING_DELETE), make it an update
+        # message when more than one device per LB
         tenant_id = get_limited_to_project(request.headers)
         # grab the lb
         lb = session.query(LoadBalancer).\
@@ -364,8 +394,10 @@ class LoadBalancersController(RestController):
 
         if lb is None:
             response.status = 400
-            return Responses.not_found
-
+            return dict(
+                faultcode="Client",
+                faultstring="Load Balancer ID is not valid"
+            )
         try:
             session.query(Node).filter(Node.lbid == load_balancer_id).delete()
             lb.status = 'DELETED'
@@ -377,21 +409,25 @@ class LoadBalancersController(RestController):
             session.execute(loadbalancers_devices.delete().where(
                 loadbalancers_devices.c.loadbalancer == load_balancer_id
             ))
-            device.status = 'OFFLINE'
+            if device:
+                device.status = 'OFFLINE'
             session.flush()
             # trigger gearman client to create new lb
             #result = gearman_client.submit_job('DELETE', lb.output_to_json())
 
-            response.status = 200
+            response.status = 202
 
             session.commit()
 
-            return self.get()
+            return None
         except:
             logger = logging.getLogger(__name__)
             logger.exception('Error communicating with load balancer pool')
-            response.status = 503
-            return Responses.service_unavailable
+            response.status = 500
+            return dict(
+                faultcode="Server",
+                faultstring="Error communication with load balancer pool"
+            )
 
     def virtualips(self, load_balancer_id):
         """Returns a list of virtual ips attached to a specific Load Balancer.
@@ -403,7 +439,35 @@ class LoadBalancersController(RestController):
 
         Returns: dict
         """
-        return Responses.LoadBalancers.virtualips
+        tenant_id = get_limited_to_project(request.headers)
+        if not load_balancer_id:
+            response.status = 400
+            return dict(
+                faultcode="Client",
+                faultstring="Load Balancer ID not provided"
+            )
+        device = session.query(
+            Device.id, Device.floatingIpAddr
+        ).join(LoadBalancer.devices).\
+            filter(LoadBalancer.id == load_balancer_id).\
+            filter(LoadBalancer.tenantid == tenant_id).first()
+
+        if not device:
+            response.status = 400
+            return dict(
+                faultcode="Client",
+                faultstring="Load Balancer ID not valid"
+            )
+        resp = {
+            "virtualIps": [{
+                "id": device.id,
+                "address": device.floatingIpAddr,
+                "type": "PUBLIC",
+                "ipVersion": "IPV4"
+            }]
+        }
+
+        return resp
 
     def usage(self, load_balancer_id):
         """List current and historical usage.
@@ -416,7 +480,7 @@ class LoadBalancersController(RestController):
         Returns: dict
         """
         response.status = 201
-        return Responses.LoadBalancers.usage
+        return None
 
     @expose('json')
     def _lookup(self, primary_key, *remainder):
