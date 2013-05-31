@@ -202,7 +202,6 @@ class LoadBalancersController(RestController):
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(Device.id == virtual_id).\
                 first()
-            print old_lb
             if old_lb is None:
                 response.status = 400
                 return Responses.service_unavailable
@@ -237,6 +236,7 @@ class LoadBalancersController(RestController):
                 lb.port = 443
 
         lb.status = 'BUILD'
+        lb.created = None
 
         if body.algorithm:
             lb.algorithm = body.algorithm.upper()
