@@ -17,4 +17,3 @@ debian/libra.prerm.debhelper
 debian/libra.substvars
 dist
 doc/html
-doc/api
