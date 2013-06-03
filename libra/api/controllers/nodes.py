@@ -18,9 +18,10 @@ from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 #default response objects
-from libra.api.model.lbaas import LoadBalancer, Node, session, Limits
+from libra.api.model.lbaas import LoadBalancer, Node, session, Limits, Device
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
+from libra.api.library.gearman_client import submit_job
 
 
 class NodesController(RestController):
@@ -118,6 +119,7 @@ class NodesController(RestController):
         if load_balancer is None:
             raise ClientSideError('Load Balancer not found')
 
+        load_balancer.status = 'PENDING_UPDATE'
         # check if we are over limit
         nodelimit = session.query(Limits.value).\
             filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
@@ -152,7 +154,15 @@ class NodesController(RestController):
                     status='ONLINE'
                 )
             )
+        device = session.query(
+            Device.id, Device.name
+        ).join(LoadBalancer.devices).\
+            filter(LoadBalancer.id == self.lbid).\
+            first()
         session.commit()
+        result = submit_job(
+            'UPDATE', device.name, device.id, self.lbid
+        )
         return return_data
 
     @expose('json')
@@ -187,6 +197,16 @@ class NodesController(RestController):
                 faultcode="Client",
                 faultstring="Load Balancer not found"
             )
+        load_balancer.status = 'PENDING_UPDATE'
+        nodecount = session.query(Node).\
+            filter(Node.lbid == self.lbid).count()
+        # Can't delete the last LB
+        if nodecount <= 1:
+            response_status = 400
+            return dict(
+                faultcode="Client",
+                faultstring="Load Balancer not found"
+            )
         node = session.query(Node).\
             filter(Node.lbid == self.lbid).\
             filter(Node.id == node_id).\
@@ -198,5 +218,14 @@ class NodesController(RestController):
                 faultstring="Node not found in supplied Load Balancer"
             )
         session.delete(node)
+        device = session.query(
+            Device.id, Device.name
+        ).join(LoadBalancer.devices).\
+            filter(LoadBalancer.id == self.lbid).\
+            first()
         session.commit()
+        result = submit_job(
+            'UPDATE', device.name, device.id, self.lbid
+        )
+
         return None
