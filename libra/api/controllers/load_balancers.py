@@ -21,9 +21,7 @@ from wsme.exc import ClientSideError, InvalidInput
 from wsme import Unset
 # other controllers
 from nodes import NodesController
-from health_monitor import HealthMonitorController
-from session_persistence import SessionPersistenceController
-from connection_throttle import ConnectionThrottleController
+from virtualips import VipsController
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
 from libra.api.model.lbaas import loadbalancers_devices, Limits
@@ -33,32 +31,8 @@ from libra.api.acl import get_limited_to_project
 
 
 class LoadBalancersController(RestController):
-    """nodes subclass linking
-    controller class for urls that look like
-    /loadbalancers/{loadBalancerId}/nodes/*
-    """
-    nodes = NodesController()
-
-    """healthmonitor instance
-    controller class for urls that start with
-    /loadbalancers/{loadBalancerId}/healthmonitor/*
-    """
-    healthmonitor = HealthMonitorController()
-
-    """healthmonitor instance
-    controller class for urls that start with
-    /loadbalancers/{loadBalancerId}/sessionpersistence/*
-    """
-    sessionpersistence = SessionPersistenceController()
-
-    """connectionthrottle instance
-    controller class for urls that start with
-    /loadbalancers/{loadBalancerId}/connectionthrottle/*
-    """
-    connectionthrottle = ConnectionThrottleController()
-
     @expose('json')
-    def get(self, load_balancer_id=None, command=None):
+    def get(self, load_balancer_id=None):
         """Fetches a list of load balancers or the details of one balancer if
         load_balancer_id is not empty.
 
@@ -75,10 +49,6 @@ class LoadBalancersController(RestController):
 
         Returns: dict
         """
-        if command == 'virtualips':
-            return self.virtualips(load_balancer_id)
-        elif command:
-            abort(404)
 
         tenant_id = get_limited_to_project(request.headers)
 
@@ -483,16 +453,17 @@ class LoadBalancersController(RestController):
         return None
 
     @expose('json')
-    def _lookup(self, primary_key, *remainder):
+    def _lookup(self, lbid, *remainder):
         """Routes more complex url mapping.
 
-        :param primary_key: value to look up or pass
-        :param *remainder: remaining args
+        Most things are /loadbalancer/{id}/function/... so this routes that
 
         Raises: 404
         """
-        #student = get_student_by_primary_key(primary_key)
-        #if student:
-        #    return StudentController(student), remainder
-        #else:
+        if len(remainder):
+            if remainder[0] == 'nodes':
+                return NodesController(lbid), remainder[1:]
+            if remainder[0] == 'virtualips':
+                return VipsController(lbid), remainder[1:]
+
         abort(404)

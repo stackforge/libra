@@ -24,6 +24,22 @@ class LBNode(Base):
     condition = wtypes.text
 
 
+class NodeResp(Base):
+    id = int
+    address = wtypes.text
+    port = int
+    condition = wtypes.text
+    status = wtypes.text
+
+
+class LBNodePost(Base):
+    nodes = wsattr(['LBNode'], mandatory=True)
+
+
+class LBNodeResp(Base):
+    nodes = wsattr(['NodeResp'])
+
+
 class LBVip(Base):
     id = wsattr(int, mandatory=True)
 
