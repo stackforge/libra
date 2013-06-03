@@ -15,16 +15,21 @@
 
 from pecan import expose, response, request
 from pecan.rest import RestController
+import wsmeext.pecan as wsme_pecan
+from wsme.exc import ClientSideError
 #default response objects
-from libra.api.model.lbaas import LoadBalancer, Node, session
+from libra.api.model.lbaas import LoadBalancer, Node, session, Limits
 from libra.api.acl import get_limited_to_project
+from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 
 
 class NodesController(RestController):
     """Functions for /loadbalancers/{load_balancer_id}/nodes/* routing"""
+    def __init__(self, lbid):
+        self.lbid = lbid
 
     @expose('json')
-    def get(self, load_balancer_id, node_id=None):
+    def get(self, node_id=None):
         """List node(s) configured for the load balancer OR if
         node_id == None .. Retrieve the configuration of node {node_id} of
         loadbalancer {load_balancer_id}.
@@ -39,16 +44,19 @@ class NodesController(RestController):
         """
         tenant_id = get_limited_to_project(request.headers)
 
-        if not load_balancer_id:
+        if not self.lbid:
             response.status = 400
-            return dict(status=400, message='load balancer ID not supplied')
+            return dict(
+                faultcode='Client',
+                faultstring='Load Balancer ID not supplied'
+            )
 
         if not node_id:
             nodes = session.query(
                 Node.id, Node.address, Node.port, Node.status, Node.enabled
             ).join(LoadBalancer.nodes).\
                 filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.id == load_balancer_id).\
+                filter(LoadBalancer.id == self.lbid).\
                 all()
 
             node_response = {'nodes': []}
@@ -66,21 +74,21 @@ class NodesController(RestController):
                 Node.id, Node.address, Node.port, Node.status, Node.enabled
             ).join(LoadBalancer.nodes).\
                 filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.id == load_balancer_id).\
+                filter(LoadBalancer.id == self.lbid).\
                 filter(Node.id == node_id).\
                 first()
 
         if node_response is None:
             session.rollback()
             response.status = 400
-            return dict(status=400, message='node not found')
+            return dict(faultcode='Client', faultstring='node not found')
         else:
             session.commit()
             response.status = 200
             return node_response
 
-    @expose('json')
-    def post(self, load_balancer_id, node_id=None, *args):
+    @wsme_pecan.wsexpose(LBNodeResp, body=LBNodePost, status=202)
+    def post(self, body=None):
         """Adds a new node to the load balancer OR Modify the configuration
         of a node on the load balancer.
 
@@ -95,11 +103,60 @@ class NodesController(RestController):
         Returns: dict of the full list of nodes or the details of the single
         node
         """
-        response.status = 201
-        return None
+        # TODO: gearman message
+        tenant_id = get_limited_to_project(request.headers)
+        if self.lbid is None:
+            raise ClientSideError('Load Balancer ID has not been supplied')
 
-    @expose()
-    def delete(self, load_balancer_id, node_id):
+        if not len(body.nodes):
+            raise ClientSideError('No nodes have been supplied')
+
+        load_balancer = session.query(LoadBalancer).\
+            filter(LoadBalancer.tenantid == tenant_id).\
+            filter(LoadBalancer.id == self.lbid).\
+            first()
+        if load_balancer is None:
+            raise ClientSideError('Load Balancer not found')
+
+        # check if we are over limit
+        nodelimit = session.query(Limits.value).\
+            filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
+        nodecount = session.query(Node).\
+            filter(Node.lbid == self.lbid).count()
+
+        if (nodecount + len(body.nodes)) >= nodelimit:
+            raise ClientSideError(
+                'Command would exceed Load Balancer node limit'
+            )
+        return_data = LBNodeResp()
+        return_data.nodes = []
+        for node in body.nodes:
+            if node.condition == 'DISABLED':
+                enabled = 0
+            else:
+                enabled = 1
+            new_node = Node(
+                lbid=self.lbid, port=node.port, address=node.address,
+                enabled=enabled, status='ONLINE', weight=0
+            )
+            session.add(new_node)
+            session.flush()
+            if new_node.enabled:
+                condition = 'ENABLED'
+            else:
+                condition = 'DISABLED'
+            return_data.nodes.append(
+                NodeResp(
+                    id=new_node.id, port=new_node.port,
+                    address=new_node.address, condition=condition,
+                    status='ONLINE'
+                )
+            )
+        session.commit()
+        return return_data
+
+    @expose('json')
+    def delete(self, node_id):
         """Remove a node from the load balancer.
 
         :param load_balancer_id: id of lb
@@ -110,4 +167,36 @@ class NodesController(RestController):
 
         Returns: None
         """
-        response.status = 201
+        # TODO: gearman message
+        tenant_id = get_limited_to_project(request.headers)
+        if self.lbid is None:
+            response.status = 400
+            return dict(
+                faultcode="Client",
+                faultstring='Load Balancer ID has not been supplied'
+            )
+
+        tenant_id = get_limited_to_project(request.headers)
+        load_balancer = session.query(LoadBalancer).\
+            filter(LoadBalancer.tenantid == tenant_id).\
+            filter(LoadBalancer.id == self.lbid).\
+            first()
+        if load_balancer is None:
+            response.status = 400
+            return dict(
+                faultcode="Client",
+                faultstring="Load Balancer not found"
+            )
+        node = session.query(Node).\
+            filter(Node.lbid == self.lbid).\
+            filter(Node.id == node_id).\
+            first()
+        if not node:
+            response.status = 400
+            return dict(
+                faultcode="Client",
+                faultstring="Node not found in supplied Load Balancer"
+            )
+        session.delete(node)
+        session.commit()
+        return None
