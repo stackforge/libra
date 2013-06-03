@@ -297,7 +297,7 @@ Example
 
 ::
 
-    curl -X POST -k https://15.185.107.220:8889/v1/devices/1
+    curl -X DELETE -k https://15.185.107.220:8889/v1/devices/1
 
 Update a Device
 ---------------
