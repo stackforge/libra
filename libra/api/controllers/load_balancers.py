@@ -163,7 +163,7 @@ class LoadBalancersController(RestController):
         old_lb = None
         # if we don't have an id then we want to create a new lb
         lb = LoadBalancer()
-        if not body.virtualIps:
+        if body.virtualIps == Unset:
             # find free device
             device = session.query(Device).\
                 filter(~Device.id.in_(
@@ -265,50 +265,7 @@ class LoadBalancersController(RestController):
 
         session.flush()
 
-        job_data = {
-            'hpcs_action': 'UPDATE',
-            'loadBalancers': [{
-                'name': lb.name,
-                'protocol': lb.protocol,
-                'port': lb.port,
-                'nodes': []
-            }]
-        }
-        for node in body.nodes:
-            node_data = {
-                'port': node.port, 'address': node.address, 'weight': '1'
-            }
-            if node.condition:
-                node_data['condition'] = node.condition
-            job_data['loadBalancers'][0]['nodes'].append(node_data)
-
-        if old_lb:
-            old_nodes = session.query(Node).\
-                filter(Node.lbid == old_lb.id).all()
-            old_lb_data = {
-                'name': old_lb.name,
-                'protocol': old_lb.protocol,
-                'port': old_lb.port,
-                'nodes': []
-            }
-            for node in old_nodes:
-                if node.enabled:
-                    condition = 'ENABLED'
-                else:
-                    condition = 'DISABLED'
-                old_lb_data['nodes'].append({
-                    'port': node.port, 'address': node.address,
-                    'weight': node.weight, 'condition': condition
-                })
-            job_data['loadBalancers'].append(old_lb_data)
         try:
-            # trigger gearman client to create new lb
-            result = submit_job(
-                'UPDATE', device.name, job_data, lb.id
-            )
-            # do something with result
-            if result:
-                pass
             return_data = LBResp()
             return_data.id = lb.id
             return_data.name = lb.name
@@ -331,6 +288,13 @@ class LoadBalancersController(RestController):
                 )
                 return_data.nodes.append(out_node)
             session.commit()
+            # trigger gearman client to create new lb
+            result = submit_job(
+                'UPDATE', device.name, device.id, lb.id
+            )
+            # do something with result
+            if result:
+                pass
             return return_data
         except:
             logger = logging.getLogger(__name__)
@@ -340,7 +304,7 @@ class LoadBalancersController(RestController):
             raise ClientSideError(errstr)
 
     @expose('json')
-    def delete(self, load_balancer_id):
+    def delete(self, load_balancer_id, status=202):
         """Remove a load balancer from the account.
 
         :param load_balancer_id: id of lb
@@ -354,8 +318,6 @@ class LoadBalancersController(RestController):
 
         Returns: None
         """
-        # TODO: send gearman message (use PENDING_DELETE), make it an update
-        # message when more than one device per LB
         tenant_id = get_limited_to_project(request.headers)
         # grab the lb
         lb = session.query(LoadBalancer).\
@@ -370,25 +332,20 @@ class LoadBalancersController(RestController):
             )
         try:
             session.query(Node).filter(Node.lbid == load_balancer_id).delete()
-            lb.status = 'DELETED'
+            lb.status = 'PENDING_DELETE'
             device = session.query(
-                Device.id, Device.status
+                Device.id, Device.name
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == load_balancer_id).\
                 first()
             session.execute(loadbalancers_devices.delete().where(
                 loadbalancers_devices.c.loadbalancer == load_balancer_id
             ))
-            if device:
-                device.status = 'OFFLINE'
             session.flush()
-            # trigger gearman client to create new lb
-            #result = gearman_client.submit_job('DELETE', lb.output_to_json())
-
-            response.status = 202
-
             session.commit()
-
+            submit_job(
+                'DELETE', device.name, device.id, lb.id
+            )
             return None
         except:
             logger = logging.getLogger(__name__)
@@ -398,46 +355,6 @@ class LoadBalancersController(RestController):
                 faultcode="Server",
                 faultstring="Error communication with load balancer pool"
             )
-
-    def virtualips(self, load_balancer_id):
-        """Returns a list of virtual ips attached to a specific Load Balancer.
-
-        :param load_balancer_id: id of lb
-
-        Url:
-           GET /loadbalancers/{load_balancer_id}/virtualips
-
-        Returns: dict
-        """
-        tenant_id = get_limited_to_project(request.headers)
-        if not load_balancer_id:
-            response.status = 400
-            return dict(
-                faultcode="Client",
-                faultstring="Load Balancer ID not provided"
-            )
-        device = session.query(
-            Device.id, Device.floatingIpAddr
-        ).join(LoadBalancer.devices).\
-            filter(LoadBalancer.id == load_balancer_id).\
-            filter(LoadBalancer.tenantid == tenant_id).first()
-
-        if not device:
-            response.status = 400
-            return dict(
-                faultcode="Client",
-                faultstring="Load Balancer ID not valid"
-            )
-        resp = {
-            "virtualIps": [{
-                "id": device.id,
-                "address": device.floatingIpAddr,
-                "type": "PUBLIC",
-                "ipVersion": "IPV4"
-            }]
-        }
-
-        return resp
 
     def usage(self, load_balancer_id):
         """List current and historical usage.
