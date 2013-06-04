@@ -58,6 +58,7 @@ class NodesController(RestController):
             ).join(LoadBalancer.nodes).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.id == self.lbid).\
+                filter(LoadBalancer.status != 'DELETED').\
                 all()
 
             node_response = {'nodes': []}
@@ -104,7 +105,6 @@ class NodesController(RestController):
         Returns: dict of the full list of nodes or the details of the single
         node
         """
-        # TODO: gearman message
         tenant_id = get_limited_to_project(request.headers)
         if self.lbid is None:
             raise ClientSideError('Load Balancer ID has not been supplied')
@@ -115,6 +115,7 @@ class NodesController(RestController):
         load_balancer = session.query(LoadBalancer).\
             filter(LoadBalancer.tenantid == tenant_id).\
             filter(LoadBalancer.id == self.lbid).\
+            filter(LoadBalancer.status != 'DELETED').\
             first()
         if load_balancer is None:
             raise ClientSideError('Load Balancer not found')
@@ -177,7 +178,6 @@ class NodesController(RestController):
 
         Returns: None
         """
-        # TODO: gearman message
         tenant_id = get_limited_to_project(request.headers)
         if self.lbid is None:
             response.status = 400
@@ -190,6 +190,7 @@ class NodesController(RestController):
         load_balancer = session.query(LoadBalancer).\
             filter(LoadBalancer.tenantid == tenant_id).\
             filter(LoadBalancer.id == self.lbid).\
+            filter(LoadBalancer.device != 'DELETED').\
             first()
         if load_balancer is None:
             response.status = 400
@@ -227,5 +228,5 @@ class NodesController(RestController):
         submit_job(
             'UPDATE', device.name, device.id, self.lbid
         )
-
+        response.status = 202
         return None

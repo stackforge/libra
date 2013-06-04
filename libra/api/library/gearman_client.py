@@ -58,6 +58,7 @@ class GearmanClientThread(object):
             LoadBalancer
         ).join(LoadBalancer.devices).\
             filter(Device.id == data).\
+            filter(LoadBalancer.status != 'DELETED').\
             count()
         if count >= 1:
             # This is an update message because we want to retain the
@@ -66,6 +67,7 @@ class GearmanClientThread(object):
                 join(LoadBalancer.devices).\
                 filter(Device.id == data).\
                 filter(LoadBalancer.id != self.lbid).\
+                filter(LoadBalancer.status != 'DELETED').\
                 first()
             job_data = {
                 'hpcs_action': 'UPDATE',
@@ -95,15 +97,31 @@ class GearmanClientThread(object):
             filter(LoadBalancer.id == self.lbid).\
             first()
         if not status:
-            lb.status = 'ERROR'
-            lb.errmsg = response
+            self._set_error(data, response)
         else:
             lb.status = 'DELETED'
             if count == 0:
+                # Device should never be used again
                 device = session.query(Device).\
                     filter(Device.id == data).first()
-                device.status = 'OFFLINE'
+                device.status = 'DELETED'
         session.commit()
+
+    def _set_error(self, device_id, errmsg):
+        lbs = session.query(
+            LoadBalancer
+        ).join(LoadBalancer.nodes).\
+            join(LoadBalancer.devices).\
+            filter(Device.id == device_id).\
+            filter(LoadBalancer.status != 'DELETED').\
+            all()
+        device = session.query(Device).\
+            filter(Device.id == device_id).\
+            first()
+        device.status = 'ERROR'
+        for lb in lbs:
+            lb.status = 'ERROR'
+            lb.errmsg = errmsg
 
     def send_update(self, data):
         lbs = session.query(
@@ -111,6 +129,7 @@ class GearmanClientThread(object):
         ).join(LoadBalancer.nodes).\
             join(LoadBalancer.devices).\
             filter(Device.id == data).\
+            filter(LoadBalancer.status != 'DELETED').\
             all()
         job_data = {
             'hpcs_action': 'UPDATE',
@@ -139,12 +158,9 @@ class GearmanClientThread(object):
             filter(LoadBalancer.id == self.lbid).\
             first()
         if not status:
-            lb.status = 'ERROR'
-            lb.errmsg = response
-            pass
+            self._set_error(data, response)
         else:
             lb.status = 'ACTIVE'
-            pass
         session.commit()
 
     def _send_message(self, message):
@@ -154,9 +170,13 @@ class GearmanClientThread(object):
         )
         if job_status.state == 'UNKNOWN':
             # Gearman server connection failed
+            self.logger.error('Could not talk to gearman server')
             return False, "System error communicating with load balancer"
         if job_status.timed_out:
             # Job timed out
+            self.logger.warning(
+                'Gearman timeout talking to {0}'.format(self.host)
+            )
             return False, "Timeout error communicating with load balancer"
         self.logger.debug(job_status.result)
         if 'badRequest' in job_status.result:
