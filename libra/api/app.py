@@ -78,6 +78,10 @@ class LogStdout(object):
         if data.strip() != '':
             self.logger(data)
 
+    # Gearman calls this
+    def flush(self):
+        pass
+
 
 def main():
     options = Options('api', 'API Server')

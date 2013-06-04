@@ -59,13 +59,14 @@ class LoadBalancersController(RestController):
                 LoadBalancer.port, LoadBalancer.algorithm,
                 LoadBalancer.status, LoadBalancer.created,
                 LoadBalancer.updated
-            ).filter_by(tenantid=tenant_id).all()}
+            ).filter(LoadBalancer.tenantid == tenant_id).
+                filter(LoadBalancer.status != 'DELETED').all()}
         else:
             load_balancers = session.query(
                 LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                 LoadBalancer.port, LoadBalancer.algorithm,
                 LoadBalancer.status, LoadBalancer.created,
-                LoadBalancer.updated
+                LoadBalancer.updated, LoadBalancer.statusDescription
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.id == load_balancer_id).\
@@ -145,7 +146,8 @@ class LoadBalancersController(RestController):
         nodelimit = session.query(Limits.value).\
             filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
         count = session.query(LoadBalancer).\
-            filter(LoadBalancer.tenantid == tenant_id).count()
+            filter(LoadBalancer.tenantid == tenant_id).\
+            filter(LoadBalancer.status != 'DELETED').count()
 
         # TODO: this should probably be a 413, not sure how to do that yet
         if count >= lblimit:
@@ -304,7 +306,7 @@ class LoadBalancersController(RestController):
             raise ClientSideError(errstr)
 
     @expose('json')
-    def delete(self, load_balancer_id, status=202):
+    def delete(self, load_balancer_id):
         """Remove a load balancer from the account.
 
         :param load_balancer_id: id of lb
@@ -322,7 +324,8 @@ class LoadBalancersController(RestController):
         # grab the lb
         lb = session.query(LoadBalancer).\
             filter(LoadBalancer.id == load_balancer_id).\
-            filter(LoadBalancer.tenantid == tenant_id).first()
+            filter(LoadBalancer.tenantid == tenant_id).\
+            filter(LoadBalancer.status != 'DELETED').first()
 
         if lb is None:
             response.status = 400
@@ -346,6 +349,7 @@ class LoadBalancersController(RestController):
             submit_job(
                 'DELETE', device.name, device.id, lb.id
             )
+            response.status = 202
             return None
         except:
             logger = logging.getLogger(__name__)

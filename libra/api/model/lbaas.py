@@ -85,6 +85,7 @@ class LoadBalancer(DeclarativeBase):
     port = Column(u'port', INTEGER(), nullable=False)
     protocol = Column(u'protocol', VARCHAR(length=128), nullable=False)
     status = Column(u'status', VARCHAR(length=50), nullable=False)
+    statusDescription = Column(u'errmsg', VARCHAR(length=128), nullable=True)
     tenantid = Column(u'tenantid', VARCHAR(length=128), nullable=False)
     updated = Column(u'updated', FormatedDateTime(), nullable=False)
     created = Column(u'created', FormatedDateTime(), nullable=False)
