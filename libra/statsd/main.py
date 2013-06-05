@@ -59,6 +59,14 @@ def main():
         help='how often to ping load balancers (in seconds)'
     )
     options.parser.add_argument(
+        '--poll_timeout', type=int, default=5,
+        help='timeout value for initial ping request (in seconds)'
+    )
+    options.parser.add_argument(
+        '--poll_timeout_retry', type=int, default=30,
+        help='timeout value for the retry ping request (in seconds)'
+    )
+    options.parser.add_argument(
         '--repair_interval', type=int, default=180,
         help='how often to check if a load balancer has been repaired (in '
              'seconds)'

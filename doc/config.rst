@@ -322,6 +322,16 @@ Statsd Command Line Options
 
       How often to run a ping check of load balancers (in seconds), default 60
 
+   .. option:: --poll_interval <POLL_INTERVAL>
+
+      How long to wait until we consider the initial ping check failed and
+      send a second ping. Default is 5 seconds.
+
+   .. option:: --poll_interval_retry <POLL_INTERVAL>
+
+      How long to wait until we consider the second and final ping check
+      failed. Default is 30 seconds.
+
    .. option:: --repair_interval <REPAIR_INTERVAL>
 
       How often to run a check to see if damaged load balancers had been
