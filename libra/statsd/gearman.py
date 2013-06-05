@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from gearman import JOB_UNKNOWN
 from libra.common.json_gearman import JSONGearmanClient
 
 
@@ -33,7 +34,7 @@ class GearJobs(object):
             poll_timeout=5.0
         )
         for ping in submitted_pings:
-            if ping.state == 'UNKNOWN':
+            if ping.state == JOB_UNKNOWN:
                 # TODO: Gearman server failed, ignoring for now
                 self.logger.error('Gearman Job server fail')
                 continue
@@ -63,7 +64,7 @@ class GearJobs(object):
                 poll_timeout=10.0
             )
             for ping in submitted_pings:
-                if ping.state == 'UNKNOWN':
+                if ping.state == JOB_UNKNOWN:
                     # TODO: Gearman server failed, ignoring for now
                     self.logger.error('Gearman Job server fail')
                     continue
@@ -94,7 +95,7 @@ class GearJobs(object):
             poll_timeout=5.0
         )
         for ping in submitted_pings:
-            if ping.state == 'UNKNOWN':
+            if ping.state == JOB_UNKNOWN:
                 # TODO: Gearman server failed, ignoring for now
                 self.logger.error('Gearman Job server fail')
                 continue
