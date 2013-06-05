@@ -60,7 +60,7 @@ class GearJobs(object):
                 list_of_jobs.append(dict(task=str(node), data=job_data))
             submitted_pings = self.gm_client.submit_multiple_jobs(
                 list_of_jobs, background=False, wait_until_complete=True,
-                poll_timeout=10.0
+                poll_timeout=30.0
             )
             for ping in submitted_pings:
                 if ping.state == 'UNKNOWN':

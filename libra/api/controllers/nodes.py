@@ -13,21 +13,24 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from pecan import expose, response, request
+from pecan import expose, response, request, abort
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
+from wsme import Unset
 #default response objects
 from libra.api.model.lbaas import LoadBalancer, Node, session, Limits, Device
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
+from libra.api.model.validators import LBNodePut
 from libra.api.library.gearman_client import submit_job
 
 
 class NodesController(RestController):
     """Functions for /loadbalancers/{load_balancer_id}/nodes/* routing"""
-    def __init__(self, lbid):
+    def __init__(self, lbid, nodeid=None):
         self.lbid = lbid
+        self.nodeid = nodeid
 
     @expose('json')
     def get(self, node_id=None):
@@ -89,7 +92,7 @@ class NodesController(RestController):
             response.status = 200
             return node_response
 
-    @wsme_pecan.wsexpose(LBNodeResp, body=LBNodePost, status=202)
+    @wsme_pecan.wsexpose(LBNodeResp, body=LBNodePost, status_code=202)
     def post(self, body=None):
         """Adds a new node to the load balancer OR Modify the configuration
         of a node on the load balancer.
@@ -166,6 +169,45 @@ class NodesController(RestController):
         )
         return return_data
 
+    @wsme_pecan.wsexpose(None, body=LBNodePut, status_code=202)
+    def put(self, body=None):
+        if not self.lbid:
+            raise ClientSideError('Load Balancer ID has not been supplied')
+        if not self.nodeid:
+            raise ClientSideError('Node ID has not been supplied')
+
+        tenant_id = get_limited_to_project(request.headers)
+        # grab the lb
+        lb = session.query(LoadBalancer).\
+            filter(LoadBalancer.id == self.lbid).\
+            filter(LoadBalancer.tenantid == tenant_id).\
+            filter(LoadBalancer.status != 'DELETED').first()
+
+        if lb is None:
+            raise ClientSideError('Load Balancer ID is not valid')
+
+        node = session.query(Node).\
+            filter(Node.lbid == self.lbid).\
+            filter(Node.id == self.nodeid).first()
+
+        if node is None:
+            raise ClientSideError('Node ID is not valid')
+
+        if body.condition != Unset:
+            node.condition = body.condition
+
+        lb.status = 'PENDING_UPDATE'
+        device = session.query(
+            Device.id, Device.name
+        ).join(LoadBalancer.devices).\
+            filter(LoadBalancer.id == self.lbid).\
+            first()
+        session.commit()
+        submit_job(
+            'UPDATE', device.name, device.id, lb.id
+        )
+        return
+
     @expose('json')
     def delete(self, node_id):
         """Remove a node from the load balancer.
@@ -230,3 +272,14 @@ class NodesController(RestController):
         )
         response.status = 202
         return None
+
+    @expose('json')
+    def _lookup(self, nodeid, *remainder):
+        """Routes more complex url mapping.
+
+        Raises: 404
+        """
+        # Kludgy fix for PUT since WSME doesn't like IDs on the path
+        if nodeid:
+            return NodesController(self.lbid, nodeid), remainder
+        abort(404)

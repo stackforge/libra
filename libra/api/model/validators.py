@@ -15,13 +15,17 @@
 
 from wsme import types as wtypes
 from wsme import wsattr
-from wsme.types import Base
+from wsme.types import Base, Enum
 
 
 class LBNode(Base):
     port = wsattr(int, mandatory=True)
     address = wsattr(wtypes.text, mandatory=True)
-    condition = wtypes.text
+    condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
+
+
+class LBNodePut(Base):
+    condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
 
 
 class NodeResp(Base):
@@ -48,9 +52,14 @@ class LBPost(Base):
     name = wsattr(wtypes.text, mandatory=True)
     nodes = wsattr(['LBNode'], mandatory=True)
     protocol = wtypes.text
-    algorithm = wtypes.text
+    algorithm = Enum(wtypes.text, 'ROUND_ROBIN', 'LEAST_CONNECTIONS')
     port = int
     virtualIps = wsattr(['LBVip'])
+
+
+class LBPut(Base):
+    name = wtypes.text
+    algorithm = Enum(wtypes.text, 'ROUND_ROBIN', 'LEAST_CONNECTIONS')
 
 
 class LBVipResp(Base):
