@@ -19,6 +19,8 @@ from libra.common.json_gearman import JSONGearmanClient
 class GearJobs(object):
     def __init__(self, logger, args):
         self.logger = logger
+        self.poll_timeout = args.poll_timeout
+        self.poll_timeout_retry = args.poll_timeout_retry
         self.gm_client = JSONGearmanClient(args.server)
 
     def send_pings(self, node_list):
@@ -31,7 +33,7 @@ class GearJobs(object):
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(
             list_of_jobs, background=False, wait_until_complete=True,
-            poll_timeout=5.0
+            poll_timeout=self.poll_timeout
         )
         for ping in submitted_pings:
             if ping.state == JOB_UNKNOWN:
@@ -61,7 +63,7 @@ class GearJobs(object):
                 list_of_jobs.append(dict(task=str(node), data=job_data))
             submitted_pings = self.gm_client.submit_multiple_jobs(
                 list_of_jobs, background=False, wait_until_complete=True,
-                poll_timeout=30.0
+                poll_timeout=self.poll_timeout_retry
             )
             for ping in submitted_pings:
                 if ping.state == JOB_UNKNOWN:
@@ -92,7 +94,7 @@ class GearJobs(object):
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(
             list_of_jobs, background=False, wait_until_complete=True,
-            poll_timeout=5.0
+            poll_timeout=self.poll_timeout
         )
         for ping in submitted_pings:
             if ping.state == JOB_UNKNOWN:
