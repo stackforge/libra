@@ -74,6 +74,7 @@ class GearmanClientThread(object):
                 'loadBalancers': [{
                     'name': keep_lb.name,
                     'protocol': keep_lb.protocol,
+                    'algorithm': keep_lb.algorithm,
                     'port': keep_lb.port,
                     'nodes': []
                 }]
@@ -139,6 +140,7 @@ class GearmanClientThread(object):
             lb_data = {
                 'name': lb.name,
                 'protocol': lb.protocol,
+                'algorithm': lb.algorithm,
                 'port': lb.port,
                 'nodes': []
             }

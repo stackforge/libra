@@ -25,12 +25,15 @@ from virtualips import VipsController
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
 from libra.api.model.lbaas import loadbalancers_devices, Limits
-from libra.api.model.validators import LBPost, LBResp, LBVipResp, LBNode
+from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp, LBNode
 from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 
 
 class LoadBalancersController(RestController):
+    def __init__(self, lbid=None):
+        self.lbid = lbid
+
     @expose('json')
     def get(self, load_balancer_id=None):
         """Fetches a list of load balancers or the details of one balancer if
@@ -116,7 +119,7 @@ class LoadBalancersController(RestController):
         response.status = 200
         return load_balancers
 
-    @wsme_pecan.wsexpose(LBResp, body=LBPost, status=202)
+    @wsme_pecan.wsexpose(LBResp, body=LBPost, status_code=202)
     def post(self, body=None):
         """Accepts edit if load_balancer_id isn't blank or create load balancer
         posts.
@@ -305,6 +308,40 @@ class LoadBalancersController(RestController):
             session.rollback()
             raise ClientSideError(errstr)
 
+    @wsme_pecan.wsexpose(None, body=LBPut, status_code=202)
+    def put(self, body=None):
+        if not self.lbid:
+            raise ClientSideError('Load Balancer ID is required')
+
+        tenant_id = get_limited_to_project(request.headers)
+
+        # grab the lb
+        lb = session.query(LoadBalancer).\
+            filter(LoadBalancer.id == self.lbid).\
+            filter(LoadBalancer.tenantid == tenant_id).\
+            filter(LoadBalancer.status != 'DELETED').first()
+
+        if lb is None:
+            raise ClientSideError('Load Balancer ID is not valid')
+
+        if body.name != Unset:
+            lb.name = body.name
+
+        if body.algorithm != Unset:
+            lb.algorithm = body.algorithm
+
+        lb.status = 'PENDING_UPDATE'
+        device = session.query(
+            Device.id, Device.name
+        ).join(LoadBalancer.devices).\
+            filter(LoadBalancer.id == self.lbid).\
+            first()
+        session.commit()
+        submit_job(
+            'UPDATE', device.name, device.id, lb.id
+        )
+        return
+
     @expose('json')
     def delete(self, load_balancer_id):
         """Remove a load balancer from the account.
@@ -386,5 +423,7 @@ class LoadBalancersController(RestController):
                 return NodesController(lbid), remainder[1:]
             if remainder[0] == 'virtualips':
                 return VipsController(lbid), remainder[1:]
-
+        # Kludgy fix for PUT since WSME doesn't like IDs on the path
+        elif lbid:
+            return LoadBalancersController(lbid), remainder
         abort(404)
