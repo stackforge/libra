@@ -1,5 +1,5 @@
 eventlet
-gearman
+gearman>=2.0.2
 pbr
 python-daemon>=1.6
 python_novaclient>=2.11.1
