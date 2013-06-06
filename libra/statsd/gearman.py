@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from gearman import JOB_UNKNOWN
+from gearman.constants import JOB_UNKNOWN
 from libra.common.json_gearman import JSONGearmanClient
 
 
