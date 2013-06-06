@@ -17,7 +17,7 @@ import signal
 import sys
 
 from libra.statsd.admin_api import AdminAPI
-from libra.statsd.gearman import GearJobs
+from libra.statsd.statsd_gearman import GearJobs
 
 
 class NodeNotFound(Exception):
