@@ -14,18 +14,36 @@
 # under the License.
 
 from pecan import expose, response
-from devices import DevicesController
+from libra.api.model.lbaas import Device, session
 from libra.admin_api.model.responses import Responses
+from pecan.rest import RestController
 
 
-class V1Controller(object):
-    """v1 control object."""
+class UsageController(RestController):
+
+    @expose('json')
+    def get(self):
+        """Reports the device usage statistics for total, taken, and free
+            :param None
+            Url:
+                GET /devices/usage
+            Returns: dict
+        """
+        total = session.query(Device).count()
+        free = session.query(Device).filter(Device.status == 'OFFLINE').\
+            count()
+        session.commit()
+        response.status = 200
+
+        return dict(
+            total=total,
+            free=free,
+            taken=total - free
+        )
 
     @expose('json')
     def _default(self):
         """default route.. acts as catch all for any wrong urls.
-           For now it returns a 404 because no action is defined for /"""
+            For now it returns a 404 because no action is defined for /"""
         response.status = 404
         return Responses._default
-
-    devices = DevicesController()
