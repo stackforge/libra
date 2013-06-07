@@ -24,6 +24,12 @@ class LBNode(Base):
     condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
 
 
+class LBRespNode(Base):
+    port = wtypes.text
+    address = wtypes.text
+    condition = wtypes.text
+
+
 class LBNodePut(Base):
     condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
 
@@ -63,7 +69,7 @@ class LBPut(Base):
 
 
 class LBVipResp(Base):
-    id = int
+    id = wtypes.text
     address = wtypes.text
     type = wtypes.text
     ipVersion = wtypes.text
@@ -77,13 +83,13 @@ class LBLogsPost(Base):
 
 
 class LBResp(Base):
-    id = int
+    id = wtypes.text
     name = wtypes.text
     protocol = wtypes.text
-    port = int
+    port = wtypes.text
     algorithm = wtypes.text
     status = wtypes.text
     created = wtypes.text
     updated = wtypes.text
     virtualIps = wsattr(['LBVipResp'])
-    nodes = wsattr(['LBNode'])
+    nodes = wsattr(['LBRespNode'])

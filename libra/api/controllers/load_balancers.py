@@ -13,6 +13,7 @@
 # under the License.
 
 import logging
+import socket
 # pecan imports
 from pecan import expose, abort, response, request
 from pecan.rest import RestController
@@ -26,9 +27,11 @@ from logs import LogsController
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
 from libra.api.model.lbaas import loadbalancers_devices, Limits
-from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp, LBNode
+from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
+from libra.api.model.validators import LBRespNode
 from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
+from libra.api.library.exp import OverLimit
 
 
 class LoadBalancersController(RestController):
@@ -58,13 +61,20 @@ class LoadBalancersController(RestController):
 
         # if we don't have an id then we want a list of them own by this tenent
         if not load_balancer_id:
-            load_balancers = {'loadBalancers': session.query(
+            lbs = session.query(
                 LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                 LoadBalancer.port, LoadBalancer.algorithm,
                 LoadBalancer.status, LoadBalancer.created,
                 LoadBalancer.updated
-            ).filter(LoadBalancer.tenantid == tenant_id).
-                filter(LoadBalancer.status != 'DELETED').all()}
+            ).filter(LoadBalancer.tenantid == tenant_id).\
+                filter(LoadBalancer.status != 'DELETED').all()
+
+            load_balancers = {'loadBalancers': []}
+
+            for lb in lbs:
+                lb = lb._asdict()
+                lb['id'] = str(lb['id'])
+                load_balancers['loadBalancers'].append(lb)
         else:
             load_balancers = session.query(
                 LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
@@ -97,6 +107,8 @@ class LoadBalancersController(RestController):
                 vip = item._asdict()
                 vip['type'] = 'PUBLIC'
                 vip['ipVersion'] = 'IPV4'
+                vip['address'] = vip['floatingIpAddr']
+                del(vip['floatingIpAddr'])
                 load_balancers['virtualIps'].append(vip)
 
             nodes = session.query(
@@ -106,6 +118,10 @@ class LoadBalancersController(RestController):
                 filter(LoadBalancer.id == load_balancer_id).\
                 all()
 
+            load_balancers['id'] = str(load_balancers['id'])
+            if not load_balancers['statusDescription']:
+                load_balancers['statusDescription'] = ''
+
             load_balancers['nodes'] = []
             for item in nodes:
                 node = item._asdict()
@@ -114,9 +130,11 @@ class LoadBalancersController(RestController):
                 else:
                     node['condition'] = 'DISABLED'
                 del node['enabled']
+                node['port'] = str(node['port'])
+                node['id'] = str(node['id'])
                 load_balancers['nodes'].append(node)
 
-        session.commit()
+        session.rollback()
         response.status = 200
         return load_balancers
 
@@ -140,27 +158,48 @@ class LoadBalancersController(RestController):
         Returns: dict
         """
         tenant_id = get_limited_to_project(request.headers)
-        if body.nodes == Unset:
+        if body.nodes == Unset or not len(body.nodes):
             raise ClientSideError(
                 'At least one backend node needs to be supplied'
             )
+        for node in body.nodes:
+            if node.address == Unset:
+                raise ClientSideError(
+                    'A supplied node has no address'
+                )
+            if node.port == Unset:
+                raise ClientSideError(
+                    'Node {0} is missing a port'.format(node.address)
+                )
+            try:
+                socket.inet_aton(node.address)
+            except socket.error:
+                raise ClientSideError(
+                    'IP Address {0} not valid'.format(node.address)
+                )
 
         lblimit = session.query(Limits.value).\
             filter(Limits.name == 'maxLoadBalancers').scalar()
         nodelimit = session.query(Limits.value).\
             filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
+        namelimit = session.query(Limits.value).\
+            filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
         count = session.query(LoadBalancer).\
             filter(LoadBalancer.tenantid == tenant_id).\
             filter(LoadBalancer.status != 'DELETED').count()
 
+        if len(body.name) > namelimit:
+            raise ClientSideError(
+                'Length of Load Balancer name too long'
+            )
         # TODO: this should probably be a 413, not sure how to do that yet
         if count >= lblimit:
-            raise ClientSideError(
+            raise OverLimit(
                 'Account has hit limit of {0} Load Balancers'.
                 format(lblimit)
             )
         if len(body.nodes) > nodelimit:
-            raise ClientSideError(
+            raise OverLimit(
                 'Too many backend nodes supplied (limit is {0}'.
                 format(nodelimit)
             )
@@ -261,7 +300,7 @@ class LoadBalancersController(RestController):
                 enabled = 1
             out_node = Node(
                 lbid=lb.id, port=node.port, address=node.address,
-                enabled=enabled, status='ONLINE', weight=0
+                enabled=enabled, status='ONLINE', weight=1
             )
             session.add(out_node)
 
@@ -273,23 +312,23 @@ class LoadBalancersController(RestController):
 
         try:
             return_data = LBResp()
-            return_data.id = lb.id
+            return_data.id = str(lb.id)
             return_data.name = lb.name
             return_data.protocol = lb.protocol
-            return_data.port = lb.port
+            return_data.port = str(lb.port)
             return_data.algorithm = lb.algorithm
             return_data.status = lb.status
             return_data.created = lb.created
             return_data.updated = lb.updated
             vip_resp = LBVipResp(
-                address=device.floatingIpAddr, id=device.id,
+                address=device.floatingIpAddr, id=str(device.id),
                 type='PUBLIC', ipVersion='IPV4'
             )
             return_data.virtualIps = [vip_resp]
             return_data.nodes = []
             for node in body.nodes:
-                out_node = LBNode(
-                    port=node.port, address=node.address,
+                out_node = LBRespNode(
+                    port=str(node.port), address=node.address,
                     condition=node.condition
                 )
                 return_data.nodes.append(out_node)
@@ -326,6 +365,12 @@ class LoadBalancersController(RestController):
             raise ClientSideError('Load Balancer ID is not valid')
 
         if body.name != Unset:
+            namelimit = session.query(Limits.value).\
+                filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
+            if len(body.name) > namelimit:
+                raise ClientSideError(
+                    'Length of Load Balancer name too long'
+                )
             lb.name = body.name
 
         if body.algorithm != Unset:
@@ -341,7 +386,7 @@ class LoadBalancersController(RestController):
         submit_job(
             'UPDATE', device.name, device.id, lb.id
         )
-        return
+        return ''
 
     @expose('json')
     def delete(self, load_balancer_id):
@@ -388,7 +433,7 @@ class LoadBalancersController(RestController):
                 'DELETE', device.name, device.id, lb.id
             )
             response.status = 202
-            return None
+            return ''
         except:
             logger = logging.getLogger(__name__)
             logger.exception('Error communicating with load balancer pool')

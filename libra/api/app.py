@@ -21,11 +21,16 @@ import pwd
 import pecan
 import sys
 import os
+import wsme_overrides
 from libra.api import config as api_config
 from libra.api import model
 from libra.api import acl
 from libra.common.options import Options, setup_logging
 from eventlet import wsgi
+
+
+# Gets rid of pep8 error
+assert wsme_overrides
 
 
 def get_pecan_config():
