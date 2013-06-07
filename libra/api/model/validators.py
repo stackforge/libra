@@ -69,6 +69,13 @@ class LBVipResp(Base):
     ipVersion = wtypes.text
 
 
+class LBLogsPost(Base):
+    objectStoreType = Enum(wtypes.text, 'Swift')
+    objectStoreEndpoint = wtypes.text
+    objectStoreBasePath = wtypes.text
+    authToken = wtypes.text
+
+
 class LBResp(Base):
     id = int
     name = wtypes.text

@@ -47,6 +47,10 @@ def setup_app(pecan_config, args):
         'host': args.db_host,
         'schema': args.db_schema
     }
+    config['swift'] = {
+        'swift_basepath': args.swift_basepath,
+        'swift_endpoint': args.swift_endpoint
+    }
     config['gearman'] = {
         'server': args.gearman
     }
@@ -117,11 +121,20 @@ def main():
         default='keystoneclient.middleware.auth_token:AuthProtocol',
         help='A colon separated module and class for keystone middleware'
     )
+    options.parser.add_argument(
+        '--swift_basepath',
+        help='Default swift container to use for pushing log files to'
+    )
+    options.parser.add_argument(
+        '--swift_endpoint',
+        help='Default endpoint URL (tenant ID will be appended to this'
+    )
 
     args = options.run()
 
     required_args = [
-        'db_user', 'db_pass', 'db_host', 'db_schema'
+        'db_user', 'db_pass', 'db_host', 'db_schema', 'swift_basepath',
+        'swift_endpoint'
     ]
 
     missing_args = 0
