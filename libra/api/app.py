@@ -99,7 +99,7 @@ def main():
         default='0.0.0.0'
     )
     options.parser.add_argument(
-        '--port', help='Port number for API server', type=int, default=8080
+        '--port', help='Port number for API server', type=int, default=443
     )
     options.parser.add_argument(
         '--disable_keystone', help='Unauthenticated server, for testing only',
@@ -134,12 +134,20 @@ def main():
         '--swift_endpoint',
         help='Default endpoint URL (tenant ID will be appended to this'
     )
+    options.parser.add_argument(
+        '--ssl_cert',
+        help='Path to an SSL certificate file'
+    )
+    options.parser.add_argument(
+        '--ssl_keyfile',
+        help='Path to an SSL key file'
+    )
 
     args = options.run()
 
     required_args = [
         'db_user', 'db_pass', 'db_host', 'db_schema', 'swift_basepath',
-        'swift_endpoint'
+        'swift_endpoint', 'ssl_certfile', 'ssl_keyfile'
     ]
 
     missing_args = 0
@@ -184,6 +192,14 @@ def main():
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
     sys.stderr = LogStdout(logger)
-    wsgi.server(eventlet.listen((args.host, args.port)), api)
+    wsgi.server(
+        eventlet.wrap_ssl(
+            eventlet.listen((args.host, args.port)),
+            certfile=args.ssl_certfile,
+            keyfile=args.ssl_keyfile,
+            server_side=True
+        ),
+        api
+    )
 
     return 0
