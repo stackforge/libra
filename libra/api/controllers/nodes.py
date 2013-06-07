@@ -212,7 +212,10 @@ class NodesController(RestController):
             raise ClientSideError('Node ID is not valid')
 
         if body.condition != Unset:
-            node.condition = body.condition
+            if body.condition == 'DISABLED':
+                node.enabled = 0
+            else:
+                node.enabled = 1
 
         lb.status = 'PENDING_UPDATE'
         device = session.query(
