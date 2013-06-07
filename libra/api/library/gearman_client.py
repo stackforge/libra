@@ -44,6 +44,8 @@ def client_job(logger, job_type, host, data, lbid):
         client.send_update(data)
     if job_type == 'DELETE':
         client.send_delete(data)
+    if job_type == 'ARCHIVE':
+        client.send_archive(data)
 
 
 class GearmanClientThread(object):
@@ -123,6 +125,33 @@ class GearmanClientThread(object):
         for lb in lbs:
             lb.status = 'ERROR'
             lb.errmsg = errmsg
+
+    def send_archive(self, data):
+        lb = session.query(LoadBalancer).\
+            filter(LoadBalancer.id == self.lbid).\
+            first()
+        job_data = {
+            'hpcs_action': 'ARCHIVE',
+            'hpcs_object_store_basepath': data['objectStoreBasePath'],
+            'hpcs_object_store_endpoint': data['objectStoreEndpoint'],
+            'hpcs_object_store_token': data['authToken'],
+            'hpcs_object_store_type': data['objectStoreType'],
+            'loadBalancers': [{
+                'id': str(lb.id),
+                'name': lb.name,
+                'protocol': lb.protocol
+            }]
+        }
+        status, response = self._send_message(job_data)
+        device = session.query(Device).\
+            filter(Device.id == data['deviceid']).\
+            first()
+        if status:
+            device.errmsg = 'Log archive successful'
+        else:
+            device.errmsg = 'Log archive failed: {0}'.format(response)
+        lb.status = 'ACTIVE'
+        session.commit()
 
     def send_update(self, data):
         lbs = session.query(

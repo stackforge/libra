@@ -22,6 +22,7 @@ from wsme import Unset
 # other controllers
 from nodes import NodesController
 from virtualips import VipsController
+from logs import LogsController
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, session
 from libra.api.model.lbaas import loadbalancers_devices, Limits
@@ -423,6 +424,9 @@ class LoadBalancersController(RestController):
                 return NodesController(lbid), remainder[1:]
             if remainder[0] == 'virtualips':
                 return VipsController(lbid), remainder[1:]
+            if remainder[0] == 'logs':
+                return LogsController(lbid), remainder[1:]
+
         # Kludgy fix for PUT since WSME doesn't like IDs on the path
         elif lbid:
             return LoadBalancersController(lbid), remainder
