@@ -107,7 +107,8 @@ class GearmanClientThread(object):
                 # Device should never be used again
                 device = session.query(Device).\
                     filter(Device.id == data).first()
-                device.status = 'DELETED'
+                #TODO: change this to 'DELETED' when pool mgm deletes
+                device.status = 'OFFLINE'
         session.commit()
 
     def _set_error(self, device_id, errmsg):

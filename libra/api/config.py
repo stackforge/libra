@@ -26,9 +26,9 @@ app = {
     }
 }
 
-wsme = {
-    'debug': True
-}
+#wsme = {
+#    'debug': True
+#}
 
 #database = {
 #    'username': 'root',

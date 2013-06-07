@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import socket
 from pecan import expose, response, request, abort
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
@@ -24,6 +25,7 @@ from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 from libra.api.model.validators import LBNodePut
 from libra.api.library.gearman_client import submit_job
+from libra.api.library.exp import OverLimit
 
 
 class NodesController(RestController):
@@ -112,8 +114,24 @@ class NodesController(RestController):
         if self.lbid is None:
             raise ClientSideError('Load Balancer ID has not been supplied')
 
-        if not len(body.nodes):
+        if body.nodes == Unset or not len(body.nodes):
             raise ClientSideError('No nodes have been supplied')
+
+        for node in body.nodes:
+            if node.address == Unset:
+                raise ClientSideError(
+                    'A supplied node has no address'
+                )
+            if node.port == Unset:
+                raise ClientSideError(
+                    'Node {0} is missing a port'.format(node.address)
+                )
+            try:
+                socket.inet_aton(node.address)
+            except socket.error:
+                raise ClientSideError(
+                    'IP Address {0} not valid'.format(node.address)
+                )
 
         load_balancer = session.query(LoadBalancer).\
             filter(LoadBalancer.tenantid == tenant_id).\
@@ -130,8 +148,8 @@ class NodesController(RestController):
         nodecount = session.query(Node).\
             filter(Node.lbid == self.lbid).count()
 
-        if (nodecount + len(body.nodes)) >= nodelimit:
-            raise ClientSideError(
+        if (nodecount + len(body.nodes)) > nodelimit:
+            raise OverLimit(
                 'Command would exceed Load Balancer node limit'
             )
         return_data = LBNodeResp()
@@ -143,7 +161,7 @@ class NodesController(RestController):
                 enabled = 1
             new_node = Node(
                 lbid=self.lbid, port=node.port, address=node.address,
-                enabled=enabled, status='ONLINE', weight=0
+                enabled=enabled, status='ONLINE', weight=1
             )
             session.add(new_node)
             session.flush()
@@ -206,7 +224,7 @@ class NodesController(RestController):
         submit_job(
             'UPDATE', device.name, device.id, lb.id
         )
-        return
+        return ''
 
     @expose('json')
     def delete(self, node_id):
