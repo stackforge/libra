@@ -38,8 +38,8 @@ class VipsController(RestController):
         if not self.lbid:
             response.status = 400
             return dict(
-                faultcode="Client",
-                faultstring="Load Balancer ID not provided"
+                message="Bad Request",
+                details="Load Balancer ID not provided"
             )
         session = get_session()
         device = session.query(
@@ -52,8 +52,8 @@ class VipsController(RestController):
             session.rollback()
             response.status = 400
             return dict(
-                faultcode="Client",
-                faultstring="Load Balancer ID not valid"
+                message="Bad Request",
+                details="Load Balancer ID not valid"
             )
         resp = {
             "virtualIps": [{

@@ -90,8 +90,8 @@ class LoadBalancersController(RestController):
                 response.status = 400
                 session.rollback()
                 return dict(
-                    faultcode='Client',
-                    faultstring="Load Balancer ID not found"
+                    message='Bad Request',
+                    details="Load Balancer ID not found"
                 )
 
             load_balancers = load_balancers._asdict()
@@ -424,8 +424,8 @@ class LoadBalancersController(RestController):
             session.rollback()
             response.status = 400
             return dict(
-                faultcode="Client",
-                faultstring="Load Balancer ID is not valid"
+                message="Bad Request",
+                details="Load Balancer ID is not valid"
             )
         try:
             session.query(Node).filter(Node.lbid == load_balancer_id).delete()
@@ -451,8 +451,8 @@ class LoadBalancersController(RestController):
             logger.exception('Error communicating with load balancer pool')
             response.status = 500
             return dict(
-                faultcode="Server",
-                faultstring="Error communication with load balancer pool"
+                message="Load Balancer Error",
+                details="Error communication with load balancer pool"
             )
 
     def usage(self, load_balancer_id):
