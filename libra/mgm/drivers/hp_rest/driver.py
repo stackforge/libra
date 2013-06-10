@@ -26,6 +26,7 @@ class HPRestDriver(MgmDriver):
 
     def __init__(self, addresses, logger):
         self.logger = logger
+        self.headers = {'Content-type': 'application/json'}
         random.shuffle(addresses)
         for address in addresses:
             self.url = 'https://{0}/{1}'.format(address, API_VERSION)
@@ -93,7 +94,10 @@ class HPRestDriver(MgmDriver):
 
     def _post(self, url, node_data):
         try:
-            r = requests.post(url, data=json.dumps(node_data), verify=False)
+            r = requests.post(
+                url, data=json.dumps(node_data), verify=False,
+                headers=self.headers
+            )
         except requests.exceptions.RequestException:
             self.logger.error('Exception communicating to server: {exc}'
                               .format(exc=sys.exc_info()[0]))

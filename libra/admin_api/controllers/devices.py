@@ -19,16 +19,12 @@ from pecan import expose, response, abort
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
-from usage import UsageController
 from libra.admin_api.model.validators import DeviceResp, DevicePost, DevicePut
 from libra.admin_api.model.lbaas import LoadBalancer, Device, session
 from libra.admin_api.model.lbaas import loadbalancers_devices
 
 
 class DevicesController(RestController):
-
-    usage = UsageController()
-
     def __init__(self, devid=None):
         #  Required for PUT requests. See _lookup() below
         self.devid = devid
@@ -55,7 +51,7 @@ class DevicesController(RestController):
         # if we don't have an id then we want a list of all devices
         if not device_id:
             #  return all devices
-            device = []
+            device = {'devices': []}
 
             if marker is None:
                 marker = 0
@@ -85,10 +81,14 @@ class DevicesController(RestController):
                     if lbs:
                         for item in lbs:
                             lb = item._asdict()
+                            lb['hpcs_tenantid'] = lb['tenantid']
+                            del(lb['tenantid'])
                             dev['loadBalancers'].append(lb)
 
-                device.append(dev)
+                device['devices'].append(dev)
 
+        elif device_id == 'usage':
+            return self.usage()
         else:
             #  return device detail
             device = session.query(
@@ -128,7 +128,7 @@ class DevicesController(RestController):
         response.status = 200
         return device
 
-    @wsme_pecan.wsexpose(DeviceResp, body=DevicePost, status_code=202)
+    @wsme_pecan.wsexpose(DeviceResp, body=DevicePost)
     def post(self, body=None):
         """ Creates a new device entry in devices table.
         :param None
@@ -196,7 +196,7 @@ class DevicesController(RestController):
             session.rollback()
             raise ClientSideError(errstr)
 
-    @wsme_pecan.wsexpose(None, body=DevicePut, status_code=202)
+    @wsme_pecan.wsexpose(None, body=DevicePut)
     def put(self, body=None):
         """ Updates a device entry in devices table with new status.
             Also, updates status of loadbalancers using this device
@@ -280,7 +280,6 @@ class DevicesController(RestController):
             session.query(Device).filter(Device.id == device_id).delete()
             session.flush()
             session.commit()
-            response.status = 202
             return None
         except:
             logger = logging.getLogger(__name__)
@@ -290,6 +289,27 @@ class DevicesController(RestController):
                 faultcode="Server",
                 faultstring="Error deleting device from pool"
             )
+
+    # Kludge to get to here because Pecan has a hard time with URL params
+    # and paths
+    def usage(self):
+        """Reports the device usage statistics for total, taken, and free
+            :param None
+            Url:
+                GET /devices/usage
+            Returns: dict
+        """
+        total = session.query(Device).count()
+        free = session.query(Device).filter(Device.status == 'OFFLINE').\
+            count()
+        session.commit()
+        response.status = 200
+
+        return dict(
+            total=total,
+            free=free,
+            taken=total - free
+        )
 
     @expose('json')
     def _lookup(self, devid, *remainder):

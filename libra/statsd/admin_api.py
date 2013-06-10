@@ -25,6 +25,7 @@ class APIError(Exception):
 class AdminAPI(object):
     def __init__(self, addresses, logger):
         self.logger = logger
+        self.headers = {'Content-type': 'application/json'}
         random.shuffle(addresses)
         for address in addresses:
             self.url = 'https://{0}/v1'.format(address)
@@ -113,7 +114,9 @@ class AdminAPI(object):
 
     def _put(self, url, data):
         try:
-            r = requests.put(url, data=json.dumps(data), verify=False)
+            r = requests.put(
+                url, data=json.dumps(data), verify=False, headers=self.headers
+            )
         except requests.exceptions.RequestException:
             self.logger.exception('Exception communicating to server')
             return False, None
