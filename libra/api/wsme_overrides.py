@@ -32,9 +32,9 @@ def format_exception(excinfo, debug=False):
     error = excinfo[1]
     log = logging.getLogger(__name__)
     if isinstance(error, wsme.exc.ClientSideError):
-        r = dict(faultcode="Client",
-                 faultstring=error.faultstring)
-        log.warning("Client-side error: %s" % r['faultstring'])
+        r = dict(message="Bad Request",
+                 details=error.faultstring)
+        log.warning("Client-side error: %s" % r['details'])
         return r
     else:
         faultstring = str(error)
@@ -44,9 +44,9 @@ def format_exception(excinfo, debug=False):
             faultstring, debuginfo))
 
         if isinstance(error, ValueError):
-            r = dict(faultcode="Client", faultstring=faultstring)
+            r = dict(message="Bad Request", details=faultstring)
         else:
-            r = dict(faultcode="Server", faultstring=faultstring)
+            r = dict(message="Load Balancer Fault", details=faultstring)
         if debug:
             r['debuginfo'] = debuginfo
         return r
@@ -96,7 +96,7 @@ def wsexpose(*args, **kwargs):
                 e = sys.exc_info()[1]
                 if isinstance(e, OverLimit):
                     pecan.response.status = 413
-                elif data['faultcode'] == 'Client':
+                elif data['message'] == 'Bad Request':
                     pecan.response.status = 400
                 else:
                     pecan.response.status = 500
@@ -116,3 +116,18 @@ def wsexpose(*args, **kwargs):
     return decorate
 
 wsmeext.pecan.wsexpose = wsexpose
+
+class JSonRenderer(object):
+    def __init__(self, path, extra_vars):
+        pass
+
+    def render(self, template_path, namespace):
+        if 'message' in namespace:
+            return wsme.rest.json.encode_error(None, namespace)
+        return wsme.rest.json.encode_result(
+            namespace['result'],
+            namespace['datatype']
+        )
+
+pecan.templating._builtin_renderers['wsmejson'] = JSonRenderer
+
