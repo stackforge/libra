@@ -54,8 +54,8 @@ class NodesController(RestController):
         if not self.lbid:
             response.status = 400
             return dict(
-                faultcode='Client',
-                faultstring='Load Balancer ID not supplied'
+                message='Bad Request',
+                details='Load Balancer ID not supplied'
             )
         session = get_session()
         if not node_id:
@@ -89,7 +89,7 @@ class NodesController(RestController):
         if node_response is None:
             session.rollback()
             response.status = 400
-            return dict(faultcode='Client', faultstring='node not found')
+            return dict(message='Bad Request', details='node not found')
         else:
             session.commit()
             response.status = 200
@@ -251,8 +251,8 @@ class NodesController(RestController):
         if self.lbid is None:
             response.status = 400
             return dict(
-                faultcode="Client",
-                faultstring='Load Balancer ID has not been supplied'
+                message="Bad Request",
+                details='Load Balancer ID has not been supplied'
             )
 
         tenant_id = get_limited_to_project(request.headers)
@@ -266,8 +266,8 @@ class NodesController(RestController):
             session.rollback()
             response.status = 400
             return dict(
-                faultcode="Client",
-                faultstring="Load Balancer not found"
+                message="Bad Request",
+                details="Load Balancer not found"
             )
         load_balancer.status = 'PENDING_UPDATE'
         nodecount = session.query(Node).\
@@ -277,8 +277,8 @@ class NodesController(RestController):
             session.rollback()
             response.status = 400
             return dict(
-                faultcode="Client",
-                faultstring="Cannot delete the last node in a load balancer"
+                message="Bad Request",
+                details="Cannot delete the last node in a load balancer"
             )
         node = session.query(Node).\
             filter(Node.lbid == self.lbid).\
@@ -288,8 +288,8 @@ class NodesController(RestController):
             session.rollback()
             response.status = 400
             return dict(
-                faultcode="Client",
-                faultstring="Node not found in supplied Load Balancer"
+                message="Bad Request",
+                details="Node not found in supplied Load Balancer"
             )
         session.delete(node)
         device = session.query(
