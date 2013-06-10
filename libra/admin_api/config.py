@@ -19,31 +19,8 @@ app = {
     'modules': ['libra.admin_api'],
     'static_root': '%(confdir)s/public',
     'template_path': '%(confdir)s/admin_api/templates',
-    'debug': True,
     'errors': {
         404: '/notfound',
         '__force_dict__': True
     }
 }
-
-wsme = {
-    'debug': True
-}
-
-#database = {
-#    'username': 'root',
-#    'password': 'testaburger',
-#    'host': 'localhost',
-#    'schema': 'lbaas'
-#}
-
-#gearman = {
-#    'server': ['localhost:4730'],
-#}
-
-# Custom Configurations must be in Python dictionary format::
-#
-# foo = {'bar':'baz'}
-#
-# All configurations are accessible at::
-# pecan.conf

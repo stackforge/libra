@@ -114,4 +114,6 @@ class Node(DeclarativeBase):
 
 
 """session"""
-session = sessionmaker(bind=engine)()
+def get_session():
+    session = sessionmaker(bind=engine)()
+    return session

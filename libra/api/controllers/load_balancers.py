@@ -25,7 +25,7 @@ from nodes import NodesController
 from virtualips import VipsController
 from logs import LogsController
 # models
-from libra.api.model.lbaas import LoadBalancer, Device, Node, session
+from libra.api.model.lbaas import LoadBalancer, Device, Node, get_session
 from libra.api.model.lbaas import loadbalancers_devices, Limits
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
@@ -58,7 +58,7 @@ class LoadBalancersController(RestController):
         """
 
         tenant_id = get_limited_to_project(request.headers)
-
+        session = get_session()
         # if we don't have an id then we want a list of them own by this tenent
         if not load_balancer_id:
             lbs = session.query(
@@ -177,7 +177,7 @@ class LoadBalancersController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
-
+        session = get_session()
         lblimit = session.query(Limits.value).\
             filter(Limits.name == 'maxLoadBalancers').scalar()
         nodelimit = session.query(Limits.value).\
@@ -189,16 +189,19 @@ class LoadBalancersController(RestController):
             filter(LoadBalancer.status != 'DELETED').count()
 
         if len(body.name) > namelimit:
+            session.rollback()
             raise ClientSideError(
                 'Length of Load Balancer name too long'
             )
         # TODO: this should probably be a 413, not sure how to do that yet
         if count >= lblimit:
+            session.rollback()
             raise OverLimit(
                 'Account has hit limit of {0} Load Balancers'.
                 format(lblimit)
             )
         if len(body.nodes) > nodelimit:
+            session.rollback()
             raise OverLimit(
                 'Too many backend nodes supplied (limit is {0}'.
                 format(nodelimit)
@@ -230,6 +233,7 @@ class LoadBalancersController(RestController):
                 filter(Device.id == virtual_id).\
                 first()
             if old_lb is None:
+                session.rollback()
                 raise InvalidInput(
                     'virtualIps', virtual_id, 'Invalid virtual IP provided'
                 )
@@ -243,6 +247,7 @@ class LoadBalancersController(RestController):
                     filter(LoadBalancer.protocol == 'HTTP').\
                     count()
                 if old_count:
+                    session.rollback()
                     # Error here, can have only one HTTP
                     raise ClientSideError(
                         'Only one HTTP load balancer allowed per device'
@@ -256,12 +261,14 @@ class LoadBalancersController(RestController):
                     filter(LoadBalancer.protocol == 'TCP').\
                     count()
                 if old_count:
+                    session.rollback()
                     # Error here, can have only one TCP
                     raise ClientSideError(
                         'Only one TCP load balancer allowed per device'
                     )
 
         if device is None:
+            session.rollback()
             raise RuntimeError('No devices available')
 
         lb.tenantid = tenant_id
@@ -354,7 +361,7 @@ class LoadBalancersController(RestController):
             raise ClientSideError('Load Balancer ID is required')
 
         tenant_id = get_limited_to_project(request.headers)
-
+        session = get_session()
         # grab the lb
         lb = session.query(LoadBalancer).\
             filter(LoadBalancer.id == self.lbid).\
@@ -362,12 +369,14 @@ class LoadBalancersController(RestController):
             filter(LoadBalancer.status != 'DELETED').first()
 
         if lb is None:
+            session.rollback()
             raise ClientSideError('Load Balancer ID is not valid')
 
         if body.name != Unset:
             namelimit = session.query(Limits.value).\
                 filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
             if len(body.name) > namelimit:
+                session.rollback()
                 raise ClientSideError(
                     'Length of Load Balancer name too long'
                 )
@@ -405,12 +414,14 @@ class LoadBalancersController(RestController):
         """
         tenant_id = get_limited_to_project(request.headers)
         # grab the lb
+        session = get_session()
         lb = session.query(LoadBalancer).\
             filter(LoadBalancer.id == load_balancer_id).\
             filter(LoadBalancer.tenantid == tenant_id).\
             filter(LoadBalancer.status != 'DELETED').first()
 
         if lb is None:
+            session.rollback()
             response.status = 400
             return dict(
                 faultcode="Client",
@@ -435,6 +446,7 @@ class LoadBalancersController(RestController):
             response.status = 202
             return ''
         except:
+            session.rollback()
             logger = logging.getLogger(__name__)
             logger.exception('Error communicating with load balancer pool')
             response.status = 500

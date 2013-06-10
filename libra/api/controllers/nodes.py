@@ -20,7 +20,8 @@ import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
 #default response objects
-from libra.api.model.lbaas import LoadBalancer, Node, session, Limits, Device
+from libra.api.model.lbaas import LoadBalancer, Node, get_session, Limits
+from libra.api.model.lbaas import Device
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 from libra.api.model.validators import LBNodePut
@@ -56,7 +57,7 @@ class NodesController(RestController):
                 faultcode='Client',
                 faultstring='Load Balancer ID not supplied'
             )
-
+        session = get_session()
         if not node_id:
             nodes = session.query(
                 Node.id, Node.address, Node.port, Node.status, Node.enabled
@@ -132,13 +133,14 @@ class NodesController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
-
+        session = get_session()
         load_balancer = session.query(LoadBalancer).\
             filter(LoadBalancer.tenantid == tenant_id).\
             filter(LoadBalancer.id == self.lbid).\
             filter(LoadBalancer.status != 'DELETED').\
             first()
         if load_balancer is None:
+            session.rollback()
             raise ClientSideError('Load Balancer not found')
 
         load_balancer.status = 'PENDING_UPDATE'
@@ -149,6 +151,7 @@ class NodesController(RestController):
             filter(Node.lbid == self.lbid).count()
 
         if (nodecount + len(body.nodes)) > nodelimit:
+            session.rollback()
             raise OverLimit(
                 'Command would exceed Load Balancer node limit'
             )
@@ -195,6 +198,7 @@ class NodesController(RestController):
             raise ClientSideError('Node ID has not been supplied')
 
         tenant_id = get_limited_to_project(request.headers)
+        session = get_session()
         # grab the lb
         lb = session.query(LoadBalancer).\
             filter(LoadBalancer.id == self.lbid).\
@@ -202,6 +206,7 @@ class NodesController(RestController):
             filter(LoadBalancer.status != 'DELETED').first()
 
         if lb is None:
+            session.rollback()
             raise ClientSideError('Load Balancer ID is not valid')
 
         node = session.query(Node).\
@@ -209,6 +214,7 @@ class NodesController(RestController):
             filter(Node.id == self.nodeid).first()
 
         if node is None:
+            session.rollback()
             raise ClientSideError('Node ID is not valid')
 
         if body.condition != Unset:
@@ -250,12 +256,14 @@ class NodesController(RestController):
             )
 
         tenant_id = get_limited_to_project(request.headers)
+        session = get_session()
         load_balancer = session.query(LoadBalancer).\
             filter(LoadBalancer.tenantid == tenant_id).\
             filter(LoadBalancer.id == self.lbid).\
             filter(LoadBalancer.device != 'DELETED').\
             first()
         if load_balancer is None:
+            session.rollback()
             response.status = 400
             return dict(
                 faultcode="Client",
@@ -266,16 +274,18 @@ class NodesController(RestController):
             filter(Node.lbid == self.lbid).count()
         # Can't delete the last LB
         if nodecount <= 1:
+            session.rollback()
             response.status = 400
             return dict(
                 faultcode="Client",
-                faultstring="Load Balancer not found"
+                faultstring="Cannot delete the last node in a load balancer"
             )
         node = session.query(Node).\
             filter(Node.lbid == self.lbid).\
             filter(Node.id == node_id).\
             first()
         if not node:
+            session.rollback()
             response.status = 400
             return dict(
                 faultcode="Client",

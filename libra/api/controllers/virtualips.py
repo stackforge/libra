@@ -15,7 +15,7 @@
 
 from pecan import response, expose, request
 from pecan.rest import RestController
-from libra.api.model.lbaas import LoadBalancer, Device, session
+from libra.api.model.lbaas import LoadBalancer, Device, get_session
 from libra.api.acl import get_limited_to_project
 
 
@@ -41,6 +41,7 @@ class VipsController(RestController):
                 faultcode="Client",
                 faultstring="Load Balancer ID not provided"
             )
+        session = get_session()
         device = session.query(
             Device.id, Device.floatingIpAddr
         ).join(LoadBalancer.devices).\
@@ -48,6 +49,7 @@ class VipsController(RestController):
             filter(LoadBalancer.tenantid == tenant_id).first()
 
         if not device:
+            session.rollback()
             response.status = 400
             return dict(
                 faultcode="Client",
@@ -61,5 +63,5 @@ class VipsController(RestController):
                 "ipVersion": "IPV4"
             }]
         }
-
+        session.rollback()
         return resp

@@ -46,6 +46,10 @@ def setup_app(pecan_config, args):
         'host': args.db_host,
         'schema': args.db_schema
     }
+    if args.debug:
+        config['wsme'] = {'debug': True}
+        config['app']['debug'] = True
+
     pecan.configuration.set_config(config, overwrite=True)
 
     app = pecan.make_app(
@@ -93,11 +97,20 @@ def main():
     options.parser.add_argument(
         '--db_schema', help='MySQL schema for libra'
     )
+    options.parser.add_argument(
+        '--ssl_cert',
+        help='Path to an SSL certificate file'
+    )
+    options.parser.add_argument(
+        '--ssl_keyfile',
+        help='Path to an SSL key file'
+    )
 
     args = options.run()
 
     required_args = [
-        'db_user', 'db_pass', 'db_host', 'db_schema'
+        'db_user', 'db_pass', 'db_host', 'db_schema', 'ssl_certfile',
+        'ssl_keyfile'
     ]
 
     missing_args = 0
@@ -131,6 +144,15 @@ def main():
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
     sys.stderr = LogStdout(logger)
-    wsgi.server(eventlet.listen((args.host, args.port)), api)
+    # TODO: set ca_certs and cert_reqs=CERT_REQUIRED
+    wsgi.server(
+        eventlet.wrap_ssl(
+            eventlet.listen((args.host, args.port)),
+            certfile=args.ssl_certfile,
+            keyfile=args.ssl_keyfile,
+            server_side=True
+        ),
+        api
+    )
 
     return 0
