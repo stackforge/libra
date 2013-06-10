@@ -134,7 +134,12 @@ class Sched(object):
     def _send_fails(self, failed_nodes, node_list):
         for node in failed_nodes:
             data = self._get_node(node, node_list)
-
+            if not len(data['loadBalancers']):
+                self.logger.error(
+                    'Device {0} has no Loadbalancer attached'.
+                    format(data['id'])
+                )
+                continue
             message = (
                 'Load balancer failed\n'
                 'ID: {0}\n'
