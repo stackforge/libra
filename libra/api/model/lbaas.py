@@ -113,5 +113,6 @@ class Node(DeclarativeBase):
     weight = Column(u'weight', INTEGER(), nullable=False)
 
 
-"""session"""
-session = sessionmaker(bind=engine)()
+def get_session():
+    session = sessionmaker(bind=engine)()
+    return session

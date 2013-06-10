@@ -16,7 +16,7 @@ import eventlet
 eventlet.monkey_patch()
 import logging
 from libra.common.json_gearman import JSONGearmanClient
-from libra.api.model.lbaas import LoadBalancer, session, Device
+from libra.api.model.lbaas import LoadBalancer, get_session, Device
 from pecan import conf
 
 
@@ -56,6 +56,7 @@ class GearmanClientThread(object):
         self.gearman_client = JSONGearmanClient(conf.gearman.server)
 
     def send_delete(self, data):
+        session = get_session()
         count = session.query(
             LoadBalancer
         ).join(LoadBalancer.devices).\
@@ -100,7 +101,7 @@ class GearmanClientThread(object):
             filter(LoadBalancer.id == self.lbid).\
             first()
         if not status:
-            self._set_error(data, response)
+            self._set_error(data, response, session)
         else:
             lb.status = 'DELETED'
             if count == 0:
@@ -111,7 +112,7 @@ class GearmanClientThread(object):
                 device.status = 'OFFLINE'
         session.commit()
 
-    def _set_error(self, device_id, errmsg):
+    def _set_error(self, device_id, errmsg, session):
         lbs = session.query(
             LoadBalancer
         ).join(LoadBalancer.nodes).\
@@ -128,6 +129,7 @@ class GearmanClientThread(object):
             lb.errmsg = errmsg
 
     def send_archive(self, data):
+        session = get_session()
         lb = session.query(LoadBalancer).\
             filter(LoadBalancer.id == self.lbid).\
             first()
@@ -155,6 +157,7 @@ class GearmanClientThread(object):
         session.commit()
 
     def send_update(self, data):
+        session = get_session()
         lbs = session.query(
             LoadBalancer
         ).join(LoadBalancer.nodes).\
@@ -190,7 +193,7 @@ class GearmanClientThread(object):
             filter(LoadBalancer.id == self.lbid).\
             first()
         if not status:
-            self._set_error(data, response)
+            self._set_error(data, response, session)
         else:
             lb.status = 'ACTIVE'
         session.commit()

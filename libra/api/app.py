@@ -59,6 +59,10 @@ def setup_app(pecan_config, args):
     config['gearman'] = {
         'server': args.gearman
     }
+    if args.debug:
+        config['wsme'] = {'debug': True}
+        config['app']['debug'] = True
+
     pecan.configuration.set_config(config, overwrite=True)
 
     app = pecan.make_app(

@@ -14,7 +14,7 @@
 # under the License.
 
 from pecan import expose, response
-from libra.api.model.lbaas import Device, session
+from libra.admin_api.model.lbaas import Device, session
 from libra.admin_api.model.responses import Responses
 from pecan.rest import RestController
 

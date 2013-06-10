@@ -19,7 +19,7 @@ from pecan import conf
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
-from libra.api.model.lbaas import LoadBalancer, Device, session
+from libra.api.model.lbaas import LoadBalancer, Device, get_session
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBLogsPost
 from libra.api.library.gearman_client import submit_job
@@ -35,13 +35,14 @@ class LogsController(RestController):
             raise ClientSideError('Load Balancer ID has not been supplied')
 
         tenant_id = get_limited_to_project(request.headers)
-
+        session = get_session()
         load_balancer = session.query(LoadBalancer).\
             filter(LoadBalancer.tenantid == tenant_id).\
             filter(LoadBalancer.id == self.lbid).\
             filter(LoadBalancer.status != 'DELETED').\
             first()
         if load_balancer is None:
+            session.rollback()
             raise ClientSideError('Load Balancer not found')
 
         load_balancer.status = 'PENDING_UPDATE'

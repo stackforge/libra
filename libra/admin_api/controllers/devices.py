@@ -21,8 +21,8 @@ import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from usage import UsageController
 from libra.admin_api.model.validators import DeviceResp, DevicePost, DevicePut
-from libra.api.model.lbaas import LoadBalancer, Device, session
-from libra.api.model.lbaas import loadbalancers_devices
+from libra.admin_api.model.lbaas import LoadBalancer, Device, session
+from libra.admin_api.model.lbaas import loadbalancers_devices
 
 
 class DevicesController(RestController):
