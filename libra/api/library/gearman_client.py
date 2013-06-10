@@ -83,10 +83,9 @@ class GearmanClientThread(object):
                 }]
             }
             for node in keep_lb.nodes:
-                if node.enabled:
-                    condition = 'ENABLED'
-                else:
-                    condition = 'DISABLED'
+                if not node.enabled:
+                    continue
+                condition = 'ENABLED'
                 node_data = {
                     'port': node.port, 'address': node.address,
                     'weight': node.weight, 'condition': condition
@@ -178,10 +177,9 @@ class GearmanClientThread(object):
                 'nodes': []
             }
             for node in lb.nodes:
-                if node.enabled:
-                    condition = 'ENABLED'
-                else:
-                    condition = 'DISABLED'
+                if not node.enabled:
+                    continue
+                condition = 'ENABLED'
                 node_data = {
                     'port': node.port, 'address': node.address,
                     'weight': node.weight, 'condition': condition
