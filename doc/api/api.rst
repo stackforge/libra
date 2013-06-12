@@ -289,41 +289,41 @@ by the LBaaS service.
 5.1 LBaaS API Summary Table
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Resource        | Operation                           | Method   | Path                                                            |
-+=================+=====================================+==========+=================================================================+
-| Versions        | Get list of all API versions        | GET      | {baseURI}/                                                      |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Versions        | Get specific API version            | GET      | {baseURI}/{ver}                                                 |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Limits          | Get list of LBaaS limits            | GET      | {baseURI}/{ver}/limits                                          |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Protocols       | Get list of supported protocols     | GET      | {baseURI}/{ver}/protocols                                       |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Algorithms      | Get list of supported algorithms    | GET      | {baseURI}/{ver}/algorithms                                      |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Load Balancer   | Get list of all load balancers      | GET      | {baseURI}/{ver}/loadbalancers                                   |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Load Balancer   | Get load balancer details           | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}                  |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Load Balancer   | Create a new load balancer          | POST     | {baseURI}/{ver}/loadbalancers                                   |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Load Balancer   | Update load balancer attributes     | PUT      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}                  |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Load Balancer   | Delete an existing load balancer    | DELETE   | {baseURI}/{ver}/loadbalancers/{loadbalancerId}                  |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Node            | Get list of load balancer nodes     | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes            |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Node            | Get a specific load balancer node   | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes/{nodeId}   |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Node            | Create a new load balancer node     | POST     | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes            |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Node            | Update a load balancer node         | PUT      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes/{nodeId}   |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Node            | Delete a load balancer node         | DELETE   | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes/{nodeId}   |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
-| Virtual IP      | Get list of virtual IPs             | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/virtualips       |
-+-----------------+-------------------------------------+----------+-----------------------------------------------------------------+
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Resource        | Operation                                                  | Method   | Path                                                            |
++=================+============================================================+==========+=================================================================+
+| Versions        | :ref:`Get list of all API versions <api-versions>`         | GET      | {baseURI}/                                                      |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Versions        | :ref:`Get specific API version <api-version>`              | GET      | {baseURI}/{ver}                                                 |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Limits          | :ref:`Get list of LBaaS limits <api-limits>`               | GET      | {baseURI}/{ver}/limits                                          |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Protocols       | :ref:`Get list of supported protocols <api-protocols>`     | GET      | {baseURI}/{ver}/protocols                                       |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Algorithms      | :ref:`Get list of supported algorithms <api-algorithms>`   | GET      | {baseURI}/{ver}/algorithms                                      |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Load Balancer   | :ref:`Get list of all load balancers <api-list>`           | GET      | {baseURI}/{ver}/loadbalancers                                   |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Load Balancer   | :ref:`Get load balancer details <api-status>`              | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}                  |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Load Balancer   | :ref:`Create a new load balancer <api-create>`             | POST     | {baseURI}/{ver}/loadbalancers                                   |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Load Balancer   | :ref:`Update load balancer attributes <api-modify>`        | PUT      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}                  |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Load Balancer   | :ref:`Delete an existing load balancer <api-delete>`       | DELETE   | {baseURI}/{ver}/loadbalancers/{loadbalancerId}                  |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Node            | :ref:`Get list of load balancer nodes <api-node-list>`     | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes            |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Node            | :ref:`Get a specific load balancer node <api-node-status>` | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes/{nodeId}   |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Node            | :ref:`Create a new load balancer node <api-node-create>`   | POST     | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes            |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Node            | :ref:`Update a load balancer node <api-node-modify>`       | PUT      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes/{nodeId}   |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Node            | :ref:`Delete a load balancer node <api-node-delete>`       | DELETE   | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/nodes/{nodeId}   |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Virtual IP      | :ref:`Get list of virtual IPs <api-vips>`                  | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/virtualips       |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
 
 5.2 Common Request Headers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -372,6 +372,8 @@ with POST and PUT requests. LBaaS API supports
     Content-Length: 1135
     Content-Type: application/json; charset=UTF-8
     Date: Tue, 30 Oct 2012 16:22:35 GMT
+
+.. _api-versions:
 
 6. Get a List of All LBaaS API Versions Supported
 -------------------------------------------------
@@ -472,6 +474,8 @@ The response body contains a list of all supported versions of LBaaS.
             }
         ]
     }
+
+.. _api-version:
 
 7. Get Specific LBaaS API Version Information
 ---------------------------------------------
@@ -575,6 +579,8 @@ version.
             "updated": "2012-12-18T18:30:02.25Z"
             }
     }
+
+.. _api-limits:
 
 8. Get List of LBaaS API Limits
 -------------------------------
@@ -686,6 +692,8 @@ tenant making the request.
             }
     }
 
+.. _api-protocols:
+
 9. Get List Of Supported LBaaS Protocols
 ----------------------------------------
 
@@ -787,6 +795,8 @@ numbers.
             }
             ]
     }
+
+.. _api-algorithms:
 
 10. Get List Of Supported LBaaS Algorithms
 ------------------------------------------
@@ -897,6 +907,8 @@ The response body contains the currently supported algorithms.
                 }
             ]
     }
+
+.. _api-list:
 
 11. Get List Of All Load Balancers
 ----------------------------------
@@ -1027,6 +1039,8 @@ making the request.
             ]
     }
 
+.. _api-status:
+
 12. Get Load Balancer Details
 -----------------------------
 
@@ -1146,6 +1160,8 @@ found.
                        }
                   ],
     }
+
+.. _api-create:
 
 13. Create a New Load Balancer
 ------------------------------
@@ -1423,6 +1439,8 @@ JSON**
         "algorithm":"ROUND_ROBIN"
     }
 
+.. _api-modify:
+
 14. Update An Existing Load Balancer
 ------------------------------------
 
@@ -1540,6 +1558,8 @@ None.
 
 202 status with no response body.
 
+.. _api-delete:
+
 15. Delete Load Balancer
 ------------------------
 
@@ -1624,6 +1644,8 @@ None.
 **Response**
 
 202 status with no response body.
+
+.. _api-node-list:
 
 16. List All Load Balancer Nodes
 --------------------------------
@@ -1733,6 +1755,8 @@ not found.
                 ]
     }   
 
+.. _api-node-status:
+
 17. Get Load Balancer Node
 --------------------------
 
@@ -1822,6 +1846,8 @@ not found.
         "condition":"ENABLED",
         "status":"ONLINE"
     }
+
+.. _api-node-create:
 
 18. Create Load Balancer Node
 -----------------------------
@@ -1960,6 +1986,8 @@ found.
             ]
     }
 
+.. _api-node-modify:
+
 19. Update Load Balancer Node Condition
 ---------------------------------------
 
@@ -2063,6 +2091,8 @@ None.
 
 202 status with no response body.
 
+.. _api-node-delete:
+
 20. Delete Load Balancer Node
 -----------------------------
 
@@ -2145,6 +2175,8 @@ None.
 **Response**
 
 202 status with no response body.
+
+.. _api-vips:
 
 21. Get List of Virtual IPs
 ---------------------------
@@ -2248,14 +2280,11 @@ The following features are not supported.
 
 1. Node 'weight' values are not supported.
 
-2. Passing node 'condition' on node create will not be honored, all new
-   nodes will be set in ENABLED condition state.
+2. IPV6 address types are not supported.
 
-3. IPV6 address types are not supported.
-
-4. HTTPS protocol for load balancers are not supported. It is not
+3. HTTPS protocol for load balancers are not supported. It is not
    advertised in /protocols request.
 
-5. The ability to list deleted load balancers is not supported.
+4. The ability to list deleted load balancers is not supported.
 
 

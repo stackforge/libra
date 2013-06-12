@@ -5,4 +5,5 @@ Libra API Server
    :maxdepth: 2
 
    about
+   config
    api

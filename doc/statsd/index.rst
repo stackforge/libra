@@ -5,4 +5,5 @@ Statsd Monitoring Daemon
    :maxdepth: 2
 
    about
+   config
    drivers

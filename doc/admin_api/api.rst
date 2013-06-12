@@ -137,14 +137,16 @@ Example of a single device
 ::
 
     {
-        "id":1,
-        "updated":"Mon 2012.10.29 at 07:21:48 PM UTC",
-        "created":"Mon 2012.10.29 at 07:21:48 PM UTC",  
-        "status":"OFFLINE",
-        "address":"15.185.96.125",
-        "name":"lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
-        "loadbalancer":0,
-        "type":"HAProxy"
+        "id": 1,
+        "updated": "2013-06-10T14:29:14",
+        "created": "2013-06-10T14:29:14",  
+        "status": "OFFLINE",
+        "floatingIpAddress": "15.185.96.125",
+        "publicIpAddress": "15.185.96.125",
+        "name": "lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
+        "loadBalancers": [{"id": 10313, "tenantid": "42374872347634"}],
+        "type": "basename: libra-haproxy, image: 12345",
+        "az": 2
     }
 
 Operations
@@ -176,16 +178,18 @@ Response:
 ::
 
     {
-        "devices":[
+        "devices": [
             {
-                "id":1,
-                "updated":"Mon 2012.10.29 at 07:21:48 PM UTC",
-                "created":"Mon 2012.10.29 at 07:21:48 PM UTC",
-                "status":"OFFLINE",
-                "address":"15.185.96.125",
-                "name":"lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
-                "loadbalancer":0,
-                "type":"HAProxy"
+                "id": 1,
+                "updated": "2013-06-10T14:29:14",
+                "created": "2013-06-10T14:29:14",  
+                "status": "OFFLINE",
+                "floatingIpAddress ":"15.185.96.125",
+                "publicIpAddress": "15.185.96.125",
+                "name": "lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
+                "loadBalancers": [{"id": 10313, "tenantid": "42374872347634"}],
+                "type": "basename: libra-haproxy, image: 12345",
+                "az": 2
             }
         ]
     }
@@ -216,14 +220,16 @@ Response:
 ::
 
     {
-        "id":1,
-        "updated":"Mon 2012.10.29 at 07:21:48 PM UTC",
-        "created":"Mon 2012.10.29 at 07:21:48 PM UTC",
-        "status":"OFFLINE",
-        "address":"15.185.96.125",
-        "name":"lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
-        "loadbalancer":0,
-        "type":"HAProxy"
+        "id": 1,
+        "updated": "2013-06-10T14:29:14",
+        "created": "2013-06-10T14:29:14",  
+        "status": "OFFLINE",
+        "floatingIpAddress": "15.185.96.125",
+        "publicIpAddress": "15.185.96.125",
+        "name": "lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
+        "loadBalancers": [{"id": 10313, "tenantid": "42374872347634"}],
+        "type": "basename: libra-haproxy, image: 12345",
+        "az": 2
     }
 
 Create a Device
@@ -251,7 +257,10 @@ A JSON request body is required for this request.
 
     {
         "name": "lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
-        "address": "15.185.96.125"
+        "publicIpAddress": "15.185.96.125",
+        "floatingIpAddress": "15.185.96.125",
+        "az": 2,
+        "type": "basename: libra-haproxy, image: 12345"
     }
 
 Example
@@ -266,14 +275,16 @@ Response:
 ::
 
     {
-        "id":1,
-        "updated":"Mon 2012.10.29 at 07:21:48 PM UTC",
-        "created":"Mon 2012.10.29 at 07:21:48 PM UTC",
-        "status":"OFFLINE",
-        "address":"15.185.96.125",
-        "name":"lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
-        "loadbalancer":0,
-        "type":"HAProxy"
+        "id": 1,
+        "updated": "2013-06-10T14:29:14",
+        "created": "2013-06-10T14:29:14",  
+        "status": "OFFLINE",
+        "floatingIpAddress": "15.185.96.125",
+        "publicIpAddress": "15.185.96.125",
+        "name": "lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
+        "loadBalancers": [{"id": 10313, "tenantid": "42374872347634"}],
+        "type": "basename: libra-haproxy, image: 12345",
+        "az": 2
     }
 
 Delete a Device
@@ -302,8 +313,9 @@ Example
 Update a Device
 ---------------
 
-Update a device allows changing the address or name of a device. No
-other fields can be changed and will be ignored.
+Update the status of a device, it can set the status to `ERROR` or `ONLINE`
+and the statusDescription field. No other fields can be changed and will be
+ignored.
 
 ::
 
@@ -322,8 +334,8 @@ A JSON request body is required for this request.
 ::
 
     {
-        "name": "lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
-        "address": "15.185.96.125"
+        "status": "ERROR",
+        "statusDescription": "Load Balancer has failed"
     }
 
 Example
@@ -332,21 +344,6 @@ Example
 ::
 
     curl -X PUT -H "Content-type:application/json" --data-binary "@device.json" -k https://15.185.107.220:8889/v1/devices/1
-
-Response:
-
-::
-
-    {
-        "id":1,
-        "updated":"Mon 2012.10.29 at 07:21:48 PM UTC",
-        "created":"Mon 2012.10.29 at 07:21:48 PM UTC",
-        "status":"OFFLINE",
-        "address":"15.185.96.125",
-        "name":"lbaas-v1-067e6162-3b6f-4ae2-a171-2470b63dff00",
-        "loadbalancer":0,
-        "type":"HAProxy"
-    }
 
 Get Usage of Devices
 --------------------
