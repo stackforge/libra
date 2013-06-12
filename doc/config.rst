@@ -36,55 +36,23 @@ Global Section
 
       [global]
       verbose = true
+      nodaemon = false
+      syslog = true
+      syslog-socket = /dev/log
+      syslog-facility = local7
+      debug = true
+      pid = /var/run/libra_tool.pid
+      logfile = /var/log/libra/libra_tool.log
+      user = libra
+      group = libra
 
-Worker Section
-^^^^^^^^^^^^^^
+   The options listed above are common to all libra applications so can either
+   be used in the ``[global]`` section or in an application's individual
+   section.
 
-   The ``[worker]`` section is specific to the libra_worker utility. Below
-   is an example:
-
-   .. code-block:: ini
-
-      [worker]
-      user = haproxy
-      group = haproxy
-      driver = haproxy
-      reconnect_sleep = 60
-      server = 10.0.0.1:8080 10.0.0.2:8080
-      pid = /var/run/libra/libra_worker.pid
-      logfile = /var/log/libra/libra_worker.log
-
-Pool Manager Section
-^^^^^^^^^^^^^^^^^^^^^
-
-   The ``[mgm]`` section is specific to the libra_pool_mgm utility. Below is an
-   example:
-
-   .. code-block:: ini
-
-       [mgm]
-       pid = /var/run/libra/libra_mgm.pid
-       logfile = /var/log/libra/libra_mgm.log
-       datadir = /etc/libra/
-       nova_auth_url = https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0/
-       nova_user = username
-       nova_pass = password
-       nova_tenant = tenant
-       nova_region = region
-       nova_keyname = default
-       nova_secgroup = default
-       nova_image = 12345
-       nova_image_size = standard.medium
-       api_server = 10.0.0.1:8889 10.0.0.2:8889
-       nodes = 10
-       check_interval = 5
-       failed_interval = 15
-       node_basename = 'libra'
-
-
-Worker Command Line Options
+Common Command Line Options
 ---------------------------
-   .. program:: libra_worker.py
+   These command line options are common to all libra utilities
 
    .. option:: -c <FILE>, --config <FILE>
 
@@ -95,13 +63,6 @@ Worker Command Line Options
    .. option:: -d, --debug
 
       Enable debugging output.
-
-   .. option:: --driver <DRIVER>
-
-      Load balancer driver to use. Valid driver options are:
-
-      * *haproxy* - `HAProxy <http://haproxy.1wt.eu>`_ software load balancer.
-        This is the default driver.
 
    .. option:: --group <GROUP>
 
@@ -121,154 +82,6 @@ Worker Command Line Options
 
       Do not run as a daemon. This option is useful for debugging purposes
       only as the worker is intended to be run as a daemon normally.
-
-   .. option:: -p <PID>, --pid <PID>
-
-      Name of the PID file to use. Default is:
-      */var/run/libra/libra_worker.pid*
-
-   .. option:: -s <SECONDS>, --reconnect_sleep <SECONDS>
-
-      The number of seconds to sleep between job server reconnect attempts
-      when no specified job servers are available. Default is 60 seconds.
-
-   .. option:: --server <HOST:PORT>
-
-      Used to specify the Gearman job server hostname and port. This option
-      can be used multiple times to specify multiple job servers.
-
-   .. option:: --syslog
-
-      Send log events to syslog.
-
-   .. option:: --syslog-socket
-
-      Socket to use for the syslog connection. Default is */dev/log*.
-
-   .. option:: --syslog-facility
-
-      Syslog logging facility. Default is *LOCAL7*.
-
-   .. option:: --user <USER>
-
-      Specifies the user for the process when in daemon mode. Default is the
-      current user.
-
-   .. option:: -v, --verbose
-
-      Enable verbose output. Normally, only errors are logged. This enables
-      additional logging, but not as much as the :option:`-d` option.
-
-   .. option:: --stats-poll <SECONDS>
-
-      The number of seconds to sleep between statistics polling of the
-      load balancer driver. Default is 300 seconds.
-
-Pool Manager Command Line Options
----------------------------------
-   .. program:: libra_pool_mgm.py
-
-   .. option:: --api_server <HOST:PORT>
-
-      The hostname/IP and port colon separated for use with the HP REST API
-      driver.  Can be specified multiple times for multiple servers
-
-   .. option:: -c <FILE>, --config <FILE>
-
-      Load options from the specified configuration file. Command line
-      options will take precedence over any options specified in the
-      configuration file.
-
-   .. option:: --check_interval <CHECK_INTERVAL>
-
-      How often to check the API server to see if new nodes are needed
-      (value is minutes)
-
-   .. option:: --failed_interval <FAILED_INTERVAL>
-
-      How often to check the list of failed node uploads to see if the nodes
-      are now in a good state (value is in minutes)
-
-   .. option:: -d, --debug
-
-      Enable debugging output.
-
-   .. option:: --driver <DRIVER>
-
-      API driver to use. Valid driver options are:
-
-      * *hp_rest* - HP REST API, talks to the HP Cloud API server (based
-        on Atlas API)
-        This is the default driver.
-
-   .. option:: --group <GROUP>
-
-      Specifies the group for the process when run in daemon mode.
-
-   .. option:: -h, --help
-
-      Show the help message and quit.
-
-   .. option:: -l <FILE>, --logfile <FILE>
-
-      Name of the log file. When running in daemon mode, the default log
-      file is */var/log/libra/libra_worker.log*. When not in daemon mode,
-      logging will go to STDOUT unless a log file is specified.
-
-   .. option:: --datadir <DATADIR>
-
-      The data directory used to store things such as the failed node list.
-
-   .. option:: -n, --nodaemon
-
-      Do not run as a daemon. This option is useful for debugging purposes
-      only as the worker is intended to be run as a daemon normally.
-
-   .. option:: --node_basename <NODE_BASENAME>
-
-      A name to prefix the UUID name given to the nodes the pool manager
-      generates.
-
-   .. option:: --nodes <NODES>
-
-      The size of the pool of spare nodes the pool manager should keep.
-
-   .. option:: --nova_auth_url <NOVA_AUTH_URL>
-
-      The URL used to authenticate for the Nova API
-
-   .. option:: --nova_user <NOVA_USER>
-
-      The username to authenticate for the Nova API
-
-   .. option:: --nova_pass <NOVA_PASS>
-
-      The password to authenticate for the Nova API
-
-   .. option:: --nova_tenant <NOVA_TENANT>
-
-      The tenant to use for the Nova API
-
-   .. option:: --nova_region <NOVA_REGION>
-
-      The region to use for the Nova API
-
-   .. option:: --nova_keyname <NOVA_KEYNAME>
-
-      The key name to use when spinning up nodes in the Nova API
-
-   .. option:: --nova_secgroup <NOVA_SECGROUP>
-
-      The security group to use when spinning up nodes in the Nova API
-
-   .. option:: --nova_image <NOVA_IMAGE>
-
-      The image ID or name to use on new nodes spun up in the Nova API
-
-   .. option:: --nova_image_size <NOVA_IMAGE_SIZE>
-
-      The flavor ID (image size ID) or name to use for new nodes spun up in
-      the Nova API
 
    .. option:: -p <PID>, --pid <PID>
 
@@ -296,74 +109,4 @@ Pool Manager Command Line Options
 
       Enable verbose output. Normally, only errors are logged. This enables
       additional logging, but not as much as the :option:`-d` option.
-
-Statsd Command Line Options
----------------------------
-
-   .. program:: libra_statsd.py
-
-   .. option:: --api_server <HOST:PORT>
-
-      The hostname/IP and port colon separated for use with the HP REST API
-      driver.  Can be specified multiple times for multiple servers.  This
-      option is also used for the hp_rest alerting driver.
-
-   .. option:: --server <HOST:PORT>
-
-      Used to specify the Gearman job server hostname and port. This option
-      can be used multiple times to specify multiple job servers
-
-   .. option:: --driver <DRIVER LIST>
-
-      The drivers to be used for alerting.  This option can be used multiple
-      times to specift multiple drivers.
-
-   .. option:: --ping_interval <PING_INTERVAL>
-
-      How often to run a ping check of load balancers (in seconds), default 60
-
-   .. option:: --poll_interval <POLL_INTERVAL>
-
-      How long to wait until we consider the initial ping check failed and
-      send a second ping. Default is 5 seconds.
-
-   .. option:: --poll_interval_retry <POLL_INTERVAL>
-
-      How long to wait until we consider the second and final ping check
-      failed. Default is 30 seconds.
-
-   .. option:: --repair_interval <REPAIR_INTERVAL>
-
-      How often to run a check to see if damaged load balancers had been
-      repaired (in seconds), default 180
-
-   .. option:: --datadog_api_key <KEY>
-
-      The API key to be used for the datadog driver
-
-   .. option:: --datadog_app_key <KEY>
-
-      The Application key to be used for the datadog driver
-
-   .. option:: --datadog_message_tail <TEXT>
-
-      Some text to add at the end of an alerting message such as a list of
-      users to alert (using @user@email.com format), used for the datadog
-      driver.
-
-   .. option:: --datadog_tags <TAGS>
-
-      A list of tags to be used for the datadog driver
-
-   .. option:: --syslog
-
-      Send log events to syslog.
-
-   .. option:: --syslog-socket
-
-      Socket to use for the syslog connection. Default is */dev/log*.
-
-   .. option:: --syslog-facility
-
-      Syslog logging facility. Default is *LOCAL7*.
 
