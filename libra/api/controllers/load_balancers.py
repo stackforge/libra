@@ -213,11 +213,13 @@ class LoadBalancersController(RestController):
         lb = LoadBalancer()
         if body.virtualIps == Unset:
             # find free device
+            # lock with "for update" so multiple APIs don't grab the same LB
             device = session.query(Device).\
                 filter(~Device.id.in_(
                     session.query(loadbalancers_devices.c.device)
                 )).\
                 filter(Device.status == "OFFLINE").\
+                with_lockmode('update').\
                 first()
         else:
             virtual_id = body.virtualIps[0].id
