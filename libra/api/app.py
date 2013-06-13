@@ -139,7 +139,7 @@ def main():
         help='Default endpoint URL (tenant ID will be appended to this'
     )
     options.parser.add_argument(
-        '--ssl_cert',
+        '--ssl_certfile',
         help='Path to an SSL certificate file'
     )
     options.parser.add_argument(
