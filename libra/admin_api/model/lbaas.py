@@ -27,7 +27,7 @@ conn_string = '''mysql://%s:%s@%s/%s''' % (
     conf.database.schema
 )
 
-engine = create_engine(conn_string, echo=True)
+engine = create_engine(conn_string)
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
 metadata.bind = engine
