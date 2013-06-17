@@ -16,7 +16,7 @@ import eventlet
 eventlet.monkey_patch()
 import logging
 from libra.common.json_gearman import JSONGearmanClient
-from libra.api.model.lbaas import LoadBalancer, get_session, Device
+from libra.api.model.lbaas import LoadBalancer, db_session, Device
 from pecan import conf
 
 
@@ -56,60 +56,61 @@ class GearmanClientThread(object):
         self.gearman_client = JSONGearmanClient(conf.gearman.server)
 
     def send_delete(self, data):
-        session = get_session()
-        count = session.query(
-            LoadBalancer
-        ).join(LoadBalancer.devices).\
-            filter(Device.id == data).\
-            filter(LoadBalancer.status != 'DELETED').\
-            count()
-        if count >= 1:
-            # This is an update message because we want to retain the
-            # remaining LB
-            keep_lb = session.query(LoadBalancer).join(LoadBalancer.nodes).\
-                join(LoadBalancer.devices).\
+        with db_session() as session:
+            count = session.query(
+                LoadBalancer
+            ).join(LoadBalancer.devices).\
                 filter(Device.id == data).\
-                filter(LoadBalancer.id != self.lbid).\
                 filter(LoadBalancer.status != 'DELETED').\
-                first()
-            job_data = {
-                'hpcs_action': 'UPDATE',
-                'loadBalancers': [{
-                    'name': keep_lb.name,
-                    'protocol': keep_lb.protocol,
-                    'algorithm': keep_lb.algorithm,
-                    'port': keep_lb.port,
-                    'nodes': []
-                }]
-            }
-            for node in keep_lb.nodes:
-                if not node.enabled:
-                    continue
-                condition = 'ENABLED'
-                node_data = {
-                    'port': node.port, 'address': node.address,
-                    'weight': node.weight, 'condition': condition
+                count()
+            if count >= 1:
+                # This is an update message because we want to retain the
+                # remaining LB
+                keep_lb = session.query(LoadBalancer).\
+                    join(LoadBalancer.nodes).\
+                    join(LoadBalancer.devices).\
+                    filter(Device.id == data).\
+                    filter(LoadBalancer.id != self.lbid).\
+                    filter(LoadBalancer.status != 'DELETED').\
+                    first()
+                job_data = {
+                    'hpcs_action': 'UPDATE',
+                    'loadBalancers': [{
+                        'name': keep_lb.name,
+                        'protocol': keep_lb.protocol,
+                        'algorithm': keep_lb.algorithm,
+                        'port': keep_lb.port,
+                        'nodes': []
+                    }]
                 }
-                job_data['loadBalancers'][0]['nodes'].append(node_data)
-        else:
-            # This is a delete
-            job_data = {"hpcs_action": "DELETE"}
+                for node in keep_lb.nodes:
+                    if not node.enabled:
+                        continue
+                    condition = 'ENABLED'
+                    node_data = {
+                        'port': node.port, 'address': node.address,
+                        'weight': node.weight, 'condition': condition
+                    }
+                    job_data['loadBalancers'][0]['nodes'].append(node_data)
+            else:
+                # This is a delete
+                job_data = {"hpcs_action": "DELETE"}
 
-        status, response = self._send_message(job_data)
-        lb = session.query(LoadBalancer).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        if not status:
-            self._set_error(data, response, session)
-        else:
-            lb.status = 'DELETED'
-            if count == 0:
-                # Device should never be used again
-                device = session.query(Device).\
-                    filter(Device.id == data).first()
-                #TODO: change this to 'DELETED' when pool mgm deletes
-                device.status = 'OFFLINE'
-        session.commit()
+            status, response = self._send_message(job_data)
+            lb = session.query(LoadBalancer).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            if not status:
+                self._set_error(data, response, session)
+            else:
+                lb.status = 'DELETED'
+                if count == 0:
+                    # Device should never be used again
+                    device = session.query(Device).\
+                        filter(Device.id == data).first()
+                    #TODO: change this to 'DELETED' when pool mgm deletes
+                    device.status = 'OFFLINE'
+            session.commit()
 
     def _set_error(self, device_id, errmsg, session):
         lbs = session.query(
@@ -128,73 +129,73 @@ class GearmanClientThread(object):
             lb.errmsg = errmsg
 
     def send_archive(self, data):
-        session = get_session()
-        lb = session.query(LoadBalancer).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        job_data = {
-            'hpcs_action': 'ARCHIVE',
-            'hpcs_object_store_basepath': data['objectStoreBasePath'],
-            'hpcs_object_store_endpoint': data['objectStoreEndpoint'],
-            'hpcs_object_store_token': data['authToken'],
-            'hpcs_object_store_type': data['objectStoreType'],
-            'loadBalancers': [{
-                'id': str(lb.id),
-                'name': lb.name,
-                'protocol': lb.protocol
-            }]
-        }
-        status, response = self._send_message(job_data)
-        device = session.query(Device).\
-            filter(Device.id == data['deviceid']).\
-            first()
-        if status:
-            device.errmsg = 'Log archive successful'
-        else:
-            device.errmsg = 'Log archive failed: {0}'.format(response)
-        lb.status = 'ACTIVE'
-        session.commit()
+        with db_session() as session:
+            lb = session.query(LoadBalancer).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            job_data = {
+                'hpcs_action': 'ARCHIVE',
+                'hpcs_object_store_basepath': data['objectStoreBasePath'],
+                'hpcs_object_store_endpoint': data['objectStoreEndpoint'],
+                'hpcs_object_store_token': data['authToken'],
+                'hpcs_object_store_type': data['objectStoreType'],
+                'loadBalancers': [{
+                    'id': str(lb.id),
+                    'name': lb.name,
+                    'protocol': lb.protocol
+                }]
+            }
+            status, response = self._send_message(job_data)
+            device = session.query(Device).\
+                filter(Device.id == data['deviceid']).\
+                first()
+            if status:
+                device.errmsg = 'Log archive successful'
+            else:
+                device.errmsg = 'Log archive failed: {0}'.format(response)
+            lb.status = 'ACTIVE'
+            session.commit()
 
     def send_update(self, data):
-        session = get_session()
-        lbs = session.query(
-            LoadBalancer
-        ).join(LoadBalancer.nodes).\
-            join(LoadBalancer.devices).\
-            filter(Device.id == data).\
-            filter(LoadBalancer.status != 'DELETED').\
-            all()
-        job_data = {
-            'hpcs_action': 'UPDATE',
-            'loadBalancers': []
-        }
-        for lb in lbs:
-            lb_data = {
-                'name': lb.name,
-                'protocol': lb.protocol,
-                'algorithm': lb.algorithm,
-                'port': lb.port,
-                'nodes': []
+        with db_session() as session:
+            lbs = session.query(
+                LoadBalancer
+            ).join(LoadBalancer.nodes).\
+                join(LoadBalancer.devices).\
+                filter(Device.id == data).\
+                filter(LoadBalancer.status != 'DELETED').\
+                all()
+            job_data = {
+                'hpcs_action': 'UPDATE',
+                'loadBalancers': []
             }
-            for node in lb.nodes:
-                if not node.enabled:
-                    continue
-                condition = 'ENABLED'
-                node_data = {
-                    'port': node.port, 'address': node.address,
-                    'weight': node.weight, 'condition': condition
+            for lb in lbs:
+                lb_data = {
+                    'name': lb.name,
+                    'protocol': lb.protocol,
+                    'algorithm': lb.algorithm,
+                    'port': lb.port,
+                    'nodes': []
                 }
-                lb_data['nodes'].append(node_data)
-            job_data['loadBalancers'].append(lb_data)
-        status, response = self._send_message(job_data)
-        lb = session.query(LoadBalancer).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        if not status:
-            self._set_error(data, response, session)
-        else:
-            lb.status = 'ACTIVE'
-        session.commit()
+                for node in lb.nodes:
+                    if not node.enabled:
+                        continue
+                    condition = 'ENABLED'
+                    node_data = {
+                        'port': node.port, 'address': node.address,
+                        'weight': node.weight, 'condition': condition
+                    }
+                    lb_data['nodes'].append(node_data)
+                job_data['loadBalancers'].append(lb_data)
+            status, response = self._send_message(job_data)
+            lb = session.query(LoadBalancer).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            if not status:
+                self._set_error(data, response, session)
+            else:
+                lb.status = 'ACTIVE'
+            session.commit()
 
     def _send_message(self, message):
         job_status = self.gearman_client.submit_job(

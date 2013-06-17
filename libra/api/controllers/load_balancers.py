@@ -25,7 +25,7 @@ from nodes import NodesController
 from virtualips import VipsController
 from logs import LogsController
 # models
-from libra.api.model.lbaas import LoadBalancer, Device, Node, get_session
+from libra.api.model.lbaas import LoadBalancer, Device, Node, db_session
 from libra.api.model.lbaas import loadbalancers_devices, Limits
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
@@ -58,85 +58,86 @@ class LoadBalancersController(RestController):
         """
 
         tenant_id = get_limited_to_project(request.headers)
-        session = get_session()
-        # if we don't have an id then we want a list of them own by this tenent
-        if not load_balancer_id:
-            lbs = session.query(
-                LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
-                LoadBalancer.port, LoadBalancer.algorithm,
-                LoadBalancer.status, LoadBalancer.created,
-                LoadBalancer.updated
-            ).filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.status != 'DELETED').all()
+        with db_session() as session:
+            # if we don't have an id then we want a list of them own by this
+            # tenent
+            if not load_balancer_id:
+                lbs = session.query(
+                    LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
+                    LoadBalancer.port, LoadBalancer.algorithm,
+                    LoadBalancer.status, LoadBalancer.created,
+                    LoadBalancer.updated
+                ).filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(LoadBalancer.status != 'DELETED').all()
 
-            load_balancers = {'loadBalancers': []}
+                load_balancers = {'loadBalancers': []}
 
-            for lb in lbs:
-                lb = lb._asdict()
-                lb['id'] = str(lb['id'])
-                load_balancers['loadBalancers'].append(lb)
-        else:
-            load_balancers = session.query(
-                LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
-                LoadBalancer.port, LoadBalancer.algorithm,
-                LoadBalancer.status, LoadBalancer.created,
-                LoadBalancer.updated, LoadBalancer.statusDescription
-            ).join(LoadBalancer.devices).\
-                filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.id == load_balancer_id).\
-                first()
+                for lb in lbs:
+                    lb = lb._asdict()
+                    lb['id'] = str(lb['id'])
+                    load_balancers['loadBalancers'].append(lb)
+            else:
+                load_balancers = session.query(
+                    LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
+                    LoadBalancer.port, LoadBalancer.algorithm,
+                    LoadBalancer.status, LoadBalancer.created,
+                    LoadBalancer.updated, LoadBalancer.statusDescription
+                ).join(LoadBalancer.devices).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(LoadBalancer.id == load_balancer_id).\
+                    first()
 
-            if not load_balancers:
-                response.status = 400
-                session.rollback()
-                return dict(
-                    message='Bad Request',
-                    details="Load Balancer ID not found"
-                )
+                if not load_balancers:
+                    response.status = 400
+                    session.rollback()
+                    return dict(
+                        message='Bad Request',
+                        details="Load Balancer ID not found"
+                    )
 
-            load_balancers = load_balancers._asdict()
-            virtualIps = session.query(
-                Device.id, Device.floatingIpAddr
-            ).join(LoadBalancer.devices).\
-                filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.id == load_balancer_id).\
-                all()
+                load_balancers = load_balancers._asdict()
+                virtualIps = session.query(
+                    Device.id, Device.floatingIpAddr
+                ).join(LoadBalancer.devices).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(LoadBalancer.id == load_balancer_id).\
+                    all()
 
-            load_balancers['virtualIps'] = []
-            for item in virtualIps:
-                vip = item._asdict()
-                vip['type'] = 'PUBLIC'
-                vip['ipVersion'] = 'IPV4'
-                vip['address'] = vip['floatingIpAddr']
-                del(vip['floatingIpAddr'])
-                load_balancers['virtualIps'].append(vip)
+                load_balancers['virtualIps'] = []
+                for item in virtualIps:
+                    vip = item._asdict()
+                    vip['type'] = 'PUBLIC'
+                    vip['ipVersion'] = 'IPV4'
+                    vip['address'] = vip['floatingIpAddr']
+                    del(vip['floatingIpAddr'])
+                    load_balancers['virtualIps'].append(vip)
 
-            nodes = session.query(
-                Node.id, Node.address, Node.port, Node.status, Node.enabled
-            ).join(LoadBalancer.nodes).\
-                filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.id == load_balancer_id).\
-                all()
+                nodes = session.query(
+                    Node.id, Node.address, Node.port, Node.status, Node.enabled
+                ).join(LoadBalancer.nodes).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(LoadBalancer.id == load_balancer_id).\
+                    all()
 
-            load_balancers['id'] = str(load_balancers['id'])
-            if not load_balancers['statusDescription']:
-                load_balancers['statusDescription'] = ''
+                load_balancers['id'] = str(load_balancers['id'])
+                if not load_balancers['statusDescription']:
+                    load_balancers['statusDescription'] = ''
 
-            load_balancers['nodes'] = []
-            for item in nodes:
-                node = item._asdict()
-                if node['enabled'] == 1:
-                    node['condition'] = 'ENABLED'
-                else:
-                    node['condition'] = 'DISABLED'
-                del node['enabled']
-                node['port'] = str(node['port'])
-                node['id'] = str(node['id'])
-                load_balancers['nodes'].append(node)
+                load_balancers['nodes'] = []
+                for item in nodes:
+                    node = item._asdict()
+                    if node['enabled'] == 1:
+                        node['condition'] = 'ENABLED'
+                    else:
+                        node['condition'] = 'DISABLED'
+                    del node['enabled']
+                    node['port'] = str(node['port'])
+                    node['id'] = str(node['id'])
+                    load_balancers['nodes'].append(node)
 
-        session.rollback()
-        response.status = 200
-        return load_balancers
+            session.rollback()
+            response.status = 200
+            return load_balancers
 
     @wsme_pecan.wsexpose(LBResp, body=LBPost, status_code=202)
     def post(self, body=None):
@@ -177,185 +178,186 @@ class LoadBalancersController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
-        session = get_session()
-        lblimit = session.query(Limits.value).\
-            filter(Limits.name == 'maxLoadBalancers').scalar()
-        nodelimit = session.query(Limits.value).\
-            filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
-        namelimit = session.query(Limits.value).\
-            filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
-        count = session.query(LoadBalancer).\
-            filter(LoadBalancer.tenantid == tenant_id).\
-            filter(LoadBalancer.status != 'DELETED').count()
-
-        if len(body.name) > namelimit:
-            session.rollback()
-            raise ClientSideError(
-                'Length of Load Balancer name too long'
-            )
-        # TODO: this should probably be a 413, not sure how to do that yet
-        if count >= lblimit:
-            session.rollback()
-            raise OverLimit(
-                'Account has hit limit of {0} Load Balancers'.
-                format(lblimit)
-            )
-        if len(body.nodes) > nodelimit:
-            session.rollback()
-            raise OverLimit(
-                'Too many backend nodes supplied (limit is {0}'.
-                format(nodelimit)
-            )
-
-        device = None
-        old_lb = None
-        # if we don't have an id then we want to create a new lb
-        lb = LoadBalancer()
-        if body.virtualIps == Unset:
-            # find free device
-            # lock with "for update" so multiple APIs don't grab the same LB
-            device = session.query(Device).\
-                filter(~Device.id.in_(
-                    session.query(loadbalancers_devices.c.device)
-                )).\
-                filter(Device.status == "OFFLINE").\
-                with_lockmode('update').\
-                first()
-        else:
-            virtual_id = body.virtualIps[0].id
-            # This is an additional load balancer
-            device = session.query(
-                Device
-            ).filter(Device.id == virtual_id).\
-                first()
-            old_lb = session.query(
-                LoadBalancer
-            ).join(LoadBalancer.devices).\
+        with db_session() as session:
+            lblimit = session.query(Limits.value).\
+                filter(Limits.name == 'maxLoadBalancers').scalar()
+            nodelimit = session.query(Limits.value).\
+                filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
+            namelimit = session.query(Limits.value).\
+                filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
+            count = session.query(LoadBalancer).\
                 filter(LoadBalancer.tenantid == tenant_id).\
-                filter(Device.id == virtual_id).\
-                first()
-            if old_lb is None:
+                filter(LoadBalancer.status != 'DELETED').count()
+
+            if len(body.name) > namelimit:
                 session.rollback()
-                raise InvalidInput(
-                    'virtualIps', virtual_id, 'Invalid virtual IP provided'
+                raise ClientSideError(
+                    'Length of Load Balancer name too long'
+                )
+            # TODO: this should probably be a 413, not sure how to do that yet
+            if count >= lblimit:
+                session.rollback()
+                raise OverLimit(
+                    'Account has hit limit of {0} Load Balancers'.
+                    format(lblimit)
+                )
+            if len(body.nodes) > nodelimit:
+                session.rollback()
+                raise OverLimit(
+                    'Too many backend nodes supplied (limit is {0}'.
+                    format(nodelimit)
                 )
 
-            if body.protocol == Unset or body.protocol.lower() == 'HTTP':
-                old_count = session.query(
+            device = None
+            old_lb = None
+            # if we don't have an id then we want to create a new lb
+            lb = LoadBalancer()
+            if body.virtualIps == Unset:
+                # find free device
+                # lock with "for update" so multiple APIs don't grab the same
+                # LB
+                device = session.query(Device).\
+                    filter(~Device.id.in_(
+                        session.query(loadbalancers_devices.c.device)
+                    )).\
+                    filter(Device.status == "OFFLINE").\
+                    with_lockmode('update').\
+                    first()
+            else:
+                virtual_id = body.virtualIps[0].id
+                # This is an additional load balancer
+                device = session.query(
+                    Device
+                ).filter(Device.id == virtual_id).\
+                    first()
+                old_lb = session.query(
                     LoadBalancer
                 ).join(LoadBalancer.devices).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(Device.id == virtual_id).\
-                    filter(LoadBalancer.protocol == 'HTTP').\
-                    count()
-                if old_count:
+                    first()
+                if old_lb is None:
                     session.rollback()
-                    # Error here, can have only one HTTP
-                    raise ClientSideError(
-                        'Only one HTTP load balancer allowed per device'
-                    )
-            elif body.protocol.lower() == 'TCP':
-                old_count = session.query(
-                    LoadBalancer
-                ).join(LoadBalancer.devices).\
-                    filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(Device.id == virtual_id).\
-                    filter(LoadBalancer.protocol == 'TCP').\
-                    count()
-                if old_count:
-                    session.rollback()
-                    # Error here, can have only one TCP
-                    raise ClientSideError(
-                        'Only one TCP load balancer allowed per device'
+                    raise InvalidInput(
+                        'virtualIps', virtual_id, 'Invalid virtual IP provided'
                     )
 
-        if device is None:
-            session.rollback()
-            raise RuntimeError('No devices available')
+                if body.protocol == Unset or body.protocol.lower() == 'HTTP':
+                    old_count = session.query(
+                        LoadBalancer
+                    ).join(LoadBalancer.devices).\
+                        filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(Device.id == virtual_id).\
+                        filter(LoadBalancer.protocol == 'HTTP').\
+                        count()
+                    if old_count:
+                        session.rollback()
+                        # Error here, can have only one HTTP
+                        raise ClientSideError(
+                            'Only one HTTP load balancer allowed per device'
+                        )
+                elif body.protocol.lower() == 'TCP':
+                    old_count = session.query(
+                        LoadBalancer
+                    ).join(LoadBalancer.devices).\
+                        filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(Device.id == virtual_id).\
+                        filter(LoadBalancer.protocol == 'TCP').\
+                        count()
+                    if old_count:
+                        session.rollback()
+                        # Error here, can have only one TCP
+                        raise ClientSideError(
+                            'Only one TCP load balancer allowed per device'
+                        )
 
-        lb.tenantid = tenant_id
-        lb.name = body.name
-        if body.protocol and body.protocol.lower() == 'tcp':
-            lb.protocol = 'TCP'
-        else:
-            lb.protocol = 'HTTP'
+            if device is None:
+                session.rollback()
+                raise RuntimeError('No devices available')
 
-        if body.port:
-            lb.port = body.port
-        else:
-            if lb.protocol == 'HTTP':
-                lb.port = 80
+            lb.tenantid = tenant_id
+            lb.name = body.name
+            if body.protocol and body.protocol.lower() == 'tcp':
+                lb.protocol = 'TCP'
             else:
-                lb.port = 443
+                lb.protocol = 'HTTP'
 
-        lb.status = 'BUILD'
-        lb.created = None
-
-        if body.algorithm:
-            lb.algorithm = body.algorithm.upper()
-        else:
-            lb.algorithm = 'ROUND_ROBIN'
-
-        lb.devices = [device]
-        # write to database
-        session.add(lb)
-        session.flush()
-        #refresh the lb record so we get the id back
-        session.refresh(lb)
-        for node in body.nodes:
-            if node.condition == 'DISABLED':
-                enabled = 0
+            if body.port:
+                lb.port = body.port
             else:
-                enabled = 1
-            out_node = Node(
-                lbid=lb.id, port=node.port, address=node.address,
-                enabled=enabled, status='ONLINE', weight=1
-            )
-            session.add(out_node)
+                if lb.protocol == 'HTTP':
+                    lb.port = 80
+                else:
+                    lb.port = 443
 
-        # now save the loadbalancer_id to the device and switch its status
-        # to online
-        device.status = "ONLINE"
+            lb.status = 'BUILD'
+            lb.created = None
 
-        session.flush()
+            if body.algorithm:
+                lb.algorithm = body.algorithm.upper()
+            else:
+                lb.algorithm = 'ROUND_ROBIN'
 
-        try:
-            return_data = LBResp()
-            return_data.id = str(lb.id)
-            return_data.name = lb.name
-            return_data.protocol = lb.protocol
-            return_data.port = str(lb.port)
-            return_data.algorithm = lb.algorithm
-            return_data.status = lb.status
-            return_data.created = lb.created
-            return_data.updated = lb.updated
-            vip_resp = LBVipResp(
-                address=device.floatingIpAddr, id=str(device.id),
-                type='PUBLIC', ipVersion='IPV4'
-            )
-            return_data.virtualIps = [vip_resp]
-            return_data.nodes = []
+            lb.devices = [device]
+            # write to database
+            session.add(lb)
+            session.flush()
+            #refresh the lb record so we get the id back
+            session.refresh(lb)
             for node in body.nodes:
-                out_node = LBRespNode(
-                    port=str(node.port), address=node.address,
-                    condition=node.condition
+                if node.condition == 'DISABLED':
+                    enabled = 0
+                else:
+                    enabled = 1
+                out_node = Node(
+                    lbid=lb.id, port=node.port, address=node.address,
+                    enabled=enabled, status='ONLINE', weight=1
                 )
-                return_data.nodes.append(out_node)
-            session.commit()
-            # trigger gearman client to create new lb
-            result = submit_job(
-                'UPDATE', device.name, device.id, lb.id
-            )
-            # do something with result
-            if result:
-                pass
-            return return_data
-        except:
-            logger = logging.getLogger(__name__)
-            logger.exception('Error communicating with load balancer pool')
-            errstr = 'Error communicating with load balancer pool'
-            session.rollback()
-            raise ClientSideError(errstr)
+                session.add(out_node)
+
+            # now save the loadbalancer_id to the device and switch its status
+            # to online
+            device.status = "ONLINE"
+
+            session.flush()
+
+            try:
+                return_data = LBResp()
+                return_data.id = str(lb.id)
+                return_data.name = lb.name
+                return_data.protocol = lb.protocol
+                return_data.port = str(lb.port)
+                return_data.algorithm = lb.algorithm
+                return_data.status = lb.status
+                return_data.created = lb.created
+                return_data.updated = lb.updated
+                vip_resp = LBVipResp(
+                    address=device.floatingIpAddr, id=str(device.id),
+                    type='PUBLIC', ipVersion='IPV4'
+                )
+                return_data.virtualIps = [vip_resp]
+                return_data.nodes = []
+                for node in body.nodes:
+                    out_node = LBRespNode(
+                        port=str(node.port), address=node.address,
+                        condition=node.condition
+                    )
+                    return_data.nodes.append(out_node)
+                session.commit()
+                # trigger gearman client to create new lb
+                result = submit_job(
+                    'UPDATE', device.name, device.id, lb.id
+                )
+                # do something with result
+                if result:
+                    pass
+                return return_data
+            except:
+                logger = logging.getLogger(__name__)
+                logger.exception('Error communicating with load balancer pool')
+                errstr = 'Error communicating with load balancer pool'
+                session.rollback()
+                raise ClientSideError(errstr)
 
     @wsme_pecan.wsexpose(None, body=LBPut, status_code=202)
     def put(self, body=None):
@@ -363,41 +365,41 @@ class LoadBalancersController(RestController):
             raise ClientSideError('Load Balancer ID is required')
 
         tenant_id = get_limited_to_project(request.headers)
-        session = get_session()
-        # grab the lb
-        lb = session.query(LoadBalancer).\
-            filter(LoadBalancer.id == self.lbid).\
-            filter(LoadBalancer.tenantid == tenant_id).\
-            filter(LoadBalancer.status != 'DELETED').first()
+        with db_session() as session:
+            # grab the lb
+            lb = session.query(LoadBalancer).\
+                filter(LoadBalancer.id == self.lbid).\
+                filter(LoadBalancer.tenantid == tenant_id).\
+                filter(LoadBalancer.status != 'DELETED').first()
 
-        if lb is None:
-            session.rollback()
-            raise ClientSideError('Load Balancer ID is not valid')
-
-        if body.name != Unset:
-            namelimit = session.query(Limits.value).\
-                filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
-            if len(body.name) > namelimit:
+            if lb is None:
                 session.rollback()
-                raise ClientSideError(
-                    'Length of Load Balancer name too long'
-                )
-            lb.name = body.name
+                raise ClientSideError('Load Balancer ID is not valid')
 
-        if body.algorithm != Unset:
-            lb.algorithm = body.algorithm
+            if body.name != Unset:
+                namelimit = session.query(Limits.value).\
+                    filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
+                if len(body.name) > namelimit:
+                    session.rollback()
+                    raise ClientSideError(
+                        'Length of Load Balancer name too long'
+                    )
+                lb.name = body.name
 
-        lb.status = 'PENDING_UPDATE'
-        device = session.query(
-            Device.id, Device.name
-        ).join(LoadBalancer.devices).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        session.commit()
-        submit_job(
-            'UPDATE', device.name, device.id, lb.id
-        )
-        return ''
+            if body.algorithm != Unset:
+                lb.algorithm = body.algorithm
+
+            lb.status = 'PENDING_UPDATE'
+            device = session.query(
+                Device.id, Device.name
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            session.commit()
+            submit_job(
+                'UPDATE', device.name, device.id, lb.id
+            )
+            return ''
 
     @expose('json')
     def delete(self, load_balancer_id):
@@ -416,46 +418,47 @@ class LoadBalancersController(RestController):
         """
         tenant_id = get_limited_to_project(request.headers)
         # grab the lb
-        session = get_session()
-        lb = session.query(LoadBalancer).\
-            filter(LoadBalancer.id == load_balancer_id).\
-            filter(LoadBalancer.tenantid == tenant_id).\
-            filter(LoadBalancer.status != 'DELETED').first()
-
-        if lb is None:
-            session.rollback()
-            response.status = 400
-            return dict(
-                message="Bad Request",
-                details="Load Balancer ID is not valid"
-            )
-        try:
-            session.query(Node).filter(Node.lbid == load_balancer_id).delete()
-            lb.status = 'PENDING_DELETE'
-            device = session.query(
-                Device.id, Device.name
-            ).join(LoadBalancer.devices).\
+        with db_session() as session:
+            lb = session.query(LoadBalancer).\
                 filter(LoadBalancer.id == load_balancer_id).\
-                first()
-            session.execute(loadbalancers_devices.delete().where(
-                loadbalancers_devices.c.loadbalancer == load_balancer_id
-            ))
-            session.flush()
-            session.commit()
-            submit_job(
-                'DELETE', device.name, device.id, lb.id
-            )
-            response.status = 202
-            return ''
-        except:
-            session.rollback()
-            logger = logging.getLogger(__name__)
-            logger.exception('Error communicating with load balancer pool')
-            response.status = 500
-            return dict(
-                message="Load Balancer Error",
-                details="Error communication with load balancer pool"
-            )
+                filter(LoadBalancer.tenantid == tenant_id).\
+                filter(LoadBalancer.status != 'DELETED').first()
+
+            if lb is None:
+                session.rollback()
+                response.status = 400
+                return dict(
+                    message="Bad Request",
+                    details="Load Balancer ID is not valid"
+                )
+            try:
+                session.query(Node).\
+                    filter(Node.lbid == load_balancer_id).delete()
+                lb.status = 'PENDING_DELETE'
+                device = session.query(
+                    Device.id, Device.name
+                ).join(LoadBalancer.devices).\
+                    filter(LoadBalancer.id == load_balancer_id).\
+                    first()
+                session.execute(loadbalancers_devices.delete().where(
+                    loadbalancers_devices.c.loadbalancer == load_balancer_id
+                ))
+                session.flush()
+                session.commit()
+                submit_job(
+                    'DELETE', device.name, device.id, lb.id
+                )
+                response.status = 202
+                return ''
+            except:
+                session.rollback()
+                logger = logging.getLogger(__name__)
+                logger.exception('Error communicating with load balancer pool')
+                response.status = 500
+                return dict(
+                    message="Load Balancer Error",
+                    details="Error communication with load balancer pool"
+                )
 
     def usage(self, load_balancer_id):
         """List current and historical usage.

@@ -15,18 +15,18 @@
 
 from pecan import expose
 from pecan.rest import RestController
-from libra.api.model.lbaas import Limits, get_session
+from libra.api.model.lbaas import Limits, db_session
 
 
 class LimitsController(RestController):
     @expose('json')
     def get(self):
         resp = {}
-        session = get_session()
-        limits = session.query(Limits).all()
-        for limit in limits:
-            resp[limit.name] = limit.value
+        with db_session() as session:
+            limits = session.query(Limits).all()
+            for limit in limits:
+                resp[limit.name] = limit.value
 
-        resp = {"limits": {"absolute": {"values": resp}}}
-        session.rollback()
-        return resp
+            resp = {"limits": {"absolute": {"values": resp}}}
+            session.rollback()
+            return resp

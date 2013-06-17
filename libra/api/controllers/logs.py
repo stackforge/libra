@@ -19,7 +19,7 @@ from pecan import conf
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
-from libra.api.model.lbaas import LoadBalancer, Device, get_session
+from libra.api.model.lbaas import LoadBalancer, Device, db_session
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBLogsPost
 from libra.api.library.gearman_client import submit_job
@@ -35,48 +35,48 @@ class LogsController(RestController):
             raise ClientSideError('Load Balancer ID has not been supplied')
 
         tenant_id = get_limited_to_project(request.headers)
-        session = get_session()
-        load_balancer = session.query(LoadBalancer).\
-            filter(LoadBalancer.tenantid == tenant_id).\
-            filter(LoadBalancer.id == self.lbid).\
-            filter(LoadBalancer.status != 'DELETED').\
-            first()
-        if load_balancer is None:
-            session.rollback()
-            raise ClientSideError('Load Balancer not found')
+        with db_session() as session:
+            load_balancer = session.query(LoadBalancer).\
+                filter(LoadBalancer.tenantid == tenant_id).\
+                filter(LoadBalancer.id == self.lbid).\
+                filter(LoadBalancer.status != 'DELETED').\
+                first()
+            if load_balancer is None:
+                session.rollback()
+                raise ClientSideError('Load Balancer not found')
 
-        load_balancer.status = 'PENDING_UPDATE'
-        device = session.query(
-            Device.id, Device.name
-        ).join(LoadBalancer.devices).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        session.commit()
-        data = {
-            'deviceid': device.id
-        }
-        if body.objectStoreType != Unset:
-            data['objectStoreType'] = body.objectStoreType.lower()
-        else:
-            data['objectStoreType'] = 'swift'
+            load_balancer.status = 'PENDING_UPDATE'
+            device = session.query(
+                Device.id, Device.name
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            session.commit()
+            data = {
+                'deviceid': device.id
+            }
+            if body.objectStoreType != Unset:
+                data['objectStoreType'] = body.objectStoreType.lower()
+            else:
+                data['objectStoreType'] = 'swift'
 
-        if body.objectStoreBasePath != Unset:
-            data['objectStoreBasePath'] = body.objectStoreBasePath
-        else:
-            data['objectStoreBasePath'] = conf.swift.swift_basepath
+            if body.objectStoreBasePath != Unset:
+                data['objectStoreBasePath'] = body.objectStoreBasePath
+            else:
+                data['objectStoreBasePath'] = conf.swift.swift_basepath
 
-        if body.objectStoreEndpoint != Unset:
-            data['objectStoreEndpoint'] = body.objectStoreEndpoint
-        else:
-            data['objectStoreEndpoint'] = '{0}/{1}'.\
-                format(conf.swift.swift_endpoint.rstrip('/'), tenant_id)
+            if body.objectStoreEndpoint != Unset:
+                data['objectStoreEndpoint'] = body.objectStoreEndpoint
+            else:
+                data['objectStoreEndpoint'] = '{0}/{1}'.\
+                    format(conf.swift.swift_endpoint.rstrip('/'), tenant_id)
 
-        if body.authToken != Unset:
-            data['authToken'] = body.authToken
-        else:
-            data['authToken'] = request.headers.get('X-Auth-Token')
+            if body.authToken != Unset:
+                data['authToken'] = body.authToken
+            else:
+                data['authToken'] = request.headers.get('X-Auth-Token')
 
-        submit_job(
-            'ARCHIVE', device.name, data, self.lbid
-        )
-        return
+            submit_job(
+                'ARCHIVE', device.name, data, self.lbid
+            )
+            return

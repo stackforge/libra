@@ -20,7 +20,7 @@ import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
 #default response objects
-from libra.api.model.lbaas import LoadBalancer, Node, get_session, Limits
+from libra.api.model.lbaas import LoadBalancer, Node, db_session, Limits
 from libra.api.model.lbaas import Device
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
@@ -57,43 +57,43 @@ class NodesController(RestController):
                 message='Bad Request',
                 details='Load Balancer ID not supplied'
             )
-        session = get_session()
-        if not node_id:
-            nodes = session.query(
-                Node.id, Node.address, Node.port, Node.status, Node.enabled
-            ).join(LoadBalancer.nodes).\
-                filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.id == self.lbid).\
-                filter(LoadBalancer.status != 'DELETED').\
-                all()
+        with db_session() as session:
+            if not node_id:
+                nodes = session.query(
+                    Node.id, Node.address, Node.port, Node.status, Node.enabled
+                ).join(LoadBalancer.nodes).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(LoadBalancer.id == self.lbid).\
+                    filter(LoadBalancer.status != 'DELETED').\
+                    all()
 
-            node_response = {'nodes': []}
-            for item in nodes:
-                node = item._asdict()
-                if node['enabled'] == 1:
-                    node['condition'] = 'ENABLED'
-                else:
-                    node['condition'] = 'DISABLED'
-                del node['enabled']
-                node_response['nodes'].append(node)
+                node_response = {'nodes': []}
+                for item in nodes:
+                    node = item._asdict()
+                    if node['enabled'] == 1:
+                        node['condition'] = 'ENABLED'
+                    else:
+                        node['condition'] = 'DISABLED'
+                    del node['enabled']
+                    node_response['nodes'].append(node)
 
-        else:
-            node_response = session.query(
-                Node.id, Node.address, Node.port, Node.status, Node.enabled
-            ).join(LoadBalancer.nodes).\
-                filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.id == self.lbid).\
-                filter(Node.id == node_id).\
-                first()
+            else:
+                node_response = session.query(
+                    Node.id, Node.address, Node.port, Node.status, Node.enabled
+                ).join(LoadBalancer.nodes).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(LoadBalancer.id == self.lbid).\
+                    filter(Node.id == node_id).\
+                    first()
 
-        if node_response is None:
-            session.rollback()
-            response.status = 400
-            return dict(message='Bad Request', details='node not found')
-        else:
-            session.commit()
-            response.status = 200
-            return node_response
+            if node_response is None:
+                session.rollback()
+                response.status = 400
+                return dict(message='Bad Request', details='node not found')
+            else:
+                session.commit()
+                response.status = 200
+                return node_response
 
     @wsme_pecan.wsexpose(LBNodeResp, body=LBNodePost, status_code=202)
     def post(self, body=None):
@@ -133,62 +133,62 @@ class NodesController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
-        session = get_session()
-        load_balancer = session.query(LoadBalancer).\
-            filter(LoadBalancer.tenantid == tenant_id).\
-            filter(LoadBalancer.id == self.lbid).\
-            filter(LoadBalancer.status != 'DELETED').\
-            first()
-        if load_balancer is None:
-            session.rollback()
-            raise ClientSideError('Load Balancer not found')
+        with db_session() as session:
+            load_balancer = session.query(LoadBalancer).\
+                filter(LoadBalancer.tenantid == tenant_id).\
+                filter(LoadBalancer.id == self.lbid).\
+                filter(LoadBalancer.status != 'DELETED').\
+                first()
+            if load_balancer is None:
+                session.rollback()
+                raise ClientSideError('Load Balancer not found')
 
-        load_balancer.status = 'PENDING_UPDATE'
-        # check if we are over limit
-        nodelimit = session.query(Limits.value).\
-            filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
-        nodecount = session.query(Node).\
-            filter(Node.lbid == self.lbid).count()
+            load_balancer.status = 'PENDING_UPDATE'
+            # check if we are over limit
+            nodelimit = session.query(Limits.value).\
+                filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
+            nodecount = session.query(Node).\
+                filter(Node.lbid == self.lbid).count()
 
-        if (nodecount + len(body.nodes)) > nodelimit:
-            session.rollback()
-            raise OverLimit(
-                'Command would exceed Load Balancer node limit'
-            )
-        return_data = LBNodeResp()
-        return_data.nodes = []
-        for node in body.nodes:
-            if node.condition == 'DISABLED':
-                enabled = 0
-            else:
-                enabled = 1
-            new_node = Node(
-                lbid=self.lbid, port=node.port, address=node.address,
-                enabled=enabled, status='ONLINE', weight=1
-            )
-            session.add(new_node)
-            session.flush()
-            if new_node.enabled:
-                condition = 'ENABLED'
-            else:
-                condition = 'DISABLED'
-            return_data.nodes.append(
-                NodeResp(
-                    id=new_node.id, port=new_node.port,
-                    address=new_node.address, condition=condition,
-                    status='ONLINE'
+            if (nodecount + len(body.nodes)) > nodelimit:
+                session.rollback()
+                raise OverLimit(
+                    'Command would exceed Load Balancer node limit'
                 )
+            return_data = LBNodeResp()
+            return_data.nodes = []
+            for node in body.nodes:
+                if node.condition == 'DISABLED':
+                    enabled = 0
+                else:
+                    enabled = 1
+                new_node = Node(
+                    lbid=self.lbid, port=node.port, address=node.address,
+                    enabled=enabled, status='ONLINE', weight=1
+                )
+                session.add(new_node)
+                session.flush()
+                if new_node.enabled:
+                    condition = 'ENABLED'
+                else:
+                    condition = 'DISABLED'
+                return_data.nodes.append(
+                    NodeResp(
+                        id=new_node.id, port=new_node.port,
+                        address=new_node.address, condition=condition,
+                        status='ONLINE'
+                    )
+                )
+            device = session.query(
+                Device.id, Device.name
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            session.commit()
+            submit_job(
+                'UPDATE', device.name, device.id, self.lbid
             )
-        device = session.query(
-            Device.id, Device.name
-        ).join(LoadBalancer.devices).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        session.commit()
-        submit_job(
-            'UPDATE', device.name, device.id, self.lbid
-        )
-        return return_data
+            return return_data
 
     @wsme_pecan.wsexpose(None, body=LBNodePut, status_code=202)
     def put(self, body=None):
@@ -198,42 +198,42 @@ class NodesController(RestController):
             raise ClientSideError('Node ID has not been supplied')
 
         tenant_id = get_limited_to_project(request.headers)
-        session = get_session()
-        # grab the lb
-        lb = session.query(LoadBalancer).\
-            filter(LoadBalancer.id == self.lbid).\
-            filter(LoadBalancer.tenantid == tenant_id).\
-            filter(LoadBalancer.status != 'DELETED').first()
+        with db_session() as session:
+            # grab the lb
+            lb = session.query(LoadBalancer).\
+                filter(LoadBalancer.id == self.lbid).\
+                filter(LoadBalancer.tenantid == tenant_id).\
+                filter(LoadBalancer.status != 'DELETED').first()
 
-        if lb is None:
-            session.rollback()
-            raise ClientSideError('Load Balancer ID is not valid')
+            if lb is None:
+                session.rollback()
+                raise ClientSideError('Load Balancer ID is not valid')
 
-        node = session.query(Node).\
-            filter(Node.lbid == self.lbid).\
-            filter(Node.id == self.nodeid).first()
+            node = session.query(Node).\
+                filter(Node.lbid == self.lbid).\
+                filter(Node.id == self.nodeid).first()
 
-        if node is None:
-            session.rollback()
-            raise ClientSideError('Node ID is not valid')
+            if node is None:
+                session.rollback()
+                raise ClientSideError('Node ID is not valid')
 
-        if body.condition != Unset:
-            if body.condition == 'DISABLED':
-                node.enabled = 0
-            else:
-                node.enabled = 1
+            if body.condition != Unset:
+                if body.condition == 'DISABLED':
+                    node.enabled = 0
+                else:
+                    node.enabled = 1
 
-        lb.status = 'PENDING_UPDATE'
-        device = session.query(
-            Device.id, Device.name
-        ).join(LoadBalancer.devices).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        session.commit()
-        submit_job(
-            'UPDATE', device.name, device.id, lb.id
-        )
-        return ''
+            lb.status = 'PENDING_UPDATE'
+            device = session.query(
+                Device.id, Device.name
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            session.commit()
+            submit_job(
+                'UPDATE', device.name, device.id, lb.id
+            )
+            return ''
 
     @expose('json')
     def delete(self, node_id):
@@ -256,53 +256,53 @@ class NodesController(RestController):
             )
 
         tenant_id = get_limited_to_project(request.headers)
-        session = get_session()
-        load_balancer = session.query(LoadBalancer).\
-            filter(LoadBalancer.tenantid == tenant_id).\
-            filter(LoadBalancer.id == self.lbid).\
-            filter(LoadBalancer.device != 'DELETED').\
-            first()
-        if load_balancer is None:
-            session.rollback()
-            response.status = 400
-            return dict(
-                message="Bad Request",
-                details="Load Balancer not found"
+        with db_session() as session:
+            load_balancer = session.query(LoadBalancer).\
+                filter(LoadBalancer.tenantid == tenant_id).\
+                filter(LoadBalancer.id == self.lbid).\
+                filter(LoadBalancer.device != 'DELETED').\
+                first()
+            if load_balancer is None:
+                session.rollback()
+                response.status = 400
+                return dict(
+                    message="Bad Request",
+                    details="Load Balancer not found"
+                )
+            load_balancer.status = 'PENDING_UPDATE'
+            nodecount = session.query(Node).\
+                filter(Node.lbid == self.lbid).count()
+            # Can't delete the last LB
+            if nodecount <= 1:
+                session.rollback()
+                response.status = 400
+                return dict(
+                    message="Bad Request",
+                    details="Cannot delete the last node in a load balancer"
+                )
+            node = session.query(Node).\
+                filter(Node.lbid == self.lbid).\
+                filter(Node.id == node_id).\
+                first()
+            if not node:
+                session.rollback()
+                response.status = 400
+                return dict(
+                    message="Bad Request",
+                    details="Node not found in supplied Load Balancer"
+                )
+            session.delete(node)
+            device = session.query(
+                Device.id, Device.name
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == self.lbid).\
+                first()
+            session.commit()
+            submit_job(
+                'UPDATE', device.name, device.id, self.lbid
             )
-        load_balancer.status = 'PENDING_UPDATE'
-        nodecount = session.query(Node).\
-            filter(Node.lbid == self.lbid).count()
-        # Can't delete the last LB
-        if nodecount <= 1:
-            session.rollback()
-            response.status = 400
-            return dict(
-                message="Bad Request",
-                details="Cannot delete the last node in a load balancer"
-            )
-        node = session.query(Node).\
-            filter(Node.lbid == self.lbid).\
-            filter(Node.id == node_id).\
-            first()
-        if not node:
-            session.rollback()
-            response.status = 400
-            return dict(
-                message="Bad Request",
-                details="Node not found in supplied Load Balancer"
-            )
-        session.delete(node)
-        device = session.query(
-            Device.id, Device.name
-        ).join(LoadBalancer.devices).\
-            filter(LoadBalancer.id == self.lbid).\
-            first()
-        session.commit()
-        submit_job(
-            'UPDATE', device.name, device.id, self.lbid
-        )
-        response.status = 202
-        return None
+            response.status = 202
+            return None
 
     @expose('json')
     def _lookup(self, nodeid, *remainder):

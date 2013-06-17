@@ -15,7 +15,7 @@
 
 from pecan import response, expose, request
 from pecan.rest import RestController
-from libra.api.model.lbaas import LoadBalancer, Device, get_session
+from libra.api.model.lbaas import LoadBalancer, Device, db_session
 from libra.api.acl import get_limited_to_project
 
 
@@ -41,27 +41,27 @@ class VipsController(RestController):
                 message="Bad Request",
                 details="Load Balancer ID not provided"
             )
-        session = get_session()
-        device = session.query(
-            Device.id, Device.floatingIpAddr
-        ).join(LoadBalancer.devices).\
-            filter(LoadBalancer.id == self.lbid).\
-            filter(LoadBalancer.tenantid == tenant_id).first()
+        with db_session() as session:
+            device = session.query(
+                Device.id, Device.floatingIpAddr
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == self.lbid).\
+                filter(LoadBalancer.tenantid == tenant_id).first()
 
-        if not device:
+            if not device:
+                session.rollback()
+                response.status = 400
+                return dict(
+                    message="Bad Request",
+                    details="Load Balancer ID not valid"
+                )
+            resp = {
+                "virtualIps": [{
+                    "id": device.id,
+                    "address": device.floatingIpAddr,
+                    "type": "PUBLIC",
+                    "ipVersion": "IPV4"
+                }]
+            }
             session.rollback()
-            response.status = 400
-            return dict(
-                message="Bad Request",
-                details="Load Balancer ID not valid"
-            )
-        resp = {
-            "virtualIps": [{
-                "id": device.id,
-                "address": device.floatingIpAddr,
-                "type": "PUBLIC",
-                "ipVersion": "IPV4"
-            }]
-        }
-        session.rollback()
-        return resp
+            return resp
