@@ -160,6 +160,10 @@ class Options(object):
             help='log file to use (ignored with --nodaemon)'
         )
         self.parser.add_argument(
+            '--logstash', dest='logstash', metavar="HOST:PORT",
+            help='send logs to logstash at "host:port"'
+        )
+        self.parser.add_argument(
             '--user', dest='user',
             help='user to use for daemon mode'
         )
@@ -208,6 +212,10 @@ def setup_logging(name, args):
         handler = logging.handlers.SysLogHandler(address=args.syslog_socket,
                                                  facility=args.syslog_facility)
         handler.setFormatter(simple_formatter)
+    elif args.logstash:
+        logstash_host, logstash_port = args.logstash.split(':')
+        handler = logstash.LogstashHandler(logstash_host, logstash_port)
+        handler.setFormatter(ts_formatter)
     elif logfile:
         handler = CompressedTimedRotatingFileHandler(
             logfile, when='D', interval=1, backupCount=7
