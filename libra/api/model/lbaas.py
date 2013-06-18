@@ -125,5 +125,4 @@ class db_session(object):
 
     def __exit__(self, type, value, traceback):
         self.session.close()
-        # TODO: handle exceptions?
         return False
