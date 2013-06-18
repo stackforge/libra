@@ -74,16 +74,17 @@ class DevicesController(RestController):
                         all()
 
                     lblist = [i[0] for i in lbids]
-                    lbs = session.query(
-                        LoadBalancer.id, LoadBalancer.tenantid).\
-                        filter(LoadBalancer.id.in_(lblist)).all()
+                    if len(lblist) > 0:
+                        lbs = session.query(
+                            LoadBalancer.id, LoadBalancer.tenantid).\
+                            filter(LoadBalancer.id.in_(lblist)).all()
 
-                    if lbs:
-                        for item in lbs:
-                            lb = item._asdict()
-                            lb['hpcs_tenantid'] = lb['tenantid']
-                            del(lb['tenantid'])
-                            dev['loadBalancers'].append(lb)
+                        if lbs:
+                            for item in lbs:
+                                lb = item._asdict()
+                                lb['hpcs_tenantid'] = lb['tenantid']
+                                del(lb['tenantid'])
+                                dev['loadBalancers'].append(lb)
 
                 device['devices'].append(dev)
 
