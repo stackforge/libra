@@ -36,6 +36,10 @@ Command Line Options
 
       The host name for the MySQL database server
 
+   .. option:: --db_port <PORT>
+
+      The port number for the MySQL database server
+
    .. option:: --db_user <USERNAME>
 
       The username for the MySQL database server
@@ -47,6 +51,22 @@ Command Line Options
    .. option:: --db_schema <SCHEMA>
 
       The schema containing the LBaaS tables in the MySQL database server
+
+   .. option:: --db_ssl
+
+      Enable MySQL SSL support
+
+   .. option:: --db_ssl_cert <CERTIFICATE PATH>
+
+      The path for the MySQL SSL certificate
+
+   .. option:: --db_ssl_key <KEY PATH>
+
+      The path for the MySQL SSL key
+
+   .. option:: --db_ssl_ca <CA PATH>
+
+      The path for the MySQL SSL Certificate Authority
 
    .. option:: --ssl_certfile <PATH>
 
