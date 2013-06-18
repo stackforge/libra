@@ -39,13 +39,16 @@ def submit_job(job_type, host, data, lbid):
 
 
 def client_job(logger, job_type, host, data, lbid):
-    client = GearmanClientThread(logger, host, lbid)
-    if job_type == 'UPDATE':
-        client.send_update(data)
-    if job_type == 'DELETE':
-        client.send_delete(data)
-    if job_type == 'ARCHIVE':
-        client.send_archive(data)
+    try:
+        client = GearmanClientThread(logger, host, lbid)
+        if job_type == 'UPDATE':
+            client.send_update(data)
+        if job_type == 'DELETE':
+            client.send_delete(data)
+        if job_type == 'ARCHIVE':
+            client.send_archive(data)
+    except:
+        logger.exception("Gearman thread unhandled exception")
 
 
 class GearmanClientThread(object):
