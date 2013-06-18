@@ -27,7 +27,7 @@ conn_string = '''mysql://%s:%s@%s/%s''' % (
     conf.database.schema
 )
 
-engine = create_engine(conn_string)
+engine = create_engine(conn_string, isolation_level="READ COMMITTED")
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
 metadata.bind = engine
@@ -113,5 +113,14 @@ class Node(DeclarativeBase):
     weight = Column(u'weight', INTEGER(), nullable=False)
 
 
-"""session"""
-session = sessionmaker(bind=engine)()
+class db_session(object):
+    def __init__(self):
+        self.session = None
+
+    def __enter__(self):
+        self.session = sessionmaker(bind=engine)()
+        return self.session
+
+    def __exit__(self, type, value, traceback):
+        self.session.close()
+        return False

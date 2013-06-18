@@ -20,7 +20,7 @@ from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from libra.admin_api.model.validators import DeviceResp, DevicePost, DevicePut
-from libra.admin_api.model.lbaas import LoadBalancer, Device, session
+from libra.admin_api.model.lbaas import LoadBalancer, Device, db_session
 from libra.admin_api.model.lbaas import loadbalancers_devices
 
 
@@ -47,87 +47,92 @@ class DevicesController(RestController):
             List details of a particular device
         Returns: dict
         """
+        with db_session() as session:
+            # if we don't have an id then we want a list of all devices
+            if not device_id:
+                #  return all devices
+                device = {'devices': []}
 
-        # if we don't have an id then we want a list of all devices
-        if not device_id:
-            #  return all devices
-            device = {'devices': []}
+                if marker is None:
+                    marker = 0
+                if limit is None:
+                    limit = 100
 
-            if marker is None:
-                marker = 0
-            if limit is None:
-                limit = 100
+                devices = session.query(
+                    Device.id, Device.az, Device.updated, Device.created,
+                    Device.status, Device.publicIpAddr, Device.name,
+                    Device.type, Device.floatingIpAddr).\
+                    offset(marker).limit(limit)
 
-            devices = session.query(
-                Device.id, Device.az, Device.updated, Device.created,
-                Device.status, Device.publicIpAddr, Device.name,
-                Device.type, Device.floatingIpAddr).offset(marker).limit(limit)
+                for item in devices:
+                    dev = item._asdict()
+                    dev['loadBalancers'] = []
+                    if dev['status'] != "OFFLINE":
+                        #  Find loadbalancers using device
+                        lbids = session.query(
+                            loadbalancers_devices.c.loadbalancer).\
+                            filter(
+                                loadbalancers_devices.c.device == dev['id']
+                            ).\
+                            all()
 
-            for item in devices:
-                dev = item._asdict()
-                dev['loadBalancers'] = []
-                if dev['status'] != "OFFLINE":
-                    #  Find loadbalancers using device
+                        lblist = [i[0] for i in lbids]
+                        if len(lblist) > 0:
+                            lbs = session.query(
+                                LoadBalancer.id, LoadBalancer.tenantid).\
+                                filter(LoadBalancer.id.in_(lblist)).all()
+
+                            if lbs:
+                                for item in lbs:
+                                    lb = item._asdict()
+                                    lb['hpcs_tenantid'] = lb['tenantid']
+                                    del(lb['tenantid'])
+                                    dev['loadBalancers'].append(lb)
+
+                    device['devices'].append(dev)
+
+            elif device_id == 'usage':
+                return self.usage()
+            else:
+                #  return device detail
+                device = session.query(
+                    Device.id, Device.az, Device.updated, Device.created,
+                    Device.status, Device.publicIpAddr, Device.name,
+                    Device.type, Device.floatingIpAddr
+                ).filter(Device.id == device_id).first()
+
+                if not device:
+                    response.status = 404
+                    session.rollback()
+                    return dict(
+                        status=404,
+                        message="device id " + device_id + "not found"
+                    )
+
+                device = device._asdict()
+                device['loadBalancers'] = []
+
+                if device['status'] != "OFFLINE":
                     lbids = session.query(
                         loadbalancers_devices.c.loadbalancer).\
-                        filter(loadbalancers_devices.c.device == dev['id']).\
+                        filter(
+                            loadbalancers_devices.c.device == device['id']
+                        ).\
                         all()
 
                     lblist = [i[0] for i in lbids]
-                    if len(lblist) > 0:
-                        lbs = session.query(
-                            LoadBalancer.id, LoadBalancer.tenantid).\
-                            filter(LoadBalancer.id.in_(lblist)).all()
+                    lbs = session.query(
+                        LoadBalancer.id, LoadBalancer.tenantid).\
+                        filter(LoadBalancer.id.in_(lblist)).all()
 
-                        if lbs:
-                            for item in lbs:
-                                lb = item._asdict()
-                                lb['hpcs_tenantid'] = lb['tenantid']
-                                del(lb['tenantid'])
-                                dev['loadBalancers'].append(lb)
+                    if lbs:
+                        for item in lbs:
+                            lb = item._asdict()
+                            device['loadBalancers'].append(lb)
 
-                device['devices'].append(dev)
-
-        elif device_id == 'usage':
-            return self.usage()
-        else:
-            #  return device detail
-            device = session.query(
-                Device.id, Device.az, Device.updated, Device.created,
-                Device.status, Device.publicIpAddr, Device.name,
-                Device.type, Device.floatingIpAddr
-            ).filter(Device.id == device_id).first()
-
-            if not device:
-                response.status = 404
-                session.rollback()
-                return dict(
-                    status=404,
-                    message="device id " + device_id + "not found"
-                )
-
-            device = device._asdict()
-            device['loadBalancers'] = []
-
-            if device['status'] != "OFFLINE":
-                lbids = session.query(
-                    loadbalancers_devices.c.loadbalancer).\
-                    filter(loadbalancers_devices.c.device == device['id']).\
-                    all()
-
-                lblist = [i[0] for i in lbids]
-                lbs = session.query(
-                    LoadBalancer.id, LoadBalancer.tenantid).\
-                    filter(LoadBalancer.id.in_(lblist)).all()
-
-                if lbs:
-                    for item in lbs:
-                        lb = item._asdict()
-                        device['loadBalancers'].append(lb)
-
-        session.commit()
-        response.status = 200
-        return device
+            session.commit()
+            response.status = 200
+            return device
 
     @wsme_pecan.wsexpose(DeviceResp, body=DevicePost)
     def post(self, body=None):
@@ -169,33 +174,34 @@ class DevicesController(RestController):
         device.status = 'OFFLINE'
         device.created = None
 
-        # write to database
-        session.add(device)
-        session.flush()
+        with db_session() as session:
+            # write to database
+            session.add(device)
+            session.flush()
 
-        #refresh the device record so we get the id back
-        session.refresh(device)
+            #refresh the device record so we get the id back
+            session.refresh(device)
 
-        try:
-            return_data = DeviceResp()
-            return_data.id = device.id
-            return_data.name = device.name
-            return_data.floatingIpAddr = device.floatingIpAddr
-            return_data.publicIpAddr = device.publicIpAddr
-            return_data.az = device.az
-            return_data.type = device.type
-            return_data.created = device.created
-            return_data.updated = device.updated
-            return_data.status = device.status
-            return_data.loadBalancers = []
-            session.commit()
-            return return_data
-        except:
-            logger = logging.getLogger(__name__)
-            logger.exception('Error communicating with load balancer pool')
-            errstr = 'Error communicating with load balancer pool'
-            session.rollback()
-            raise ClientSideError(errstr)
+            try:
+                return_data = DeviceResp()
+                return_data.id = device.id
+                return_data.name = device.name
+                return_data.floatingIpAddr = device.floatingIpAddr
+                return_data.publicIpAddr = device.publicIpAddr
+                return_data.az = device.az
+                return_data.type = device.type
+                return_data.created = device.created
+                return_data.updated = device.updated
+                return_data.status = device.status
+                return_data.loadBalancers = []
+                session.commit()
+                return return_data
+            except:
+                logger = logging.getLogger(__name__)
+                logger.exception('Error communicating with load balancer pool')
+                errstr = 'Error communicating with load balancer pool'
+                session.rollback()
+                raise ClientSideError(errstr)
 
     @wsme_pecan.wsexpose(None, body=DevicePut)
     def put(self, body=None):
@@ -217,34 +223,36 @@ class DevicesController(RestController):
         if not self.devid:
             raise ClientSideError('Device ID is required')
 
-        device = session.query(Device).\
-            filter(Device.id == self.devid).first()
+        with db_session() as session:
+            device = session.query(Device).\
+                filter(Device.id == self.devid).first()
 
-        if not device:
-            raise ClientSideError('Device ID is not valid')
+            if not device:
+                session.rollback()
+                raise ClientSideError('Device ID is not valid')
 
-        device.status = body.status
-        session.flush()
-
-        lb_status = 'ACTIVE' if body.status == 'ONLINE' else body.status
-        lb_descr = body.statusDescription
-
-        #  Now find LB's associated with this Device and update their status
-        lbs = session.query(
-            loadbalancers_devices.c.loadbalancer).\
-            filter(loadbalancers_devices.c.device == self.devid).\
-            all()
-
-        for lb in lbs:
-            session.query(LoadBalancer).\
-                filter(LoadBalancer.id == lb[0]).\
-                update({"status": lb_status, "errmsg": lb_descr},
-                       synchronize_session='fetch')
-
+            device.status = body.status
             session.flush()
 
-        session.commit()
-        return
+            lb_status = 'ACTIVE' if body.status == 'ONLINE' else body.status
+            lb_descr = body.statusDescription
+
+            # Now find LB's associated with this Device and update their status
+            lbs = session.query(
+                loadbalancers_devices.c.loadbalancer).\
+                filter(loadbalancers_devices.c.device == self.devid).\
+                all()
+
+            for lb in lbs:
+                session.query(LoadBalancer).\
+                    filter(LoadBalancer.id == lb[0]).\
+                    update({"status": lb_status, "errmsg": lb_descr},
+                           synchronize_session='fetch')
+
+                session.flush()
+
+            session.commit()
+            return
 
     @expose('json')
     def delete(self, device_id):
@@ -254,42 +262,46 @@ class DevicesController(RestController):
            DELETE   /devices/{device_id}
         Returns: None
         """
-        # check for the device
-        device = session.query(Device.id).\
-            filter(Device.id == device_id).first()
+        with db_session() as session:
+            # check for the device
+            device = session.query(Device.id).\
+                filter(Device.id == device_id).first()
 
-        if device is None:
-            response.status = 400
-            return dict(
-                faultcode="Client",
-                faultstring="Device ID is not valid"
-            )
+            if device is None:
+                session.rollback()
+                response.status = 400
+                return dict(
+                    faultcode="Client",
+                    faultstring="Device ID is not valid"
+                )
 
-        # Is the device is attached to a LB
-        lb = session.query(
-            loadbalancers_devices.c.loadbalancer).\
-            filter(loadbalancers_devices.c.device == device_id).\
-            all()
+            # Is the device is attached to a LB
+            lb = session.query(
+                loadbalancers_devices.c.loadbalancer).\
+                filter(loadbalancers_devices.c.device == device_id).\
+                all()
 
-        if lb:
-            response.status = 400
-            return dict(
-                faultcode="Client",
-                faultstring="Device belongs to a loadbalancer"
-            )
-        try:
-            session.query(Device).filter(Device.id == device_id).delete()
-            session.flush()
-            session.commit()
-            return None
-        except:
-            logger = logging.getLogger(__name__)
-            logger.exception('Error deleting device from pool')
-            response.status = 500
-            return dict(
-                faultcode="Server",
-                faultstring="Error deleting device from pool"
-            )
+            if lb:
+                session.rollback()
+                response.status = 400
+                return dict(
+                    faultcode="Client",
+                    faultstring="Device belongs to a loadbalancer"
+                )
+            try:
+                session.query(Device).filter(Device.id == device_id).delete()
+                session.flush()
+                session.commit()
+                return None
+            except:
+                session.rollback()
+                logger = logging.getLogger(__name__)
+                logger.exception('Error deleting device from pool')
+                response.status = 500
+                return dict(
+                    faultcode="Server",
+                    faultstring="Error deleting device from pool"
+                )
 
     # Kludge to get to here because Pecan has a hard time with URL params
     # and paths
@@ -300,17 +312,18 @@ class DevicesController(RestController):
                 GET /devices/usage
             Returns: dict
         """
-        total = session.query(Device).count()
-        free = session.query(Device).filter(Device.status == 'OFFLINE').\
-            count()
-        session.commit()
-        response.status = 200
+        with db_session() as session:
+            total = session.query(Device).count()
+            free = session.query(Device).filter(Device.status == 'OFFLINE').\
+                count()
+            session.commit()
+            response.status = 200
 
-        return dict(
-            total=total,
-            free=free,
-            taken=total - free
-        )
+            return dict(
+                total=total,
+                free=free,
+                taken=total - free
+            )
 
     @expose('json')
     def _lookup(self, devid, *remainder):
