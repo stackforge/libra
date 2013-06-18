@@ -200,7 +200,7 @@ class GearmanClientThread(object):
     def _send_message(self, message):
         job_status = self.gearman_client.submit_job(
             self.host, message, background=False, wait_until_complete=True,
-            max_retries=3, poll_timeout=30.0
+            max_retries=10, poll_timeout=120.0
         )
         if job_status.state == 'UNKNOWN':
             # Gearman server connection failed
