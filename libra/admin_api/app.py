@@ -44,7 +44,13 @@ def setup_app(pecan_config, args):
         'username': args.db_user,
         'password': args.db_pass,
         'host': args.db_host,
-        'schema': args.db_schema
+        'schema': args.db_schema,
+        'port': args.db_port,
+        'schema': args.db_schema,
+        'use_ssl': args.db_ssl,
+        'ssl_cert': args.db_ssl_cert,
+        'ssl_key': args.db_ssl_key,
+        'ssl_ca': args.db_ssl_ca
     }
     if args.debug:
         config['wsme'] = {'debug': True}
@@ -95,7 +101,22 @@ def main():
         '--db_host', help='MySQL host name'
     )
     options.parser.add_argument(
+        '--db_port', help='MySQL port number', default=3306, type=int
+    )
+    options.parser.add_argument(
         '--db_schema', help='MySQL schema for libra'
+    )
+    options.parser.add_argument(
+        '--db_ssl', help='Enable MySQL SSL connections', action='store_true'
+    )
+    options.parser.add_argument(
+        '--db_ssl_cert', help='MySQL SSL certificate'
+    )
+    options.parser.add_argument(
+        '--db_ssl_key', help='MySQL SSL key'
+    )
+    options.parser.add_argument(
+        '--db_ssl_ca', help='MySQL SSL certificate authority'
     )
     options.parser.add_argument(
         '--ssl_certfile',
@@ -112,6 +133,8 @@ def main():
         'db_user', 'db_pass', 'db_host', 'db_schema', 'ssl_certfile',
         'ssl_keyfile'
     ]
+    if args.db_ssl:
+        required_args.extend(['db_ssl_cert', 'db_ssl_key', 'db_ssl_ca'])
 
     missing_args = 0
     for req in required_args:

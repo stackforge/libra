@@ -20,14 +20,27 @@ import sqlalchemy.types as types
 from pecan import conf
 
 # TODO replace this with something better
-conn_string = '''mysql://%s:%s@%s/%s''' % (
+conn_string = '''mysql://%s:%s@%s:%d/%s''' % (
     conf.database.username,
     conf.database.password,
     conf.database.host,
+    conf.database.port,
     conf.database.schema
 )
 
-engine = create_engine(conn_string, isolation_level="READ COMMITTED")
+if conf.database.use_ssl:
+    ssl_args = {'ssl': {
+        'cert': conf.database.ssl_cert,
+        'key': conf.database.ssl_key,
+        'ca': conf.database.ssl_ca
+    }}
+
+    engine = create_engine(
+        conn_string, isolation_level="READ COMMITTED", connect_args=ssl_args
+    )
+else:
+    engine = create_engine(conn_string, isolation_level="READ COMMITTED")
+
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
 metadata.bind = engine
