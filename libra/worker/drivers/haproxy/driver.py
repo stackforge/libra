@@ -49,6 +49,7 @@ class HAProxyDriver(LoadBalancerDriver):
         Use whatever configuration parameters have been set to generate
         output suitable for a HAProxy configuration file.
         """
+        stats_socket = "/var/run/haproxy-stats.socket"
         output = []
         output.append('global')
         output.append('    daemon')
@@ -56,9 +57,19 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    maxconn 4096')
         output.append('    user haproxy')
         output.append('    group haproxy')
-        output.append(
-            '    stats socket /var/run/haproxy-stats.socket mode operator'
-        )
+
+        # group can be None, but user cannot
+        if self.group is None:
+            output.append(
+                '    stats socket %s user %s mode operator' %
+                (stats_socket, self.user)
+            )
+        else:
+            output.append(
+                '    stats socket %s user %s group %s mode operator' %
+                (stats_socket, self.user, self.group)
+            )
+
         output.append('defaults')
         output.append('    log global')
         output.append('    option dontlognull')

@@ -32,7 +32,7 @@ class HAProxyQuery(object):
         Return the output of a successful query as a string with trailing
         newlines removed, or raise an Exception if the query fails.
         """
-        cmd = 'echo "%s" | sudo -n /usr/bin/socat stdio %s' % \
+        cmd = 'echo "%s" | /usr/bin/socat stdio %s' % \
               (query, self.socket)
 
         try:

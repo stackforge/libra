@@ -37,7 +37,6 @@ class LBaaSController(object):
     def __init__(self, logger, driver, json_msg):
         self.logger = logger
         self.driver = driver
-        self.logger.debug("Entered LBaaSController")
         self.msg = json_msg
 
     def run(self):
