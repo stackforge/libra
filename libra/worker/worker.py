@@ -43,7 +43,7 @@ def handler(worker, job):
     if LBaaSController.OBJ_STORE_TOKEN_FIELD in copy:
         copy[LBaaSController.OBJ_STORE_TOKEN_FIELD] = "*****"
 
-    logger.debug("Received JSON message: %s" % json.dumps(copy, indent=4))
+    logger.debug("Received JSON message: %s" % json.dumps(copy))
 
     controller = LBaaSController(logger, driver, job.data)
     response = controller.run()
@@ -53,7 +53,7 @@ def handler(worker, job):
     if LBaaSController.OBJ_STORE_TOKEN_FIELD in copy:
         copy[LBaaSController.OBJ_STORE_TOKEN_FIELD] = "*****"
 
-    logger.debug("Return JSON message: %s" % json.dumps(copy, indent=4))
+    logger.debug("Return JSON message: %s" % json.dumps(copy))
     return copy
 
 
