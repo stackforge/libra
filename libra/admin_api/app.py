@@ -168,14 +168,12 @@ def main():
     api = setup_app(pc, args)
     sys.stderr = LogStdout(logger)
     # TODO: set ca_certs and cert_reqs=CERT_REQUIRED
-    wsgi.server(
-        eventlet.wrap_ssl(
-            eventlet.listen((args.host, args.port)),
-            certfile=args.ssl_certfile,
-            keyfile=args.ssl_keyfile,
-            server_side=True
-        ),
-        api
+    ssl_sock = eventlet.wrap_ssl(
+        eventlet.listen((args.host, args.port)),
+        certfile=args.ssl_certfile,
+        keyfile=args.ssl_keyfile,
+        server_side=True
     )
+    wsgi.server(ssl_sock, api, keepalive=False)
 
     return 0
