@@ -218,14 +218,12 @@ def main():
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
     sys.stderr = LogStdout(logger)
-    wsgi.server(
-        eventlet.wrap_ssl(
-            eventlet.listen((args.host, args.port)),
-            certfile=args.ssl_certfile,
-            keyfile=args.ssl_keyfile,
-            server_side=True
-        ),
-        api
+    ssl_sock = eventlet.wrap_ssl(
+        eventlet.listen((args.host, args.port)),
+        certfile=args.ssl_certfile,
+        keyfile=args.ssl_keyfile,
+        server_side=True
     )
+    wsgi.server(ssl_sock, api, keepalive=False)
 
     return 0
