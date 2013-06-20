@@ -22,6 +22,7 @@ import ConfigParser
 
 from libra import __version__, __release__
 from logging_handler import CompressedTimedRotatingFileHandler
+from logging_handler import NewlineFormatter
 
 """
 Common options parser.
@@ -200,7 +201,9 @@ def setup_logging(name, args):
         logfile = None
 
     # Timestamped formatter
-    ts_formatter = logging.Formatter(
+    # Use newline formatter to convert /n to ' ' so logstatsh doesn't break
+    # multiline
+    ts_formatter = NewlineFormatter(
         '%(asctime)-6s: %(name)s - %(levelname)s - %(message)s'
     )
 

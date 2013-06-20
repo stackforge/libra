@@ -15,9 +15,29 @@ import logging
 import logging.handlers
 import gzip
 import os
+import sys
 import time
 import glob
 import codecs
+
+
+class NewlineFormatter(logging.Formatter):
+    def format(self, record):
+        record.message = record.getMessage()
+        if self.usesTime():
+            record.asctime = self.formatTime(record, self.datefmt)
+        s = self._fmt % record.__dict__
+        if record.exc_info:
+            if not record.exc_text:
+                record.exc_text = self.formatException(record.exc_info)
+        if record.exc_text:
+            try:
+                s = s + record.exc_text
+            except UnicodeError:
+                s = s + record.exc_text.decode(sys.getfilesystemencoding(),
+                                               'replace')
+        s = s.replace('\n', ' ')
+        return s
 
 
 class CompressedTimedRotatingFileHandler(
