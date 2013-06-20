@@ -36,10 +36,13 @@ if conf.database.use_ssl:
     }}
 
     engine = create_engine(
-        conn_string, isolation_level="READ COMMITTED", connect_args=ssl_args
+        conn_string, isolation_level="READ COMMITTED", connect_args=ssl_args,
+        pool_recycle=3600
     )
 else:
-    engine = create_engine(conn_string, isolation_level="READ COMMITTED")
+    engine = create_engine(
+        conn_string, isolation_level="READ COMMITTED", pool_recycle=3600
+    )
 
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
