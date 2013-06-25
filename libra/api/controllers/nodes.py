@@ -260,7 +260,7 @@ class NodesController(RestController):
             load_balancer = session.query(LoadBalancer).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.id == self.lbid).\
-                filter(LoadBalancer.device != 'DELETED').\
+                filter(LoadBalancer.status != 'DELETED').\
                 first()
             if load_balancer is None:
                 session.rollback()
