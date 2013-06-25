@@ -17,6 +17,7 @@ import traceback
 import functools
 import inspect
 import sys
+import json
 
 import wsme
 import wsme.rest.args
@@ -25,6 +26,7 @@ import wsme.rest.xml
 import wsmeext.pecan
 import pecan
 from libra.api.library.exp import OverLimit
+from wsme.rest.json import tojson
 
 
 def format_exception(excinfo, debug=False):
@@ -52,6 +54,18 @@ def format_exception(excinfo, debug=False):
         return r
 
 wsme.api.format_exception = format_exception
+
+
+def encode_result(value, datatype, **options):
+    jsondata = tojson(datatype, value)
+    if options.get('nest_result', False):
+        jsondata = {options.get('nested_result_attrname', 'result'): jsondata}
+    if jsondata:
+        return json.dumps(jsondata)
+    else:
+        return ''
+
+wsme.rest.json.encode_result = encode_result
 
 
 def wsexpose(*args, **kwargs):
