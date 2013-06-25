@@ -20,8 +20,6 @@ from libra.api.model.lbaas import LoadBalancer, db_session, Device
 from pecan import conf
 
 
-gearman_client = JSONGearmanClient(conf.gearman.server)
-
 gearman_workers = [
     'UPDATE',  # Create/Update a Load Balancer.
     'SUSPEND',  # Suspend a Load Balancer.
