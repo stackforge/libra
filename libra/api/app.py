@@ -224,6 +224,6 @@ def main():
         keyfile=args.ssl_keyfile,
         server_side=True
     )
-    wsgi.server(ssl_sock, api, keepalive=False)
+    wsgi.server(ssl_sock, api, keepalive=False, debug=args.debug)
 
     return 0
