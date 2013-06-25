@@ -14,6 +14,8 @@
 
 import ConfigParser
 import importlib
+import logging
+from pecan import request
 
 
 def install(app, args):
@@ -28,4 +30,16 @@ def install(app, args):
 
 def get_limited_to_project(headers):
     """Return the tenant the request should be limited to."""
-    return headers.get('X-Tenant-Id')
+    tenant_id = headers.get('X-Tenant-Id')
+    logger = logging.getLogger(__name__)
+    logger.info(
+        'Loadbalancers {0} request {1} ({2}) from {3} tenant {4}'.format(
+            request.environ.get('REQUEST_METHOD'),
+            request.environ.get('PATH_INFO'),
+            request.environ.get('QUERY_STRING'),
+            request.environ.get('REMOTE_ADDR'),
+            tenant_id
+        )
+    )
+
+    return tenant_id
