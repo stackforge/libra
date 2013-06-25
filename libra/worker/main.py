@@ -66,14 +66,19 @@ def main():
 
     options = Options('worker', 'Worker Daemon')
     options.parser.add_argument(
-        '-s', '--reconnect_sleep',
-        dest='reconnect_sleep', type=int, metavar='TIME',
-        default=60, help='seconds to sleep between job server reconnects'
-    )
-    options.parser.add_argument(
         '--driver', dest='driver',
         choices=known_drivers.keys(), default='haproxy',
         help='type of device to use'
+    )
+    options.parser.add_argument(
+        '--haproxy-service', dest='haproxy_service',
+        choices=haproxy_services.keys(), default='ubuntu',
+        help='os services to use with HAProxy driver (when used)'
+    )
+    options.parser.add_argument(
+        '-s', '--reconnect_sleep',
+        dest='reconnect_sleep', type=int, metavar='TIME',
+        default=60, help='seconds to sleep between job server reconnects'
     )
     options.parser.add_argument(
         '--server', dest='server', action='append', metavar='HOST:PORT',
@@ -81,9 +86,16 @@ def main():
         help='add a Gearman job server to the connection list'
     )
     options.parser.add_argument(
-        '--haproxy-service', dest='haproxy_service',
-        choices=haproxy_services.keys(), default='ubuntu',
-        help='os services to use with HAProxy driver (when used)'
+        '--ssl_ca_certs', dest='ssl_ca_certs', metavar='FILE',
+        help='path to file with CA public cert(s)'
+    )
+    options.parser.add_argument(
+        '--ssl_certfile', dest='ssl_certfile', metavar='FILE',
+        help='path to file with public key'
+    )
+    options.parser.add_argument(
+        '--ssl_keyfile', dest='ssl_keyfile', metavar='FILE',
+        help='path to file with private key'
     )
     options.parser.add_argument(
         '--stats-poll', dest='stats_poll', type=int, metavar='TIME',
@@ -128,7 +140,7 @@ def main():
 
     # Tasks to execute in parallel
     task_list = [
-        (config_thread, (driver, args.server, args.reconnect_sleep))
+        (config_thread, (driver, args))
     ]
 
     if args.nodaemon:

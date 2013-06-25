@@ -38,6 +38,27 @@ Command Line Options
       Used to specify the Gearman job server hostname and port. This option
       can be used multiple times to specify multiple job servers.
 
+   .. option:: --ssl_keyfile <FILE>
+
+      Full path to the file with the SSL private key to use when
+      connecting to an SSL-enabled Gearman job server.
+
+   .. option:: --ssl_certfile <FILE>
+
+      Full path to the file with the SSL public key to use when
+      connecting to an SSL-enabled Gearman job server.
+
+   .. option:: --ssl_ca_certs <FILE>
+
+      Full path to the file with the CA public key to use when
+      connecting to an SSL-enabled Gearman job server. This is used
+      to validate the server key.
+
+   .. option:: --stats-poll <SECONDS>
+
+      The number of seconds to sleep between statistics polling of the
+      load balancer driver. Default is 300 seconds.
+
    .. option:: --syslog
 
       Send log events to syslog.
@@ -49,9 +70,4 @@ Command Line Options
    .. option:: --syslog-facility
 
       Syslog logging facility. Default is *LOCAL7*.
-
-   .. option:: --stats-poll <SECONDS>
-
-      The number of seconds to sleep between statistics polling of the
-      load balancer driver. Default is 300 seconds.
 

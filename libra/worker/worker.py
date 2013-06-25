@@ -57,13 +57,25 @@ def handler(worker, job):
     return copy
 
 
-def config_thread(logger, driver, servers, reconnect_sleep):
+def config_thread(logger, driver, args):
     """ Worker thread function. """
     # Hostname should be a unique value, like UUID
     hostname = socket.gethostname()
     logger.info("[worker] Registering task %s" % hostname)
 
-    worker = CustomJSONGearmanWorker(servers)
+    if all([args.ssl_keyfile, args.ssl_certfile, args.ssl_ca_certs]):
+        ssl_server_list = []
+        for host_port in args.server:
+            host, port = host_port.split(':')
+            ssl_server_list.append({'host': host,
+                                    'port': port,
+                                    'keyfile': args.ssl_keyfile,
+                                    'certfile': args.ssl_certfile,
+                                    'ca_certs': args.ssl_ca_certs})
+        worker = CustomJSONGearmanWorker(ssl_server_list)
+    else:
+        worker = CustomJSONGearmanWorker(args.server)
+
     worker.set_client_id(hostname)
     worker.register_task(hostname, handler)
     worker.logger = logger
@@ -78,7 +90,7 @@ def config_thread(logger, driver, servers, reconnect_sleep):
             retry = False
         except gearman.errors.ServerUnavailable:
             logger.error("[worker] Job server(s) went away. Reconnecting.")
-            time.sleep(reconnect_sleep)
+            time.sleep(args.reconnect_sleep)
             retry = True
         except Exception as e:
             logger.critical("[worker] Exception: %s, %s" % (e.__class__, e))
