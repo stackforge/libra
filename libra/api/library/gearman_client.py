@@ -54,7 +54,21 @@ class GearmanClientThread(object):
         self.logger = logger
         self.host = host
         self.lbid = lbid
-        self.gearman_client = JSONGearmanClient(conf.gearman.server)
+
+        if all([conf.gearman.ssl_key, conf.gearman.ssl_cert,
+                conf.gearman.ssl_ca]):
+            # Use SSL connections to each Gearman job server.
+            ssl_server_list = []
+            for server in conf.gearman:
+                ghost, gport = server.split(':')
+                ssl_server_list.append({'host': ghost,
+                                        'port': gport,
+                                        'keyfile': conf.gearman.ssl_key,
+                                        'certfile': conf.gearman.ssl_cert,
+                                        'ca_certs': conf.gearman.ssl_ca})
+            self.gearman_client = JSONGearmanClient(ssl_server_list)
+        else:
+            self.gearman_client = JSONGearmanClient(conf.gearman.server)
 
     def send_delete(self, data):
         with db_session() as session:
