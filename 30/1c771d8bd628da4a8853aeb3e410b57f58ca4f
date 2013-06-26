@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Approved+1: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Code-Review+2: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Code-Review+2: David Shrewsbury <shrewsbury.dave@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 26 Jun 2013 17:17:36 +0000
+Reviewed-on: https://review.openstack.org/34545
+Project: stackforge/libra
+Branch: refs/heads/master
