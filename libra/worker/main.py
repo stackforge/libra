@@ -71,6 +71,18 @@ def main():
         help='type of device to use'
     )
     options.parser.add_argument(
+        '--gearman_ssl_ca', dest='gearman_ssl_ca', metavar='FILE',
+        help='Gearman SSL certificate authority'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_cert', dest='gearman_ssl_cert', metavar='FILE',
+        help='Gearman SSL certificate'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_key', dest='gearman_ssl_key', metavar='FILE',
+        help='Gearman SSL key'
+    )
+    options.parser.add_argument(
         '--haproxy-service', dest='haproxy_service',
         choices=haproxy_services.keys(), default='ubuntu',
         help='os services to use with HAProxy driver (when used)'
@@ -84,18 +96,6 @@ def main():
         '--server', dest='server', action='append', metavar='HOST:PORT',
         default=[],
         help='add a Gearman job server to the connection list'
-    )
-    options.parser.add_argument(
-        '--ssl_ca_certs', dest='ssl_ca_certs', metavar='FILE',
-        help='path to file with CA public cert(s)'
-    )
-    options.parser.add_argument(
-        '--ssl_certfile', dest='ssl_certfile', metavar='FILE',
-        help='path to file with public key'
-    )
-    options.parser.add_argument(
-        '--ssl_keyfile', dest='ssl_keyfile', metavar='FILE',
-        help='path to file with private key'
     )
     options.parser.add_argument(
         '--stats-poll', dest='stats_poll', type=int, metavar='TIME',

@@ -63,15 +63,15 @@ def config_thread(logger, driver, args):
     hostname = socket.gethostname()
     logger.info("[worker] Registering task %s" % hostname)
 
-    if all([args.ssl_keyfile, args.ssl_certfile, args.ssl_ca_certs]):
+    if all([args.gearman_ssl_key, args.gearman_ssl_cert, args.gearman_ssl_ca]):
         ssl_server_list = []
         for host_port in args.server:
             host, port = host_port.split(':')
             ssl_server_list.append({'host': host,
                                     'port': port,
-                                    'keyfile': args.ssl_keyfile,
-                                    'certfile': args.ssl_certfile,
-                                    'ca_certs': args.ssl_ca_certs})
+                                    'keyfile': args.gearman_ssl_key,
+                                    'certfile': args.gearman_ssl_cert,
+                                    'ca_certs': args.gearman_ssl_ca})
         worker = CustomJSONGearmanWorker(ssl_server_list)
     else:
         worker = CustomJSONGearmanWorker(args.server)

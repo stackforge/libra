@@ -28,6 +28,22 @@ Command Line Options
       * *haproxy* - `HAProxy <http://haproxy.1wt.eu>`_ software load balancer.
         This is the default driver.
 
+   .. option:: --gearman_ssl_ca <FILE>
+
+      Full path to the file with the CA public key to use when
+      connecting to an SSL-enabled Gearman job server. This is used
+      to validate the server key.
+
+   .. option:: --gearman_ssl_cert <FILE>
+
+      Full path to the file with the SSL public key to use when
+      connecting to an SSL-enabled Gearman job server.
+
+   .. option:: --gearman_ssl_key <FILE>
+
+      Full path to the file with the SSL private key to use when
+      connecting to an SSL-enabled Gearman job server.
+
    .. option:: -s <SECONDS>, --reconnect_sleep <SECONDS>
 
       The number of seconds to sleep between job server reconnect attempts
@@ -37,22 +53,6 @@ Command Line Options
 
       Used to specify the Gearman job server hostname and port. This option
       can be used multiple times to specify multiple job servers.
-
-   .. option:: --ssl_keyfile <FILE>
-
-      Full path to the file with the SSL private key to use when
-      connecting to an SSL-enabled Gearman job server.
-
-   .. option:: --ssl_certfile <FILE>
-
-      Full path to the file with the SSL public key to use when
-      connecting to an SSL-enabled Gearman job server.
-
-   .. option:: --ssl_ca_certs <FILE>
-
-      Full path to the file with the CA public key to use when
-      connecting to an SSL-enabled Gearman job server. This is used
-      to validate the server key.
 
    .. option:: --stats-poll <SECONDS>
 
