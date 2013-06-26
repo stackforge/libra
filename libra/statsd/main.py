@@ -50,6 +50,18 @@ def main():
         help='type of device to use'
     )
     options.parser.add_argument(
+        '--gearman_ssl_ca', dest='gearman_ssl_ca', metavar='FILE',
+        help='Gearman SSL certificate authority'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_cert', dest='gearman_ssl_cert', metavar='FILE',
+        help='Gearman SSL certificate'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_key', dest='gearman_ssl_key', metavar='FILE',
+        help='Gearman SSL key'
+    )
+    options.parser.add_argument(
         '--server', dest='server', action='append', metavar='HOST:PORT',
         default=[],
         help='add a Gearman job server to the connection list'

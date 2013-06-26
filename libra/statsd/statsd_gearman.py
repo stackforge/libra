@@ -21,7 +21,21 @@ class GearJobs(object):
         self.logger = logger
         self.poll_timeout = args.poll_timeout
         self.poll_timeout_retry = args.poll_timeout_retry
-        self.gm_client = JSONGearmanClient(args.server)
+
+        if all([args.gearman_ssl_ca, args.gearman_ssl_cert,
+                args.gearman_ssl_key]):
+            # Use SSL connections to each Gearman job server.
+            ssl_server_list = []
+            for server in args.server:
+                host, port = server.split(':')
+                ssl_server_list.append({'host': host,
+                                        'port': port,
+                                        'keyfile': args.gearman_ssl_key,
+                                        'certfile': args.gearman_ssl_cert,
+                                        'ca_certs': args.gearman_ssl_ca})
+            self.gm_client = JSONGearmanClient(ssl_server_list)
+        else:
+            self.gm_client = JSONGearmanClient(args.server)
 
     def send_pings(self, node_list):
         # TODO: lots of duplicated code that needs cleanup

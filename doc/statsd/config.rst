@@ -25,6 +25,18 @@ Command Line Options
       driver.  Can be specified multiple times for multiple servers.  This
       option is also used for the hp_rest alerting driver.
 
+   .. option:: --gearman_ssl_ca <PATH>
+
+      The path for the Gearman SSL Certificate Authority.
+
+   .. option:: --gearman_ssl_cert <PATH>
+
+      The path for the Gearman SSL certificate.
+
+   .. option:: --gearman_ssl_key <PATH>
+
+      The path for the Gearman SSL key.
+
    .. option:: --server <HOST:PORT>
 
       Used to specify the Gearman job server hostname and port. This option
