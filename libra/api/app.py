@@ -62,7 +62,10 @@ def setup_app(pecan_config, args):
         'swift_endpoint': args.swift_endpoint
     }
     config['gearman'] = {
-        'server': args.gearman
+        'server': args.gearman,
+        'ssl_key': args.gearman_ssl_key,
+        'ssl_cert': args.gearman_ssl_cert,
+        'ssl_ca': args.gearman_ssl_ca
     }
     if args.debug:
         config['wsme'] = {'debug': True}
@@ -144,6 +147,18 @@ def main():
     options.parser.add_argument(
         '--gearman', action='append', metavar='HOST:PORT', default=[],
         help='Gearman job servers'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_ca', metavar='FILE',
+        help='Gearman SSL certificate authority'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_cert', metavar='FILE',
+        help='Gearman SSL certificate'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_key', metavar='FILE',
+        help='Gearman SSL key'
     )
     options.parser.add_argument(
         '--keystone_module',
