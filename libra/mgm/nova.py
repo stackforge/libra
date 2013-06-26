@@ -133,7 +133,12 @@ class Node(object):
     def status(self, node_id):
         """ used to keep scanning to see if node is up """
         url = "/servers/{0}".format(node_id)
-        resp, body = self.nova.get(url)
+        try:
+            resp, body = self.nova.get(url)
+        except exceptions.NotFound:
+            msg = "Could not find node with id {0}".format(node_id)
+            raise NotFound(msg)
+
         return resp, body
 
     def _delete(self, node_id):
@@ -149,7 +154,11 @@ class Node(object):
         """ tries to find a node from the name """
         args = {'name': node_name}
         url = "/servers?{0}".format(urllib.urlencode(args))
-        resp, body = self.nova.get(url)
+        try:
+            resp, body = self.nova.get(url)
+        except exceptions.NotFound:
+            msg = "Could not find node with name {0}".format(node_name)
+            raise NotFound(msg)
         if resp.status_code not in [200, 203]:
             msg = "Error {0} searching for node with name {1}".format(
                 resp.status_code, node_name
