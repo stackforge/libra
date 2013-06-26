@@ -84,6 +84,18 @@ Command Line Options
       Used to specify the Gearman job server hostname and port. This option
       can be used multiple times to specify multiple job servers.
 
+   .. option:: --gearman_ssl_ca <PATH>
+
+      The path for the Gearman SSL Certificate Authority
+
+   .. option:: --gearman_ssl_cert <PATH>
+
+      The path for the Gearman SSL certificate
+
+   .. option:: --gearman_ssl_key <PATH>
+
+      The path for the Gearman SSL key
+
    .. option:: --keystone_module <MODULE:CLASS>
 
       A colon separated module and class to use as the keystone authentication
