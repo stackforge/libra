@@ -86,6 +86,12 @@ class NodesController(RestController):
                     filter(Node.id == node_id).\
                     first()
 
+                if node['enabled'] == 1:
+                    node['condition'] = 'ENABLED'
+                else:
+                    node['condition'] = 'DISABLED'
+                del node['enabled']
+
             if node_response is None:
                 session.rollback()
                 response.status = 400
