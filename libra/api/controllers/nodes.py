@@ -78,7 +78,7 @@ class NodesController(RestController):
                     node_response['nodes'].append(node)
 
             else:
-                node_response = session.query(
+                node = session.query(
                     Node.id, Node.address, Node.port, Node.status, Node.enabled
                 ).join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
@@ -86,14 +86,23 @@ class NodesController(RestController):
                     filter(Node.id == node_id).\
                     first()
 
-            if node_response is None:
-                session.rollback()
-                response.status = 400
-                return dict(message='Bad Request', details='node not found')
-            else:
-                session.commit()
-                response.status = 200
-                return node_response
+                if node is None:
+                    session.rollback()
+                    response.status = 400
+                    return dict(
+                        message='Bad Request', details='node not found'
+                    )
+
+                node_response = node._asdict()
+                if node_response['enabled'] == 1:
+                    node_response['condition'] = 'ENABLED'
+                else:
+                    node_response['condition'] = 'DISABLED'
+                del node_response['enabled']
+
+            session.commit()
+            response.status = 200
+            return node_response
 
     @wsme_pecan.wsexpose(LBNodeResp, body=LBNodePost, status_code=202)
     def post(self, body=None):
