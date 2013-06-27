@@ -42,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'LBaaS Worker and Pool Manager'
-copyright = u'2012, Andrew Hutchings, David Shrewsbury'
+project = u'Libra LBaaS Toolset'
+copyright = u'2013, Hewlett-Packard Development Company, L.P.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -190,8 +190,8 @@ htmlhelp_basename = 'LBaaSdoc'
 # (source start file, target name, title, author,
 # documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'Libra-{0}.tex'.format(version), u'Libra Client, Worker and Pool Manager Documentation',
-        u'Andrew Hutchings and David Shrewsbury', 'manual'),
+    ('index', 'Libra-{0}.tex'.format(version), u'Libra LBaaS Toolset Documentation',
+        u'Hewlett-Packard Development Company, L.P.', 'manual'),
 ]
 
 #pdf_documents = [('index', 'Libra-{0}'.format(version), u'Libra Client, Worker and Pool Manager Documentation', u'Andrew Hutchings and David Shrewsbury')]
@@ -229,6 +229,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'lbaas', u'LBaaS Worker and Pool Manager',
-     [u'Andrew Hutchings and David Shrewsbury'], 1)
+    ('index', 'lbaas', u'Libra LBaaS Toolset',
+     [u'Hewlett-Packard Development Company, L.P.'], 1)
 ]

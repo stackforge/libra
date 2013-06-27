@@ -1,5 +1,5 @@
-Statsd Monitoring Daemon
-========================
+Libra Statsd Monitoring Daemon
+==============================
 
 .. toctree::
    :maxdepth: 2
