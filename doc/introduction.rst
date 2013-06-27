@@ -6,12 +6,13 @@ Hewlett-Packard Cloud Services.  It consists of five core components
 required to get LBaaS working:
 
 * A node pool manager to keep a warm spare pool of load balancers ready
-* A node worker to asyncronusly communicate to the API server
+* A node worker to asynchronously communicate to the API server
 * A monitoring system for the load balancers
 * A customer API server
 * An administrative API server
 
-The API server is based on a modified version of the Atlas API specification.
+The API server is based on a modified version of the `Atlas API specification
+<https://wiki.openstack.org/wiki/Atlas-LB>`_.
 
 Layout
 ------
@@ -30,4 +31,4 @@ designed to use HAProxy.
 The statsd monitoring system routinely probes the workers and can alert on as
 well as disable faulty nodes.
 
-The parts of this diagram in orange are provided by the libra codebase.
+The parts of this diagram in orange are provided by the Libra codebase.

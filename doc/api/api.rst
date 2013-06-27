@@ -2283,6 +2283,6 @@ The following features are not supported.
    and the HTTPS connections will be passed through the load balancer with no
    termination at the load balancer.
 
-3. The ability to list deleted load balancers is yet not supported.
+3. The ability to list deleted load balancers is not yet supported.
 
 
