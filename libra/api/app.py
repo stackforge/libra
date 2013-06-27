@@ -85,10 +85,9 @@ def setup_app(pecan_config, args):
             True)
     )
 
-    if not args.disable_keystone:
-        return acl.install(app, args)
+    final_app = acl.AuthDirector(app, args)
 
-    return app
+    return final_app
 
 
 class LogStdout(object):
