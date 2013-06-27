@@ -1,10 +1,6 @@
 Load Balancer as a Service (LBaaS) API Specification
 ====================================================
 
-**Date:** February 8, 2013
-
-**Document Version:** 0.6
-
 1. Overview
 -----------
 
@@ -1254,7 +1250,9 @@ None required.
 13.5 Required HTTP Header Values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**X-Auth-Token**
+- **X-Auth-Token**
+- **Accept: application/json**
+- **Content-Type: application/json**
 
 13.6 Request Body
 ~~~~~~~~~~~~~~~~~
@@ -2278,13 +2276,13 @@ Features Currently Not Implemented or Supported
 
 The following features are not supported.
 
-1. Node 'weight' values are not supported.
+1. IPV6 address types are not supported.
 
-2. IPV6 address types are not supported.
+2. HTTPS protocol for load balancers are not supported. It is not
+   advertised in /protocols request.  Instead TCP will be used for port 443
+   and the HTTPS connections will be passed through the load balancer with no
+   termination at the load balancer.
 
-3. HTTPS protocol for load balancers are not supported. It is not
-   advertised in /protocols request.
-
-4. The ability to list deleted load balancers is not supported.
+3. The ability to list deleted load balancers is yet not supported.
 
 

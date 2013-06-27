@@ -1,5 +1,5 @@
-PI Configuration
-=================
+Admin API Configuration
+=======================
 
 These options are specific to the Admin API in addition to the
 :doc:`common options </config>`.
