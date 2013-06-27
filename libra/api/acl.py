@@ -18,16 +18,6 @@ import logging
 from pecan import request
 
 
-def install(app, args):
-    """Install ACL check on application."""
-    config = ConfigParser.SafeConfigParser()
-    config.read([args.config])
-    module_details = args.keystone_module.split(':')
-    keystone = importlib.import_module(module_details[0])
-    auth_class = getattr(keystone, module_details[1])
-    return auth_class(app, config._sections['keystone'])
-
-
 def get_limited_to_project(headers):
     """Return the tenant the request should be limited to."""
     tenant_id = headers.get('X-Tenant-Id')
@@ -43,3 +33,33 @@ def get_limited_to_project(headers):
     )
 
     return tenant_id
+
+
+class AuthDirector(object):
+    """ There are some paths we want to work unauthenticated.  This class
+        will direct intentionally unauthenticated requests to the relevant
+        controllers. """
+
+    def __init__(self, app, args):
+        self.args = args
+        self.unauthed_app = app
+        if not args.disable_keystone:
+            self.app = self._install()
+        else:
+            self.app = app
+
+    def __call__(self, env, start_response):
+        uri = env['PATH_INFO']
+        if uri == '/' or uri == '/v1.1' or uri == '/v1.1/':
+            return self.unauthed_app(env, start_response)
+        else:
+            return self.app(env, start_response)
+
+    def _install(self):
+        """Install ACL check on application."""
+        config = ConfigParser.SafeConfigParser()
+        config.read([self.args.config])
+        module_details = self.args.keystone_module.split(':')
+        keystone = importlib.import_module(module_details[0])
+        auth_class = getattr(keystone, module_details[1])
+        return auth_class(self.unauthed_app, config._sections['keystone'])
