@@ -244,8 +244,8 @@ class NodesController(RestController):
             )
             return ''
 
-    @expose('json')
-    def delete(self, node_id):
+    @wsme_pecan.wsexpose(None)
+    def delete(self):
         """Remove a node from the load balancer.
 
         :param load_balancer_id: id of lb
@@ -256,6 +256,7 @@ class NodesController(RestController):
 
         Returns: None
         """
+        node_id = self.nodeid
         tenant_id = get_limited_to_project(request.headers)
         if self.lbid is None:
             response.status = 400
@@ -273,21 +274,15 @@ class NodesController(RestController):
                 first()
             if load_balancer is None:
                 session.rollback()
-                response.status = 400
-                return dict(
-                    message="Bad Request",
-                    details="Load Balancer not found"
-                )
+                ClientSideError("Load Balancer not found")
             load_balancer.status = 'PENDING_UPDATE'
             nodecount = session.query(Node).\
                 filter(Node.lbid == self.lbid).count()
             # Can't delete the last LB
             if nodecount <= 1:
                 session.rollback()
-                response.status = 400
-                return dict(
-                    message="Bad Request",
-                    details="Cannot delete the last node in a load balancer"
+                ClientSideError(
+                    "Cannot delete the last node in a load balancer"
                 )
             node = session.query(Node).\
                 filter(Node.lbid == self.lbid).\
@@ -295,11 +290,7 @@ class NodesController(RestController):
                 first()
             if not node:
                 session.rollback()
-                response.status = 400
-                return dict(
-                    message="Bad Request",
-                    details="Node not found in supplied Load Balancer"
-                )
+                ClientSideError("Node not found in supplied Load Balancer")
             session.delete(node)
             device = session.query(
                 Device.id, Device.name

@@ -401,8 +401,8 @@ class LoadBalancersController(RestController):
             )
             return ''
 
-    @expose('json')
-    def delete(self, load_balancer_id):
+    @wsme_pecan.wsexpose(None)
+    def delete(self):
         """Remove a load balancer from the account.
 
         :param load_balancer_id: id of lb
@@ -416,6 +416,7 @@ class LoadBalancersController(RestController):
 
         Returns: None
         """
+        load_balancer_id = self.lbid
         tenant_id = get_limited_to_project(request.headers)
         # grab the lb
         with db_session() as session:
@@ -426,11 +427,7 @@ class LoadBalancersController(RestController):
 
             if lb is None:
                 session.rollback()
-                response.status = 400
-                return dict(
-                    message="Bad Request",
-                    details="Load Balancer ID is not valid"
-                )
+                raise ClientSideError("Load Balancer ID is not valid")
             try:
                 session.query(Node).\
                     filter(Node.lbid == load_balancer_id).delete()
@@ -440,24 +437,19 @@ class LoadBalancersController(RestController):
                 ).join(LoadBalancer.devices).\
                     filter(LoadBalancer.id == load_balancer_id).\
                     first()
-                session.execute(loadbalancers_devices.delete().where(
-                    loadbalancers_devices.c.loadbalancer == load_balancer_id
-                ))
                 session.flush()
                 session.commit()
                 submit_job(
                     'DELETE', device.name, device.id, lb.id
                 )
                 response.status = 202
-                return ''
+                return None
             except:
                 session.rollback()
                 logger = logging.getLogger(__name__)
                 logger.exception('Error communicating with load balancer pool')
-                response.status = 500
-                return dict(
-                    message="Load Balancer Error",
-                    details="Error communication with load balancer pool"
+                raise RuntimeError(
+                    "Error communication with load balancer pool"
                 )
 
     def usage(self, load_balancer_id):

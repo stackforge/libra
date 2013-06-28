@@ -17,6 +17,7 @@ eventlet.monkey_patch()
 import logging
 from libra.common.json_gearman import JSONGearmanClient
 from libra.api.model.lbaas import LoadBalancer, db_session, Device
+from libra.api.model.lbaas import loadbalancers_devices
 from pecan import conf
 
 
@@ -39,6 +40,11 @@ def submit_job(job_type, host, data, lbid):
 def client_job(logger, job_type, host, data, lbid):
     try:
         client = GearmanClientThread(logger, host, lbid)
+        logger.info(
+            "Sending Gearman job {0} to {1} for loadbalancer {2}".format(
+                job_type, host, lbid
+            )
+        )
         if job_type == 'UPDATE':
             client.send_update(data)
         if job_type == 'DELETE':
@@ -78,7 +84,7 @@ class GearmanClientThread(object):
                 filter(Device.id == data).\
                 filter(LoadBalancer.status != 'DELETED').\
                 count()
-            if count >= 1:
+            if count >= 2:
                 # This is an update message because we want to retain the
                 # remaining LB
                 keep_lb = session.query(LoadBalancer).\
@@ -125,6 +131,10 @@ class GearmanClientThread(object):
                         filter(Device.id == data).first()
                     #TODO: change this to 'DELETED' when pool mgm deletes
                     device.status = 'OFFLINE'
+                # Remove LB-device join
+                session.execute(loadbalancers_devices.delete().where(
+                    loadbalancers_devices.c.loadbalancer == lb.id
+                ))
             session.commit()
 
     def _set_error(self, device_id, errmsg, session):
@@ -237,5 +247,9 @@ class GearmanClientThread(object):
                 error = job_status.result['hpcs_error']
             else:
                 error = 'Load Balancer error'
+            self.logger.error(
+                'Gearman error response from {0}: {1}'.format(self.host, error)
+            )
             return False, error
+        self.logger.info('Gearman success from {0}'.format(self.host))
         return True, job_status.result
