@@ -111,7 +111,7 @@ class GearmanClientThread(object):
                 self._set_error(data, response, session)
             else:
                 lb.status = 'DELETED'
-                if count == 0:
+                if count == 1:
                     # Device should never be used again
                     device = session.query(Device).\
                         filter(Device.id == data).first()
