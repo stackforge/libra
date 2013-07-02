@@ -83,8 +83,9 @@ class GearmanClientThread(object):
             ).join(LoadBalancer.devices).\
                 filter(Device.id == data).\
                 filter(LoadBalancer.status != 'DELETED').\
+                filter(LoadBalancer.status != 'PENDING_DELETE').\
                 count()
-            if count >= 2:
+            if count >= 1:
                 # This is an update message because we want to retain the
                 # remaining LB
                 keep_lb = session.query(LoadBalancer).\
@@ -93,6 +94,7 @@ class GearmanClientThread(object):
                     filter(Device.id == data).\
                     filter(LoadBalancer.id != self.lbid).\
                     filter(LoadBalancer.status != 'DELETED').\
+                    filter(LoadBalancer.status != 'PENDING_DELETE').\
                     first()
                 job_data = {
                     'hpcs_action': 'UPDATE',
@@ -125,7 +127,7 @@ class GearmanClientThread(object):
                 self._set_error(data, response, session)
             else:
                 lb.status = 'DELETED'
-                if count == 1:
+                if count == 0:
                     # Device should never be used again
                     device = session.query(Device).\
                         filter(Device.id == data).first()
