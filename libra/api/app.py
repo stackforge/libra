@@ -67,6 +67,7 @@ def setup_app(pecan_config, args):
         'ssl_cert': args.gearman_ssl_cert,
         'ssl_ca': args.gearman_ssl_ca
     }
+    config['ip_filters'] = args.ip_filters
     if args.debug:
         config['wsme'] = {'debug': True}
         config['app']['debug'] = True
@@ -170,7 +171,7 @@ def main():
     )
     options.parser.add_argument(
         '--swift_endpoint',
-        help='Default endpoint URL (tenant ID will be appended to this'
+        help='Default endpoint URL (tenant ID will be appended to this)'
     )
     options.parser.add_argument(
         '--ssl_certfile',
@@ -179,6 +180,10 @@ def main():
     options.parser.add_argument(
         '--ssl_keyfile',
         help='Path to an SSL key file'
+    )
+    options.parser.add_argument(
+        '--ip_filters', action='append', default=[],
+        help='IP filters for backend nodes in the form xxx.xxx.xxx.xxx/yy'
     )
 
     args = options.run()
@@ -211,6 +216,10 @@ def main():
         # We convert it to the expected type here.
         svr_list = args.gearman.split()
         args.gearman = svr_list
+
+    if not isinstance(args.ip_filters, list):
+        ip_list = args.ip_filters.split()
+        args.ip_filters = ip_list
 
     pc = get_pecan_config()
     if not args.nodaemon:

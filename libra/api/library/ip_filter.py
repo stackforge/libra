@@ -12,20 +12,18 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import six
-from wsme.exc import ClientSideError
-from wsme.utils import _
+import ipaddress
+from libra.api.library.exp import IPOutOfRange
 
 
-class IPOutOfRange(Exception):
-    pass
-
-
-class OverLimit(ClientSideError):
-    def __init__(self, msg=''):
-        self.msg = msg
-        super(OverLimit, self).__init__()
-
-    @property
-    def faultstring(self):
-        return _(six.u("OverLimit: %s")) % (self.msg)
+def ipfilter(address, masks):
+    address = ipaddress.IPv4Address(address)
+    if masks and len(masks) > 0:
+        in_mask = False
+        for mask in masks:
+            if address in ipaddress.IPv4Network(unicode(mask), True):
+                in_mask = True
+                break
+        if not in_mask:
+            raise IPOutOfRange('IP Address not in mask')
+    return str(address)

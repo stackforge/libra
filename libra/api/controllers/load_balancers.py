@@ -13,7 +13,6 @@
 # under the License.
 
 import logging
-import socket
 # pecan imports
 from pecan import expose, abort, response, request
 from pecan.rest import RestController
@@ -31,7 +30,9 @@ from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
 from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
-from libra.api.library.exp import OverLimit
+from libra.api.library.exp import OverLimit, IPOutOfRange
+from libra.api.library.ip_filter import ipfilter
+from pecan import conf
 
 
 class LoadBalancersController(RestController):
@@ -173,8 +174,13 @@ class LoadBalancersController(RestController):
                     'Node {0} is missing a port'.format(node.address)
                 )
             try:
-                socket.inet_aton(node.address)
-            except socket.error:
+                node.address = ipfilter(node.address, conf.ip_filters)
+            except IPOutOfRange:
+                raise ClientSideError(
+                    'IP Address {0} is not allowed as a backend node'
+                    .format(node.address)
+                )
+            except:
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
