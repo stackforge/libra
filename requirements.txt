@@ -11,3 +11,4 @@ pecan
 sqlalchemy>=0.8.0
 wsme>=0.5b2
 MySQL-python
+ipaddress==1.0.4

@@ -13,7 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import socket
 from pecan import expose, response, request, abort
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
@@ -26,7 +25,9 @@ from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 from libra.api.model.validators import LBNodePut
 from libra.api.library.gearman_client import submit_job
-from libra.api.library.exp import OverLimit
+from libra.api.library.exp import OverLimit, IPOutOfRange
+from libra.api.library.ip_filter import ipfilter
+from pecan import conf
 
 
 class NodesController(RestController):
@@ -137,8 +138,13 @@ class NodesController(RestController):
                     'Node {0} is missing a port'.format(node.address)
                 )
             try:
-                socket.inet_aton(node.address)
-            except socket.error:
+                node.address = ipfilter(node.address, conf.ip_filters)
+            except IPOutOfRange:
+                raise ClientSideError(
+                    'IP Address {0} is not allowed as a backend node'
+                    .format(node.address)
+                )
+            except:
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
