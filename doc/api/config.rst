@@ -113,3 +113,12 @@ Command Line Options
 
       Deleted Load Balancers older than this number of days will be expunged
       from the database using a sceduler that is executed every 24 hours.
+
+   .. option:: --ip_filters <FILTERS>
+
+      A mask of IP addresses to filter for backend nodes in the form
+      xxx.xxx.xxx.xxx/yy
+
+      Any backend node IP address supplied which falls outside these filters
+      will result in an error for the create or node add functions.
+      This option can be specified multiple times.
