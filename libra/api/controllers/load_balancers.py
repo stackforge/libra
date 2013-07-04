@@ -33,6 +33,7 @@ from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
+from sqlalchemy import func
 
 
 class LoadBalancersController(RestController):
@@ -78,10 +79,12 @@ class LoadBalancersController(RestController):
                         LoadBalancer.protocol,
                         LoadBalancer.port, LoadBalancer.algorithm,
                         LoadBalancer.status, LoadBalancer.created,
-                        LoadBalancer.updated
-                    ).filter(LoadBalancer.tenantid == tenant_id).\
-                        filter(LoadBalancer.status != 'DELETED').all()
-
+                        LoadBalancer.updated,
+                        func.count(Node.id).label('nodeCount')
+                    ).join(LoadBalancer.nodes).\
+                        filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(LoadBalancer.status != 'DELETED').\
+                        group_by(LoadBalancer).all()
                 load_balancers = {'loadBalancers': []}
 
                 for lb in lbs:
@@ -93,10 +96,13 @@ class LoadBalancersController(RestController):
                     LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                     LoadBalancer.port, LoadBalancer.algorithm,
                     LoadBalancer.status, LoadBalancer.created,
-                    LoadBalancer.updated, LoadBalancer.statusDescription
+                    LoadBalancer.updated, LoadBalancer.statusDescription,
+                    func.count(Node.id).label('nodeCount')
                 ).join(LoadBalancer.devices).\
+                    join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == load_balancer_id).\
+                    group_by(LoadBalancer).\
                     first()
 
                 if not load_balancers:
