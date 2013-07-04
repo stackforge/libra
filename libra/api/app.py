@@ -46,17 +46,8 @@ def setup_app(pecan_config, args):
     if not pecan_config:
         pecan_config = get_pecan_config()
     config = dict(pecan_config)
-    config['database'] = {
-        'username': args.db_user,
-        'password': args.db_pass,
-        'host': args.db_host,
-        'port': args.db_port,
-        'schema': args.db_schema,
-        'use_ssl': args.db_ssl,
-        'ssl_cert': args.db_ssl_cert,
-        'ssl_key': args.db_ssl_key,
-        'ssl_ca': args.db_ssl_ca
-    }
+    config['database'] = args.db_sections
+    config['conffile'] = args.config
     config['swift'] = {
         'swift_basepath': args.swift_basepath,
         'swift_endpoint': args.swift_endpoint
@@ -118,31 +109,8 @@ def main():
         action='store_true'
     )
     options.parser.add_argument(
-        '--db_user', help='MySQL database user'
-    )
-    options.parser.add_argument(
-        '--db_pass', help='MySQL database password'
-    )
-    options.parser.add_argument(
-        '--db_host', help='MySQL host name'
-    )
-    options.parser.add_argument(
-        '--db_port', help='MySQL port number', default=3306, type=int
-    )
-    options.parser.add_argument(
-        '--db_schema', help='MySQL schema for libra'
-    )
-    options.parser.add_argument(
-        '--db_ssl', help='Enable MySQL SSL connections', action='store_true'
-    )
-    options.parser.add_argument(
-        '--db_ssl_cert', help='MySQL SSL certificate'
-    )
-    options.parser.add_argument(
-        '--db_ssl_key', help='MySQL SSL key'
-    )
-    options.parser.add_argument(
-        '--db_ssl_ca', help='MySQL SSL certificate authority'
+        '--db_sections', action='append', default=[],
+        help='MySQL config sections in the config file'
     )
     options.parser.add_argument(
         '--gearman', action='append', metavar='HOST:PORT', default=[],
@@ -193,11 +161,9 @@ def main():
     args = options.run()
 
     required_args = [
-        'db_user', 'db_pass', 'db_host', 'db_schema', 'swift_basepath',
+        'db_sections', 'swift_basepath',
         'swift_endpoint', 'ssl_certfile', 'ssl_keyfile'
     ]
-    if args.db_ssl:
-        required_args.extend(['db_ssl_cert', 'db_ssl_key', 'db_ssl_ca'])
 
     missing_args = 0
     for req in required_args:
@@ -220,6 +186,10 @@ def main():
         # We convert it to the expected type here.
         svr_list = args.gearman.split()
         args.gearman = svr_list
+
+    if not isinstance(args.db_sections, list):
+        db_list = args.db_sections.split()
+        args.db_sections = db_list
 
     if not isinstance(args.ip_filters, list):
         ip_list = args.ip_filters.split()
