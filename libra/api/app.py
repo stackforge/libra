@@ -64,6 +64,7 @@ def setup_app(pecan_config, args):
     config['gearman'] = {
         'server': args.gearman
     }
+    config['expire_days'] = args.expire_days
     if args.debug:
         config['wsme'] = {'debug': True}
         config['app']['debug'] = True
@@ -83,7 +84,6 @@ def setup_app(pecan_config, args):
     )
 
     final_app = acl.AuthDirector(app, args)
-
     return final_app
 
 
@@ -165,6 +165,10 @@ def main():
         '--ssl_keyfile',
         help='Path to an SSL key file'
     )
+    options.parser.add_argument(
+        '--expire_days', default=0,
+        help='Number of days until deleted load balancers are expired'
+    )
 
     args = options.run()
 
@@ -216,6 +220,9 @@ def main():
     logger = setup_logging('', args)
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
+    # Include this here so that the DB model doesn't cry
+    from libra.api.library.expunge import ExpungeScheduler
+    ExpungeScheduler(logger)
     sys.stderr = LogStdout(logger)
     ssl_sock = eventlet.wrap_ssl(
         eventlet.listen((args.host, args.port)),

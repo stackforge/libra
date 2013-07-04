@@ -39,7 +39,7 @@ class LoadBalancersController(RestController):
         self.lbid = lbid
 
     @expose('json')
-    def get(self, load_balancer_id=None):
+    def get(self, load_balancer_id=None, status=None):
         """Fetches a list of load balancers or the details of one balancer if
         load_balancer_id is not empty.
 
@@ -62,13 +62,24 @@ class LoadBalancersController(RestController):
             # if we don't have an id then we want a list of them own by this
             # tenent
             if not load_balancer_id:
-                lbs = session.query(
-                    LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
-                    LoadBalancer.port, LoadBalancer.algorithm,
-                    LoadBalancer.status, LoadBalancer.created,
-                    LoadBalancer.updated
-                ).filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(LoadBalancer.status != 'DELETED').all()
+                if status and status == 'DELETED':
+                    lbs = session.query(
+                        LoadBalancer.name, LoadBalancer.id,
+                        LoadBalancer.protocol,
+                        LoadBalancer.port, LoadBalancer.algorithm,
+                        LoadBalancer.status, LoadBalancer.created,
+                        LoadBalancer.updated
+                    ).filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(LoadBalancer.status == 'DELETED').all()
+                else:
+                    lbs = session.query(
+                        LoadBalancer.name, LoadBalancer.id,
+                        LoadBalancer.protocol,
+                        LoadBalancer.port, LoadBalancer.algorithm,
+                        LoadBalancer.status, LoadBalancer.created,
+                        LoadBalancer.updated
+                    ).filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(LoadBalancer.status != 'DELETED').all()
 
                 load_balancers = {'loadBalancers': []}
 
