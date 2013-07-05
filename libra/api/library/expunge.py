@@ -59,6 +59,6 @@ class ExpungeScheduler(object):
                     '{0} deleted load balancers expunged'.format(count)
                 )
             except:
-                self.logger.exception('Exception occured during expunge')
+                self.logger.exception('Exception occurred during expunge')
         self.logger.info('Expunge thread sleeping for 24 hours')
         self.expunge_timer = threading.Timer(24*60*60, self.run_expunge, ())

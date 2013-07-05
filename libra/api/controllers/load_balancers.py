@@ -227,7 +227,7 @@ class LoadBalancersController(RestController):
             if len(body.nodes) > nodelimit:
                 session.rollback()
                 raise OverLimit(
-                    'Too many backend nodes supplied (limit is {0}'.
+                    'Too many backend nodes supplied (limit is {0})'.
                     format(nodelimit)
                 )
 
