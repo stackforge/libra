@@ -148,7 +148,7 @@ class db_session(object):
         self.session = None
 
     def __enter__(self):
-        self.session = sessionmaker(bind=engine, class_=RoutingSession)()
+        self.session = sessionmaker(class_=RoutingSession)()
         return self.session
 
     def __exit__(self, type, value, traceback):
