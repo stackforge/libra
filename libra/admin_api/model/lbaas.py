@@ -18,6 +18,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, Session
 import sqlalchemy.types as types
 import random
+import time
 import ConfigParser
 from pecan import conf
 
@@ -140,17 +141,22 @@ class Node(DeclarativeBase):
 
 class RoutingSession(Session):
     """ If an engine is already in use, re-use it.  Otherwise we can end up
-        with deadlocks in Galera, see http://tinyurl.com/9h6qlly """
+        with deadlocks in Galera, see http://tinyurl.com/9h6qlly
+        switch engines every 60 seconds of idle time """
+
     last_engine = None
+    last_engine_time = 0
 
     def get_bind(self, mapper=None, clause=None):
         if (
             RoutingSession.last_engine
-            and RoutingSession.last_engine.pool.checkedout() > 0
+            and time.time() < RoutingSession.last_engine_time + 60
         ):
+            RoutingSession.last_engine_time = time.time()
             return RoutingSession.last_engine
         engine = random.choice(engines)
         RoutingSession.last_engine = engine
+        RoutingSession.last_engine_time = time.time()
         return engine
 
 
