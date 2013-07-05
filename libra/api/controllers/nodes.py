@@ -232,11 +232,19 @@ class NodesController(RestController):
                 session.rollback()
                 raise ClientSideError('Node ID is not valid')
 
+            nodecount = session.query(Node).\
+                filter(Node.lbid == self.lbid).\
+                filter(Node.enabled == 1).count()
             if body.condition != Unset:
                 if body.condition == 'DISABLED':
                     node.enabled = 0
                 else:
                     node.enabled = 1
+            if nodecount <= 1:
+                session.rollback()
+                raise ClientSideError(
+                    "Cannot disable the last enabled node in a load balancer"
+                )
 
             lb.status = 'PENDING_UPDATE'
             device = session.query(
@@ -279,12 +287,13 @@ class NodesController(RestController):
                 raise ClientSideError("Load Balancer not found")
             load_balancer.status = 'PENDING_UPDATE'
             nodecount = session.query(Node).\
-                filter(Node.lbid == self.lbid).count()
+                filter(Node.lbid == self.lbid).\
+                filter(Node.enabled == 1).count()
             # Can't delete the last LB
             if nodecount <= 1:
                 session.rollback()
                 raise ClientSideError(
-                    "Cannot delete the last node in a load balancer"
+                    "Cannot delete the last enabled node in a load balancer"
                 )
             node = session.query(Node).\
                 filter(Node.lbid == self.lbid).\
