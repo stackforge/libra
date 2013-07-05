@@ -424,8 +424,8 @@ class LoadBalancersController(RestController):
             )
             return ''
 
-    @wsme_pecan.wsexpose(None)
-    def delete(self, status_code=202):
+    @wsme_pecan.wsexpose(None, status_code=202)
+    def delete(self):
         """Remove a load balancer from the account.
 
         :param load_balancer_id: id of lb
