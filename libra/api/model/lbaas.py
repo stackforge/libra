@@ -139,6 +139,8 @@ class Node(DeclarativeBase):
 
 
 class RoutingSession(Session):
+    # TODO: writes deadlock on multi galera due to:
+    # http://tinyurl.com/9h6qlly
     def get_bind(self, mapper=None, clause=None):
         return random.choice(engines)
 
@@ -148,7 +150,7 @@ class db_session(object):
         self.session = None
 
     def __enter__(self):
-        self.session = sessionmaker(bind=engine, class_=RoutingSession)()
+        self.session = sessionmaker(class_=RoutingSession)()
         return self.session
 
     def __exit__(self, type, value, traceback):
