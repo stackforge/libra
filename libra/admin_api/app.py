@@ -40,18 +40,8 @@ def setup_app(pecan_config, args):
     if not pecan_config:
         pecan_config = get_pecan_config()
     config = dict(pecan_config)
-    config['database'] = {
-        'username': args.db_user,
-        'password': args.db_pass,
-        'host': args.db_host,
-        'schema': args.db_schema,
-        'port': args.db_port,
-        'schema': args.db_schema,
-        'use_ssl': args.db_ssl,
-        'ssl_cert': args.db_ssl_cert,
-        'ssl_key': args.db_ssl_key,
-        'ssl_ca': args.db_ssl_ca
-    }
+    config['database'] = args.db_sections
+    config['conffile'] = args.config
     if args.debug:
         config['wsme'] = {'debug': True}
         config['app']['debug'] = True
@@ -92,31 +82,8 @@ def main():
         '--port', help='Port number for API server', type=int, default=8889
     )
     options.parser.add_argument(
-        '--db_user', help='MySQL database user'
-    )
-    options.parser.add_argument(
-        '--db_pass', help='MySQL database password'
-    )
-    options.parser.add_argument(
-        '--db_host', help='MySQL host name'
-    )
-    options.parser.add_argument(
-        '--db_port', help='MySQL port number', default=3306, type=int
-    )
-    options.parser.add_argument(
-        '--db_schema', help='MySQL schema for libra'
-    )
-    options.parser.add_argument(
-        '--db_ssl', help='Enable MySQL SSL connections', action='store_true'
-    )
-    options.parser.add_argument(
-        '--db_ssl_cert', help='MySQL SSL certificate'
-    )
-    options.parser.add_argument(
-        '--db_ssl_key', help='MySQL SSL key'
-    )
-    options.parser.add_argument(
-        '--db_ssl_ca', help='MySQL SSL certificate authority'
+        '--db_sections', action='append', default=[],
+        help='MySQL config sections in the config file'
     )
     options.parser.add_argument(
         '--ssl_certfile',
@@ -129,12 +96,7 @@ def main():
 
     args = options.run()
 
-    required_args = [
-        'db_user', 'db_pass', 'db_host', 'db_schema', 'ssl_certfile',
-        'ssl_keyfile'
-    ]
-    if args.db_ssl:
-        required_args.extend(['db_ssl_cert', 'db_ssl_key', 'db_ssl_ca'])
+    required_args = ['db_sections', 'ssl_certfile', 'ssl_keyfile']
 
     missing_args = 0
     for req in required_args:
@@ -146,6 +108,10 @@ def main():
                 .format(app=os.path.basename(sys.argv[0]), test_var=req))
     if missing_args:
         return 2
+
+    if not isinstance(args.db_sections, list):
+        db_list = args.db_sections.split()
+        args.db_sections = db_list
 
     pc = get_pecan_config()
     if not args.nodaemon:

@@ -15,38 +15,47 @@
 from sqlalchemy import Table, Column, Integer, ForeignKey, create_engine
 from sqlalchemy import INTEGER, VARCHAR, BIGINT
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref, sessionmaker
+from sqlalchemy.orm import relationship, backref, sessionmaker, Session
 import sqlalchemy.types as types
+import random
+import ConfigParser
 from pecan import conf
 
-# TODO replace this with something better
-conn_string = '''mysql://%s:%s@%s:%d/%s''' % (
-    conf.database.username,
-    conf.database.password,
-    conf.database.host,
-    conf.database.port,
-    conf.database.schema
-)
 
-if conf.database.use_ssl:
-    ssl_args = {'ssl': {
-        'cert': conf.database.ssl_cert,
-        'key': conf.database.ssl_key,
-        'ca': conf.database.ssl_ca
-    }}
+config = ConfigParser.SafeConfigParser()
+config.read([conf.conffile])
+engines = []
+for section in conf.database:
+    db_conf = config._sections[section]
 
-    engine = create_engine(
-        conn_string, isolation_level="READ COMMITTED", connect_args=ssl_args,
-        pool_recycle=3600
+    conn_string = '''mysql://%s:%s@%s:%d/%s''' % (
+        db_conf['username'],
+        db_conf['password'],
+        db_conf['host'],
+        db_conf.get('port', 3306),
+        db_conf['schema']
     )
-else:
-    engine = create_engine(
-        conn_string, isolation_level="READ COMMITTED", pool_recycle=3600
-    )
+
+    if 'ssl_key' in db_conf:
+        ssl_args = {'ssl': {
+            'cert': db_conf['ssl_cert'],
+            'key': db_conf['ssl_key'],
+            'ca': db_conf['ssl_ca']
+        }}
+
+        engine = create_engine(
+            conn_string, isolation_level="READ COMMITTED", pool_size=20,
+            connect_args=ssl_args, pool_recycle=3600
+        )
+    else:
+        engine = create_engine(
+            conn_string, isolation_level="READ COMMITTED", pool_size=20,
+            pool_recycle=3600
+        )
+    engines.append(engine)
 
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
-metadata.bind = engine
 
 loadbalancers_devices = Table(
     'loadbalancers_devices',
@@ -129,12 +138,17 @@ class Node(DeclarativeBase):
     weight = Column(u'weight', INTEGER(), nullable=False)
 
 
+class RoutingSession(Session):
+    def get_bind(self, mapper=None, clause=None):
+        return random.choice(engines)
+
+
 class db_session(object):
     def __init__(self):
         self.session = None
 
     def __enter__(self):
-        self.session = sessionmaker(bind=engine)()
+        self.session = sessionmaker(bind=engine, class_=RoutingSession)()
         return self.session
 
     def __exit__(self, type, value, traceback):

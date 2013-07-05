@@ -13,16 +13,23 @@ Configuration File
    .. code-block:: ini
 
       [api]
-      db_host=localhost
-      db_user=root
-      db_pass=
-      db_schema=lbaas
+      db_sections=mysql1
       gearman=127.0.0.1:4730
       keystone_module=keystoneclient.middleware.auth_token:AuthProtocol
       swift_basepath=lbaaslogs
       swift_endpoint=https://host.com:443/v1/
       ssl_certfile=/opt/certfile.crt
       ssl_keyfile=/opt/keyfile.key
+
+      [mysql1]
+      host=localhost
+      port=3306
+      username=root
+      password=
+      schema=lbaas
+      ssl_cert=/opt/mysql_cert.crt
+      ssl_key=/opt/mysql_key.key
+      ssl_ca=/opt/mysql_ca.ca
 
    In addition to this any options that are specific to the given keystone
    module should be stored in the ``[keystone]`` section.
@@ -43,41 +50,10 @@ Command Line Options
 
       Do not use keystone authentication, for testing purposes only
 
-   .. option:: --db_host <HOSTNAME>
+   .. option:: --db_secions <SECTIONNAME>
 
-      The host name for the MySQL database server
-
-   .. option:: --db_port <PORT>
-
-      The port number for the MySQL database server
-
-   .. option:: --db_user <USERNAME>
-
-      The username for the MySQL database server
-
-   .. option:: --db_pass <PASSWORD>
-
-      The password for the MySQL database server
-
-   .. option:: --db_schema <SCHEMA>
-      
-      The schema containing the LBaaS tables in the MySQL database server
-
-   .. option:: --db_ssl
-
-      Enable MySQL SSL support
-
-   .. option:: --db_ssl_cert <CERTIFICATE PATH>
-
-      The path for the MySQL SSL certificate
-
-   .. option:: --db_ssl_key <KEY PATH>
-
-      The path for the MySQL SSL key
-
-   .. option:: --db_ssl_ca <CA PATH>
-
-      The path for the MySQL SSL Certificate Authority
+      Config file sections that describe the MySQL servers.  This option can
+      be specified multiple times for Galera or NDB clusters.
 
    .. option:: --gearman <HOST:POST>
 
