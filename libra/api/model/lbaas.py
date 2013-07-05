@@ -139,10 +139,19 @@ class Node(DeclarativeBase):
 
 
 class RoutingSession(Session):
-    # TODO: writes deadlock on multi galera due to:
-    # http://tinyurl.com/9h6qlly
+    """ If an engine is already in use, re-use it.  Otherwise we can end up
+        with deadlocks in Galera, see http://tinyurl.com/9h6qlly """
+    last_engine = None
+
     def get_bind(self, mapper=None, clause=None):
-        return random.choice(engines)
+        if (
+            RoutingSession.last_engine
+            and RoutingSession.last_engine.pool.checkedout() > 0
+        ):
+            return RoutingSession.last_engine
+        engine = random.choice(engines)
+        RoutingSession.last_engine = engine
+        return engine
 
 
 class db_session(object):
