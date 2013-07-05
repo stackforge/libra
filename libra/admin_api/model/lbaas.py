@@ -21,6 +21,7 @@ import random
 import time
 import ConfigParser
 from pecan import conf
+import logging
 
 
 config = ConfigParser.SafeConfigParser()
@@ -163,10 +164,23 @@ class RoutingSession(Session):
 class db_session(object):
     def __init__(self):
         self.session = None
+        self.logger = logging.getLogger(__name__)
 
     def __enter__(self):
-        self.session = sessionmaker(class_=RoutingSession)()
-        return self.session
+        for x in xrange(10):
+            try:
+                self.session = sessionmaker(class_=RoutingSession)()
+                self.session.execute("SELECT 1")
+                return self.session
+            except:
+                self.logger.error(
+                    'Could not connect to DB server: {0}'.format(
+                        RoutingSession.last_engine.url
+                    )
+                )
+                RoutingSession.last_engine = None
+        self.logger.error('Could not connect to any DB server')
+        return None
 
     def __exit__(self, type, value, traceback):
         self.session.close()
