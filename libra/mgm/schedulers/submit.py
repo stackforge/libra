@@ -47,7 +47,7 @@ class SubmitNodes(object):
                         self.logger.error('No working API server found')
             except Exception:
                 self.logger.exception(
-                    'Uncaught exception during failed node check'
+                    'Uncaught exception during node check'
                 )
             self.scheduler()
 
@@ -142,7 +142,7 @@ class SubmitNodes(object):
 
     def scheduler(self):
         self.logger.info('Node submit timer sleeping for {mins} minutes'
-                         .format(mins=self.args.failed_interval))
-        self.timer = threading.Timer(60 * int(self.args.failed_interval),
+                         .format(mins=self.args.submit_interval))
+        self.timer = threading.Timer(60 * int(self.args.submit_interval),
                                      self.run, ())
         self.timer.start()
