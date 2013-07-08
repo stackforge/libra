@@ -13,7 +13,6 @@
 # under the License.
 
 import uuid
-import time
 import sys
 import urllib
 
@@ -75,24 +74,7 @@ class Node(object):
                 .format(exc=sys.exc_info()[0]), node_id
             )
 
-        server_id = body['server']['id']
-        # try for 40 * 3 seconds
-        waits = 40
-        while waits > 0:
-            time.sleep(3)
-            resp, status = self.status(server_id)
-            status = status['server']
-            if status['status'] == 'ACTIVE':
-                return status
-            elif not status['status'].startswith('BUILD'):
-                raise BuildError(
-                    'Error spawning node, status {stat}'
-                    .format(stat=status['status']),
-                    node_id, server_id,
-                )
-            waits = waits - 1
-
-        raise BuildError('Timeout creating node', node_id, server_id)
+        return body['server']['id']
 
     def delete(self, node_id):
         """ delete a node """
