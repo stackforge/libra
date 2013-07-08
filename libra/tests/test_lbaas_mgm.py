@@ -67,7 +67,7 @@ class TestLBaaSMgmNova(testtools.TestCase):
         with mock.patch.object(requests, "request", mock_request):
             with mock.patch('time.time', mock.Mock(return_value=1234)):
                 data = self.api.build()
-                self.assertEqual(data['id'], 417773)
+                self.assertEqual(data, 417773)
 
     def testCreateNodeFail(self):
         with mock.patch.object(requests, "request", mock_bad_request):

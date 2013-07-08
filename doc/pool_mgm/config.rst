@@ -28,7 +28,7 @@ Configuration File
        api_server = 10.0.0.1:8889 10.0.0.2:8889
        nodes = 10
        check_interval = 5
-       failed_interval = 15
+       submit_interval = 15
        node_basename = 'libra'
 
 Command Line Options
@@ -46,9 +46,9 @@ Command Line Options
       How often to check the API server to see if new nodes are needed
       (value is minutes)
 
-   .. option:: --failed_interval <FAILED_INTERVAL>
+   .. option:: --submit_interval <SUBMIT_INTERVAL>
 
-      How often to check the list of failed node uploads to see if the nodes
+      How often to check the list of nodes to see if the nodes
       are now in a good state (value is in minutes)
 
    .. option:: --driver <DRIVER>
