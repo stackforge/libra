@@ -27,6 +27,7 @@ import wsmeext.pecan
 import pecan
 from libra.api.library.exp import OverLimit
 from wsme.rest.json import tojson
+from sqlalchemy.exc import OperationalError
 
 
 def format_exception(excinfo, debug=False):
@@ -87,39 +88,55 @@ def wsexpose(*args, **kwargs):
 
         @functools.wraps(f)
         def callfunction(self, *args, **kwargs):
-            try:
-                args, kwargs = wsme.rest.args.get_args(
-                    funcdef, args, kwargs, pecan.request.params, None,
-                    pecan.request.body, pecan.request.content_type
+            for x in xrange(5):
+                try:
+                    args, kwargs = wsme.rest.args.get_args(
+                        funcdef, args, kwargs, pecan.request.params, None,
+                        pecan.request.body, pecan.request.content_type
+                    )
+                    if funcdef.pass_request:
+                        kwargs[funcdef.pass_request] = pecan.request
+                    result = f(self, *args, **kwargs)
+
+                    # NOTE: Support setting of status_code with default 201
+                    pecan.response.status = funcdef.status_code
+                    if isinstance(result, wsme.api.Response):
+                        pecan.response.status = result.status_code
+                        result = result.obj
+
+                except OperationalError as sqlexc:
+                    logger = logging.getLogger(__name__)
+                    if sqlexc.args[0] == 1213:
+                        logger.warning(
+                            "Galera deadlock in gearman, retry {0}".format(x+1)
+                        )
+                        continue
+                    else:
+                        data = wsme.api.format_exception(
+                            sys.exc_info(),
+                            pecan.conf.get('wsme', {}).get('debug', False)
+                        )
+                        e = sys.exc_info()[1]
+                        pecan.response.status = 500
+                        return data
+                except:
+                    data = wsme.api.format_exception(
+                        sys.exc_info(),
+                        pecan.conf.get('wsme', {}).get('debug', False)
+                    )
+                    e = sys.exc_info()[1]
+                    if isinstance(e, OverLimit):
+                        pecan.response.status = 413
+                    elif data['message'] == 'Bad Request':
+                        pecan.response.status = 400
+                    else:
+                        pecan.response.status = 500
+                    return data
+
+                return dict(
+                    datatype=funcdef.return_type,
+                    result=result
                 )
-                if funcdef.pass_request:
-                    kwargs[funcdef.pass_request] = pecan.request
-                result = f(self, *args, **kwargs)
-
-                # NOTE: Support setting of status_code with default 201
-                pecan.response.status = funcdef.status_code
-                if isinstance(result, wsme.api.Response):
-                    pecan.response.status = result.status_code
-                    result = result.obj
-
-            except:
-                data = wsme.api.format_exception(
-                    sys.exc_info(),
-                    pecan.conf.get('wsme', {}).get('debug', False)
-                )
-                e = sys.exc_info()[1]
-                if isinstance(e, OverLimit):
-                    pecan.response.status = 413
-                elif data['message'] == 'Bad Request':
-                    pecan.response.status = 400
-                else:
-                    pecan.response.status = 500
-                return data
-
-            return dict(
-                datatype=funcdef.return_type,
-                result=result
-            )
 
         pecan_xml_decorate(callfunction)
         pecan_json_decorate(callfunction)

@@ -56,9 +56,12 @@ def client_job(logger, job_type, host, data, lbid):
             return
         except OperationalError as exc:
             # Auto retry on galera locking error
-            logger.warning("Galera deadlock in gearman, retry {0}".format(x+1))
             if exc.args[0] != 1213:
                 raise
+            else:
+                logger.warning(
+                    "Galera deadlock in gearman, retry {0}".format(x+1)
+                )
         except:
             logger.exception("Gearman thread unhandled exception")
 
