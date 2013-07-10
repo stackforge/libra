@@ -14,11 +14,11 @@
 # under the License.
 
 from pecan import expose
-from libra.api.library.libra_rest_controller import LibraController
+from pecan.rest import RestController
 from libra.api.model.lbaas import Limits, db_session
 
 
-class LimitsController(LibraController):
+class LimitsController(RestController):
     @expose('json')
     def get(self):
         resp = {}

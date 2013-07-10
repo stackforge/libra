@@ -15,6 +15,7 @@
 import logging
 # pecan imports
 from pecan import expose, abort, response, request
+from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError, InvalidInput
 from wsme import Unset
@@ -31,17 +32,17 @@ from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange
 from libra.api.library.ip_filter import ipfilter
-from libra.api.library.libra_rest_controller import LibraController
 from pecan import conf
 from sqlalchemy import func
+from wsme import types as wtypes
 
 
-class LoadBalancersController(LibraController):
+class LoadBalancersController(RestController):
     def __init__(self, lbid=None):
         self.lbid = lbid
 
-    @expose('json')
-    def get(self, load_balancer_id=None, status=None):
+    @wsme_pecan.wsexpose(None, wtypes.text)
+    def get(self, status=None):
         """Fetches a list of load balancers or the details of one balancer if
         load_balancer_id is not empty.
 
@@ -63,7 +64,7 @@ class LoadBalancersController(LibraController):
         with db_session() as session:
             # if we don't have an id then we want a list of them own by this
             # tenent
-            if not load_balancer_id:
+            if not self.lbid:
                 if status and status == 'DELETED':
                     lbs = session.query(
                         LoadBalancer.name, LoadBalancer.id,
@@ -101,24 +102,20 @@ class LoadBalancersController(LibraController):
                 ).join(LoadBalancer.devices).\
                     join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(LoadBalancer.id == load_balancer_id).\
+                    filter(LoadBalancer.id == self.lbid).\
                     group_by(LoadBalancer).\
                     first()
 
                 if not load_balancers:
-                    response.status = 400
                     session.rollback()
-                    return dict(
-                        message='Bad Request',
-                        details="Load Balancer ID not found"
-                    )
+                    raise ClientSideError("Load Balancer ID not found")
 
                 load_balancers = load_balancers._asdict()
                 virtualIps = session.query(
                     Device.id, Device.floatingIpAddr
                 ).join(LoadBalancer.devices).\
                     filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(LoadBalancer.id == load_balancer_id).\
+                    filter(LoadBalancer.id == self.lbid).\
                     all()
 
                 load_balancers['virtualIps'] = []
@@ -134,7 +131,7 @@ class LoadBalancersController(LibraController):
                     Node.id, Node.address, Node.port, Node.status, Node.enabled
                 ).join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(LoadBalancer.id == load_balancer_id).\
+                    filter(LoadBalancer.id == self.lbid).\
                     all()
 
                 load_balancers['id'] = str(load_balancers['id'])

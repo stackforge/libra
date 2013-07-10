@@ -14,10 +14,10 @@
 # under the License.
 
 from pecan import response
-from libra.api.library.libra_rest_controller import LibraController
+from pecan.rest import RestController
 
 
-class ConnectionThrottleController(LibraController):
+class ConnectionThrottleController(RestController):
     """functions for /loadbalancers/{loadBalancerId}/connectionthrottle/*
     routing"""
 

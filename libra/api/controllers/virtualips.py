@@ -14,12 +14,12 @@
 # under the License.
 
 from pecan import response, expose, request
-from libra.api.library.libra_rest_controller import LibraController
+from pecan.rest import RestController
 from libra.api.model.lbaas import LoadBalancer, Device, db_session
 from libra.api.acl import get_limited_to_project
 
 
-class VipsController(LibraController):
+class VipsController(RestController):
     def __init__(self, load_balancer_id=None):
         self.lbid = load_balancer_id
 

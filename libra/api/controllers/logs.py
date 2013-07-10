@@ -15,17 +15,17 @@
 
 from pecan import request
 from pecan import conf
+from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
-from libra.api.library.libra_rest_controller import LibraController
 from libra.api.model.lbaas import LoadBalancer, Device, db_session
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBLogsPost
 from libra.api.library.gearman_client import submit_job
 
 
-class LogsController(LibraController):
+class LogsController(RestController):
     def __init__(self, load_balancer_id=None):
         self.lbid = load_balancer_id
 
