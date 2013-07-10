@@ -77,10 +77,10 @@ class LibraController(RestController):
             _lookup_result = self._handle_lookup(args)
             if _lookup_result:
                 return _lookup_result
-        except OperationalError as sqlexc:
+        except OperationalError:
             logger = logging.getLogger(__name__)
             # if a galera transaction fails due to locking, retry the call
-            if sqlexc.args[0] == 1213 and LibraController.routing_calls < 5:
+            if LibraController.routing_calls < 5:
                 LibraController.routing_calls += 1
                 logger.warning("Galera deadlock, retry: {0}".format(
                     LibraController.routing_calls)
