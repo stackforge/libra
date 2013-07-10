@@ -54,16 +54,15 @@ def client_job(logger, job_type, host, data, lbid):
             if job_type == 'ARCHIVE':
                 client.send_archive(data)
             return
-        except OperationalError as exc:
+        except OperationalError:
             # Auto retry on galera locking error
-            if exc.args[0] != 1213:
-                raise
-            else:
-                logger.warning(
-                    "Galera deadlock in gearman, retry {0}".format(x+1)
-                )
+            logger.warning(
+                "Galera deadlock in gearman, retry {0}".format(x+1)
+            )
         except:
             logger.exception("Gearman thread unhandled exception")
+
+    logger.error("Gearman thread could not talk to DB")
 
 
 class GearmanClientThread(object):

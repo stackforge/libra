@@ -104,21 +104,12 @@ def wsexpose(*args, **kwargs):
                         pecan.response.status = result.status_code
                         result = result.obj
 
-                except OperationalError as sqlexc:
+                except OperationalError:
                     logger = logging.getLogger(__name__)
-                    if sqlexc.args[0] == 1213:
-                        logger.warning(
-                            "Galera deadlock in gearman, retry {0}".format(x+1)
-                        )
-                        continue
-                    else:
-                        data = wsme.api.format_exception(
-                            sys.exc_info(),
-                            pecan.conf.get('wsme', {}).get('debug', False)
-                        )
-                        e = sys.exc_info()[1]
-                        pecan.response.status = 500
-                        return data
+                    logger.warning(
+                        "Galera deadlock in gearman, retry {0}".format(x+1)
+                    )
+                    continue
                 except:
                     data = wsme.api.format_exception(
                         sys.exc_info(),
@@ -137,6 +128,13 @@ def wsexpose(*args, **kwargs):
                     datatype=funcdef.return_type,
                     result=result
                 )
+            # After 5 retries of transaction, give up!
+            data = wsme.api.format_exception(
+                sys.exc_info(),
+                pecan.conf.get('wsme', {}).get('debug', False)
+            )
+            pecan.response.status = 500
+            return data
 
         pecan_xml_decorate(callfunction)
         pecan_json_decorate(callfunction)
