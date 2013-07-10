@@ -18,6 +18,7 @@ import logging
 from libra.common.json_gearman import JSONGearmanClient
 from libra.api.model.lbaas import LoadBalancer, db_session, Device
 from libra.api.model.lbaas import loadbalancers_devices
+from sqlalchemy.exc import OperationalError
 from pecan import conf
 
 
@@ -38,21 +39,28 @@ def submit_job(job_type, host, data, lbid):
 
 
 def client_job(logger, job_type, host, data, lbid):
-    try:
-        client = GearmanClientThread(logger, host, lbid)
-        logger.info(
-            "Sending Gearman job {0} to {1} for loadbalancer {2}".format(
-                job_type, host, lbid
+    for x in xrange(5):
+        try:
+            client = GearmanClientThread(logger, host, lbid)
+            logger.info(
+                "Sending Gearman job {0} to {1} for loadbalancer {2}".format(
+                    job_type, host, lbid
+                )
             )
-        )
-        if job_type == 'UPDATE':
-            client.send_update(data)
-        if job_type == 'DELETE':
-            client.send_delete(data)
-        if job_type == 'ARCHIVE':
-            client.send_archive(data)
-    except:
-        logger.exception("Gearman thread unhandled exception")
+            if job_type == 'UPDATE':
+                client.send_update(data)
+            if job_type == 'DELETE':
+                client.send_delete(data)
+            if job_type == 'ARCHIVE':
+                client.send_archive(data)
+            return
+        except OperationalError as exc:
+            # Auto retry on galera locking error
+            logger.warning("Galera deadlock in gearman, retry {0}".format(x+1))
+            if exc.args[0] != 1213:
+                raise
+        except:
+            logger.exception("Gearman thread unhandled exception")
 
 
 class GearmanClientThread(object):

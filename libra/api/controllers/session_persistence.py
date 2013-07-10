@@ -14,10 +14,10 @@
 # under the License.
 
 from pecan import response
-from pecan.rest import RestController
+from libra.api.library.libra_rest_controller import LibraController
 
 
-class SessionPersistenceController(RestController):
+class SessionPersistenceController(LibraController):
     """SessionPersistenceController
     functions for /loadbalancers/{loadBalancerId}/sessionpersistence/* routing
     """

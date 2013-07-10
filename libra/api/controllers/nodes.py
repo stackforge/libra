@@ -14,11 +14,11 @@
 # under the License.
 
 from pecan import expose, response, request, abort
-from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
 #default response objects
+from libra.api.library.libra_rest_controller import LibraController
 from libra.api.model.lbaas import LoadBalancer, Node, db_session, Limits
 from libra.api.model.lbaas import Device
 from libra.api.acl import get_limited_to_project
@@ -30,7 +30,7 @@ from libra.api.library.ip_filter import ipfilter
 from pecan import conf
 
 
-class NodesController(RestController):
+class NodesController(LibraController):
     """Functions for /loadbalancers/{load_balancer_id}/nodes/* routing"""
     def __init__(self, lbid, nodeid=None):
         self.lbid = lbid

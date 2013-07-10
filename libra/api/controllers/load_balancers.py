@@ -15,7 +15,6 @@
 import logging
 # pecan imports
 from pecan import expose, abort, response, request
-from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError, InvalidInput
 from wsme import Unset
@@ -32,11 +31,12 @@ from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange
 from libra.api.library.ip_filter import ipfilter
+from libra.api.library.libra_rest_controller import LibraController
 from pecan import conf
 from sqlalchemy import func
 
 
-class LoadBalancersController(RestController):
+class LoadBalancersController(LibraController):
     def __init__(self, lbid=None):
         self.lbid = lbid
 
