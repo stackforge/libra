@@ -341,43 +341,36 @@ class LoadBalancersController(RestController):
 
             session.flush()
 
-            try:
-                return_data = LBResp()
-                return_data.id = str(lb.id)
-                return_data.name = lb.name
-                return_data.protocol = lb.protocol
-                return_data.port = str(lb.port)
-                return_data.algorithm = lb.algorithm
-                return_data.status = lb.status
-                return_data.created = lb.created
-                return_data.updated = lb.updated
-                vip_resp = LBVipResp(
-                    address=device.floatingIpAddr, id=str(device.id),
-                    type='PUBLIC', ipVersion='IPV4'
+            return_data = LBResp()
+            return_data.id = str(lb.id)
+            return_data.name = lb.name
+            return_data.protocol = lb.protocol
+            return_data.port = str(lb.port)
+            return_data.algorithm = lb.algorithm
+            return_data.status = lb.status
+            return_data.created = lb.created
+            return_data.updated = lb.updated
+            vip_resp = LBVipResp(
+                address=device.floatingIpAddr, id=str(device.id),
+                type='PUBLIC', ipVersion='IPV4'
+            )
+            return_data.virtualIps = [vip_resp]
+            return_data.nodes = []
+            for node in body.nodes:
+                out_node = LBRespNode(
+                    port=str(node.port), address=node.address,
+                    condition=node.condition
                 )
-                return_data.virtualIps = [vip_resp]
-                return_data.nodes = []
-                for node in body.nodes:
-                    out_node = LBRespNode(
-                        port=str(node.port), address=node.address,
-                        condition=node.condition
-                    )
-                    return_data.nodes.append(out_node)
-                session.commit()
-                # trigger gearman client to create new lb
-                result = submit_job(
-                    'UPDATE', device.name, device.id, lb.id
-                )
-                # do something with result
-                if result:
-                    pass
-                return return_data
-            except:
-                logger = logging.getLogger(__name__)
-                logger.exception('Error communicating with load balancer pool')
-                errstr = 'Error communicating with load balancer pool'
-                session.rollback()
-                raise ClientSideError(errstr)
+                return_data.nodes.append(out_node)
+            session.commit()
+            # trigger gearman client to create new lb
+            result = submit_job(
+                'UPDATE', device.name, device.id, lb.id
+            )
+            # do something with result
+            if result:
+                pass
+            return return_data
 
     @wsme_pecan.wsexpose(None, body=LBPut, status_code=202)
     def put(self, body=None):
@@ -448,28 +441,20 @@ class LoadBalancersController(RestController):
             if lb is None:
                 session.rollback()
                 raise ClientSideError("Load Balancer ID is not valid")
-            try:
-                session.query(Node).\
-                    filter(Node.lbid == load_balancer_id).delete()
-                lb.status = 'PENDING_DELETE'
-                device = session.query(
-                    Device.id, Device.name
-                ).join(LoadBalancer.devices).\
-                    filter(LoadBalancer.id == load_balancer_id).\
-                    first()
-                session.flush()
-                session.commit()
-                submit_job(
-                    'DELETE', device.name, device.id, lb.id
-                )
-                return None
-            except:
-                session.rollback()
-                logger = logging.getLogger(__name__)
-                logger.exception('Error communicating with load balancer pool')
-                raise RuntimeError(
-                    "Error communication with load balancer pool"
-                )
+            session.query(Node).\
+                filter(Node.lbid == load_balancer_id).delete()
+            lb.status = 'PENDING_DELETE'
+            device = session.query(
+                Device.id, Device.name
+            ).join(LoadBalancer.devices).\
+                filter(LoadBalancer.id == load_balancer_id).\
+                first()
+            session.flush()
+            session.commit()
+            submit_job(
+                'DELETE', device.name, device.id, lb.id
+            )
+            return None
 
     def usage(self, load_balancer_id):
         """List current and historical usage.
