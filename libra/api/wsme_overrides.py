@@ -27,7 +27,7 @@ import wsmeext.pecan
 import pecan
 from libra.api.library.exp import OverLimit
 from wsme.rest.json import tojson
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ResourceClosedError
 
 
 def format_exception(excinfo, debug=False):
@@ -106,7 +106,8 @@ def wsexpose(*args, **kwargs):
                         pecan.response.status = result.status_code
                         result = result.obj
 
-                except OperationalError:
+                # ResourceClosedError happens on for_update deadlock
+                except (OperationalError, ResourceClosedError):
                     logger = logging.getLogger(__name__)
                     logger.warning(
                         "Galera deadlock, retry {0}".format(x+1)
