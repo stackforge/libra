@@ -14,11 +14,11 @@
 # under the License.
 
 from pecan import expose, response, request, abort
+from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
 #default response objects
-from libra.api.library.libra_rest_controller import LibraController
 from libra.api.model.lbaas import LoadBalancer, Node, db_session, Limits
 from libra.api.model.lbaas import Device
 from libra.api.acl import get_limited_to_project
@@ -30,14 +30,14 @@ from libra.api.library.ip_filter import ipfilter
 from pecan import conf
 
 
-class NodesController(LibraController):
+class NodesController(RestController):
     """Functions for /loadbalancers/{load_balancer_id}/nodes/* routing"""
     def __init__(self, lbid, nodeid=None):
         self.lbid = lbid
         self.nodeid = nodeid
 
-    @expose('json')
-    def get(self, node_id=None):
+    @wsme_pecan.wsexpose(None)
+    def get(self):
         """List node(s) configured for the load balancer OR if
         node_id == None .. Retrieve the configuration of node {node_id} of
         loadbalancer {load_balancer_id}.
@@ -53,13 +53,9 @@ class NodesController(LibraController):
         tenant_id = get_limited_to_project(request.headers)
 
         if not self.lbid:
-            response.status = 400
-            return dict(
-                message='Bad Request',
-                details='Load Balancer ID not supplied'
-            )
+            raise ClientSideError('Load Balancer ID not supplied')
         with db_session() as session:
-            if not node_id:
+            if not self.nodeid:
                 nodes = session.query(
                     Node.id, Node.address, Node.port, Node.status, Node.enabled
                 ).join(LoadBalancer.nodes).\
@@ -84,15 +80,12 @@ class NodesController(LibraController):
                 ).join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == self.lbid).\
-                    filter(Node.id == node_id).\
+                    filter(Node.id == self.nodeid).\
                     first()
 
                 if node is None:
                     session.rollback()
-                    response.status = 400
-                    return dict(
-                        message='Bad Request', details='node not found'
-                    )
+                    raise ClientSideError('node not found')
 
                 node_response = node._asdict()
                 if node_response['enabled'] == 1:

@@ -14,10 +14,10 @@
 # under the License.
 
 from pecan import response
-from libra.api.library.libra_rest_controller import LibraController
+from pecan.rest import RestController
 
 
-class HealthMonitorController(LibraController):
+class HealthMonitorController(RestController):
     """functions for /loadbalancers/{loadBalancerId}/healthmonitor/* routing"""
 
     def get(self, load_balancer_id):
