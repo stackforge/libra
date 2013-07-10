@@ -89,6 +89,8 @@ def wsexpose(*args, **kwargs):
         @functools.wraps(f)
         def callfunction(self, *args, **kwargs):
             for x in xrange(5):
+                old_args = args
+                old_kwargs = kwargs
                 try:
                     args, kwargs = wsme.rest.args.get_args(
                         funcdef, args, kwargs, pecan.request.params, None,
@@ -107,8 +109,10 @@ def wsexpose(*args, **kwargs):
                 except OperationalError:
                     logger = logging.getLogger(__name__)
                     logger.warning(
-                        "Galera deadlock in gearman, retry {0}".format(x+1)
+                        "Galera deadlock, retry {0}".format(x+1)
                     )
+                    args = old_args
+                    kwargs = old_kwargs
                     continue
                 except:
                     data = wsme.api.format_exception(
