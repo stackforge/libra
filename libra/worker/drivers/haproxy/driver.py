@@ -74,11 +74,11 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    log global')
         output.append('    option dontlognull')
         output.append('    option redispatch')
-        output.append('    maxconn 2000')
+        output.append('    maxconn 50000')
         output.append('    retries 3')
-        output.append('    timeout connect 5000ms')
-        output.append('    timeout client 50000ms')
-        output.append('    timeout server 5000ms')
+        output.append('    timeout connect 30000ms')
+        output.append('    timeout client 30000ms')
+        output.append('    timeout server 30000ms')
 
         serv_num = 1
 
@@ -110,12 +110,27 @@ class HAProxyDriver(LoadBalancerDriver):
 
             # HTTP specific options for the backend
             if proto == 'http':
-                output.append('    cookie SERVERID rewrite')
+                output.append('    cookie SERVERID insert indirect')
+                output.append('    option httpchk')
+                output.append('    option httpclose')
+                output.append('    option forwardfor')
 
-            for (addr, port, weight) in protocfg['servers']:
-                output.append('    server server%d %s:%s weight %d' %
-                              (serv_num, addr, port, weight))
-                serv_num += 1
+                for (addr, port, weight) in protocfg['servers']:
+                    output.append('    server server%d %s:%s check '
+                                  'inter 30000 cookie %d weight %d' %
+                                  (serv_num, addr, port, serv_num, weight))
+                    serv_num += 1
+            # HTTPS (TCP) specific options for the backend
+            else:
+                output.append('    option ssl-hello-chk')
+                output.append('    stick-table type ip size 200k expire 30m')
+                output.append('    stick store-request src')
+                output.append('    stick match src')
+                for (addr, port, weight) in protocfg['servers']:
+                    output.append('    server server%d %s:%s check '
+                                  'inter 30000 weight %d' %
+                                  (serv_num, addr, port, weight))
+                    serv_num += 1
 
         return '\n'.join(output) + '\n'
 
