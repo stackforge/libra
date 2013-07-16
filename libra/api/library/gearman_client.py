@@ -75,7 +75,7 @@ class GearmanClientThread(object):
                 conf.gearman.ssl_ca]):
             # Use SSL connections to each Gearman job server.
             ssl_server_list = []
-            for server in conf.gearman:
+            for server in conf.gearman.server:
                 ghost, gport = server.split(':')
                 ssl_server_list.append({'host': ghost,
                                         'port': int(gport),
