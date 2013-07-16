@@ -29,7 +29,7 @@ class GearJobs(object):
             for server in args.server:
                 host, port = server.split(':')
                 ssl_server_list.append({'host': host,
-                                        'port': port,
+                                        'port': int(port),
                                         'keyfile': args.gearman_ssl_key,
                                         'certfile': args.gearman_ssl_cert,
                                         'ca_certs': args.gearman_ssl_ca})

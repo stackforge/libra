@@ -78,7 +78,7 @@ class GearmanClientThread(object):
             for server in conf.gearman:
                 ghost, gport = server.split(':')
                 ssl_server_list.append({'host': ghost,
-                                        'port': gport,
+                                        'port': int(gport),
                                         'keyfile': conf.gearman.ssl_key,
                                         'certfile': conf.gearman.ssl_cert,
                                         'ca_certs': conf.gearman.ssl_ca})

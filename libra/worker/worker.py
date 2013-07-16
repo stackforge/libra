@@ -68,7 +68,7 @@ def config_thread(logger, driver, args):
         for host_port in args.server:
             host, port = host_port.split(':')
             ssl_server_list.append({'host': host,
-                                    'port': port,
+                                    'port': int(port),
                                     'keyfile': args.gearman_ssl_key,
                                     'certfile': args.gearman_ssl_cert,
                                     'ca_certs': args.gearman_ssl_ca})
