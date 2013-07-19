@@ -123,7 +123,7 @@ def wsexpose(*args, **kwargs):
                     e = sys.exc_info()[1]
                     if isinstance(e, OverLimit):
                         pecan.response.status = 413
-                    if isinstance(e, NotFound):
+                    elif isinstance(e, NotFound):
                         pecan.response.status = 404
                     elif data['message'] == 'Bad Request':
                         pecan.response.status = 400
