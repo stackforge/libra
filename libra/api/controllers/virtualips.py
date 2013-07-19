@@ -50,9 +50,9 @@ class VipsController(RestController):
 
             if not device:
                 session.rollback()
-                response.status = 400
+                response.status = 404
                 return dict(
-                    message="Bad Request",
+                    message="Not Found",
                     details="Load Balancer ID not valid"
                 )
             resp = {

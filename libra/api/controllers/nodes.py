@@ -25,7 +25,7 @@ from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 from libra.api.model.validators import LBNodePut
 from libra.api.library.gearman_client import submit_job
-from libra.api.library.exp import OverLimit, IPOutOfRange
+from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
 
@@ -85,7 +85,7 @@ class NodesController(RestController):
 
                 if node is None:
                     session.rollback()
-                    raise ClientSideError('node not found')
+                    raise NotFound('node not found')
 
                 node_response = node._asdict()
                 if node_response['enabled'] == 1:
@@ -149,7 +149,7 @@ class NodesController(RestController):
                 first()
             if load_balancer is None:
                 session.rollback()
-                raise ClientSideError('Load Balancer not found')
+                raise NotFound('Load Balancer not found')
 
             load_balancer.status = 'PENDING_UPDATE'
             # check if we are over limit
@@ -215,7 +215,7 @@ class NodesController(RestController):
 
             if lb is None:
                 session.rollback()
-                raise ClientSideError('Load Balancer ID is not valid')
+                raise NotFound('Load Balancer ID is not valid')
 
             node = session.query(Node).\
                 filter(Node.lbid == self.lbid).\
@@ -223,7 +223,7 @@ class NodesController(RestController):
 
             if node is None:
                 session.rollback()
-                raise ClientSideError('Node ID is not valid')
+                raise NotFound('Node ID is not valid')
 
             nodecount = session.query(Node).\
                 filter(Node.lbid == self.lbid).\
@@ -277,7 +277,7 @@ class NodesController(RestController):
                 first()
             if load_balancer is None:
                 session.rollback()
-                raise ClientSideError("Load Balancer not found")
+                raise NotFound("Load Balancer not found")
             load_balancer.status = 'PENDING_UPDATE'
             nodecount = session.query(Node).\
                 filter(Node.lbid == self.lbid).\
@@ -294,7 +294,7 @@ class NodesController(RestController):
                 first()
             if not node:
                 session.rollback()
-                raise ClientSideError(
+                raise NotFound(
                     "Node not found in supplied Load Balancer"
                 )
             session.delete(node)

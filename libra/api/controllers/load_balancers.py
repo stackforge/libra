@@ -16,7 +16,7 @@
 from pecan import expose, abort, response, request
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
-from wsme.exc import ClientSideError, InvalidInput
+from wsme.exc import ClientSideError
 from wsme import Unset
 # other controllers
 from nodes import NodesController
@@ -29,7 +29,7 @@ from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
 from libra.api.library.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
-from libra.api.library.exp import OverLimit, IPOutOfRange
+from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
 from sqlalchemy import func
@@ -107,7 +107,7 @@ class LoadBalancersController(RestController):
 
                 if not load_balancers:
                     session.rollback()
-                    raise ClientSideError("Load Balancer ID not found")
+                    raise NotFound("Load Balancer ID not found")
 
                 load_balancers = load_balancers._asdict()
                 virtualIps = session.query(
@@ -257,9 +257,7 @@ class LoadBalancersController(RestController):
                     first()
                 if old_lb is None:
                     session.rollback()
-                    raise InvalidInput(
-                        'virtualIps', virtual_id, 'Invalid virtual IP provided'
-                    )
+                    raise NotFound('Invalid virtual IP provided')
 
                 if body.protocol == Unset or body.protocol.lower() == 'HTTP':
                     old_count = session.query(
@@ -386,7 +384,7 @@ class LoadBalancersController(RestController):
 
             if lb is None:
                 session.rollback()
-                raise ClientSideError('Load Balancer ID is not valid')
+                raise NotFound('Load Balancer ID is not valid')
 
             if body.name != Unset:
                 namelimit = session.query(Limits.value).\
@@ -439,7 +437,7 @@ class LoadBalancersController(RestController):
 
             if lb is None:
                 session.rollback()
-                raise ClientSideError("Load Balancer ID is not valid")
+                raise NotFound("Load Balancer ID is not valid")
             session.query(Node).\
                 filter(Node.lbid == load_balancer_id).delete()
             lb.status = 'PENDING_DELETE'
