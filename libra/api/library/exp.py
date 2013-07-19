@@ -21,6 +21,16 @@ class IPOutOfRange(Exception):
     pass
 
 
+class NotFound(ClientSideError):
+    def __init__(self, msg=''):
+        self.msg = msg
+        super(NotFound, self).__init__()
+
+    @property
+    def faultstring(self):
+        return _(six.u("NotFound: %s")) % (self.msg)
+
+
 class OverLimit(ClientSideError):
     def __init__(self, msg=''):
         self.msg = msg

@@ -25,7 +25,7 @@ import wsme.rest.json
 import wsme.rest.xml
 import wsmeext.pecan
 import pecan
-from libra.api.library.exp import OverLimit
+from libra.api.library.exp import OverLimit, NotFound
 from wsme.rest.json import tojson
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 
@@ -123,6 +123,8 @@ def wsexpose(*args, **kwargs):
                     e = sys.exc_info()[1]
                     if isinstance(e, OverLimit):
                         pecan.response.status = 413
+                    if isinstance(e, NotFound):
+                        pecan.response.status = 404
                     elif data['message'] == 'Bad Request':
                         pecan.response.status = 400
                     else:
