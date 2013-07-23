@@ -48,3 +48,44 @@ class HAProxyQuery(object):
         list_results = results.split('\n')
         # TODO: Parse the results into a well defined format.
         return list_results
+
+    def show_stat(self, proxy_iid=-1, object_type=-1, server_id=-1):
+        """
+        Get and parse output from 'show status' command.
+
+        proxy_iid
+          Proxy ID (column 27 in CSV output). -1 for all.
+
+        object_type
+          Select the type of dumpable object. Values can be ORed.
+             -1 - everything
+              1 - backends
+              2 - frontents
+              4 - servers
+
+        server_id
+          Server ID (column 28 in CSV output?), or -1 for everything.
+        """
+        results = self._query('show stat %d %d %d'
+                              % (proxy_iid, object_type, server_id))
+        list_results = results.split('\n')
+        return list_results
+
+    def get_server_status(self, protocol):
+        """
+        Get status for each server for a protocol backend.
+        Return a list of tuples containing server name and status.
+        """
+
+        filter_string = protocol.lower() + "-servers"
+        results = self.show_stat(object_type=4)  # servers only
+
+        final_results = []
+        for line in results[1:]:
+            elements = line.split(',')
+            if elements[0] != filter_string:
+                next
+            else:
+                # 1 - server name, 17 - status
+                final_results.append((elements[1], elements[17]))
+        return final_results
