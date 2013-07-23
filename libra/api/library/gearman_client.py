@@ -121,8 +121,9 @@ class GearmanClientThread(object):
                         continue
                     condition = 'ENABLED'
                     node_data = {
-                        'port': node.port, 'address': node.address,
-                        'weight': node.weight, 'condition': condition
+                        'id': node.id, 'port': node.port,
+                        'address': node.address, 'weight': node.weight,
+                        'condition': condition
                     }
                     job_data['loadBalancers'][0]['nodes'].append(node_data)
             else:
@@ -220,8 +221,9 @@ class GearmanClientThread(object):
                         continue
                     condition = 'ENABLED'
                     node_data = {
-                        'port': node.port, 'address': node.address,
-                        'weight': node.weight, 'condition': condition
+                        'id': node.id, 'port': node.port,
+                        'address': node.address, 'weight': node.weight,
+                        'condition': condition
                     }
                     lb_data['nodes'].append(node_data)
                 job_data['loadBalancers'].append(lb_data)
