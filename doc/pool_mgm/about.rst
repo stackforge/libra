@@ -14,5 +14,5 @@ Design
 
 It is designed to probe the API server every X minutes (5 by default) to find
 out how many free nodes there are.  If this falls below a certain defined level
-the pool manager will spin up new nodes and supply the details of the to the
+the pool manager will spin up new nodes and supply their details to the
 API server.

@@ -167,8 +167,8 @@ LBaaS APIs.
 4.1 Authentication
 ~~~~~~~~~~~~~~~~~~
 
-The LBaaS API uses standard defined by OpenStack Keystone project and
-used by the for authentication. Please refer to the
+The LBaaS API uses standards defined by the OpenStack Keystone project
+for authentication. Please refer to the
 identity management system for more details on all authentication
 methods currently supported.
 
@@ -187,7 +187,7 @@ The LBaaS API currently only supports JSON data serialization formats
 for request and response bodies. The request format is specified using
 the 'Content-Type' header and is required for operations that have a
 request body. The response format should be specified in requests using
-the 'Accept'header. If no response format is specified, JSON is the
+the 'Accept' header. If no response format is specified, JSON is the
 default.
 
 4.4 Persistent Connections
@@ -257,8 +257,7 @@ all faults:*
 Tenant identifiers with LBaaS API URIs are not required. The tenant
 identifier is derived from the Openstack Keystone authentication token
 provided with each API call. This simplifies the REST URIs to only
-include the base URI and the resource. The tenant identifier is derived
-from the authentication token which is provided wi the API call. All
+include the base URI and the resource. All
 LBaaS calls behave in this manner.
 
 5. LBaaS API Resources and Methods
@@ -930,13 +929,13 @@ This operation returns the following attributes for each load balancer:
 
 **id :** Unique identifier for the load balancer
 
-**name :** Creator assigned name for the load balancer
+**name :** Creator-assigned name for the load balancer
 
-**algorithm :** Creator specified algoriothm for the load balancer
+**algorithm :** Creator-specified algorithm for the load balancer
 
-**protocol :** Creator specified protocol for the load balancer
+**protocol :** Creator-specified protocol for the load balancer
 
-**port :** Creator specified port for the load balancer
+**port :** Creator-specified port for the load balancer
 
 **status :** Current status, see section on load balancer status within
 load balancer create
@@ -1219,7 +1218,7 @@ HTTP, port set to 80 (or 443 if protocol is HTTPS), and assign a public
 IPV4 address to the loadbalancer. The default algorithm used is set to
 ROUND\_ROBIN.
 
-A load balancer name has a max length that can be queried when querying
+A load balancer name has a max length that can be determined by querying
 limits.
 
 Users may configure all documented features of the load balancer at
@@ -1472,7 +1471,7 @@ attributes:
 
 This operation does not return a response body.
 
-Note, The load balancer ID, status, port and protocol are immutable
+Note: The load balancer ID, status, port and protocol are immutable
 attributes and cannot be modified by the caller. Supplying an
 unsupported attribute will result in a 400 (badRequest) fault.
 
@@ -2106,7 +2105,7 @@ None.
 20.2 Description
 ~~~~~~~~~~~~~~~~
 
-Delete node for a load balancer. Note, A load balancer must have at
+Delete node for a load balancer. Note: A load balancer must have at
 least one node. Attempting to remove the last node of a loadbalancer
 will result in a 401 error.
 

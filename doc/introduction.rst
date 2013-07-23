@@ -20,10 +20,10 @@ Layout
 .. image:: libralayout.png
 
 Here you can see that the pool manager spins up the required Nova nodes with
-the load balancer image.  It then hands the details of this node over the the
+the load balancer image.  It then hands the details of these nodes over to the
 Admin API server.
 
-The client sends an API request to the API server which in-turn sends the
+The client sends an API request to the API server, which in turn sends the
 configuration information to the worker on the load balancer node.  The worker
 has a plugin system to speak to multiple load balancer types but is currently
 designed to use HAProxy.

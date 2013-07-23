@@ -52,7 +52,7 @@ Global Section
 
 Common Command Line Options
 ---------------------------
-   These command line options are common to all libra utilities
+   These command line options are common to all libra utilities.
 
    .. option:: -c <FILE>, --config <FILE>
 
@@ -74,9 +74,10 @@ Common Command Line Options
 
    .. option:: -l <FILE>, --logfile <FILE>
 
-      Name of the log file. When running in daemon mode, the default log
-      file is */var/log/libra/libra_worker.log*. When not in daemon mode,
-      logging will go to STDOUT unless a log file is specified.
+      Name of the log file. When not in daemon mode, the logs go by
+      default to STDOUT. As a daemon, the default log file is
+      */var/run/libra/libra_name.log*, where "name" is the utility's
+      short name (like "api", "mgm", or "worker").
 
    .. option:: -n, --nodaemon
 
@@ -85,8 +86,9 @@ Common Command Line Options
 
    .. option:: -p <PID>, --pid <PID>
 
-      Name of the PID file to use. Default is:
-      */var/run/libra/libra_worker.pid*
+      Name of the PID file to use. The default is
+      */var/run/libra/libra_name.pid*, where "name" is the utility's
+      short name (like "api", "mgm", or "worker").
 
    .. option:: --syslog
 
