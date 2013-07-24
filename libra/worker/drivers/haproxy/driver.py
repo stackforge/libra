@@ -80,8 +80,6 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    timeout client 30000ms')
         output.append('    timeout server 30000ms')
 
-        serv_num = 1
-
         for proto in self._config:
             protocfg = self._config[proto]
 
@@ -114,18 +112,16 @@ class HAProxyDriver(LoadBalancerDriver):
                 output.append('    option httpclose')
                 output.append('    option forwardfor')
 
-                for (addr, port, weight) in protocfg['servers']:
-                    output.append('    server server%d %s:%s check '
-                                  'inter 30000 cookie %d weight %d' %
-                                  (serv_num, addr, port, serv_num, weight))
-                    serv_num += 1
+                for (node_id, addr, port, weight) in protocfg['servers']:
+                    output.append('    server id-%s %s:%s check '
+                                  'inter 30000 cookie id-%s weight %d' %
+                                  (node_id, addr, port, node_id, weight))
             # HTTPS (TCP) specific options for the backend
             else:
-                for (addr, port, weight) in protocfg['servers']:
-                    output.append('    server server%d %s:%s check '
+                for (node_id, addr, port, weight) in protocfg['servers']:
+                    output.append('    server id-%s %s:%s check '
                                   'inter 30000 weight %d' %
-                                  (serv_num, addr, port, weight))
-                    serv_num += 1
+                                  (node_id, addr, port, weight))
 
         return '\n'.join(output) + '\n'
 
@@ -237,7 +233,7 @@ class HAProxyDriver(LoadBalancerDriver):
         else:
             self._bind(proto, '0.0.0.0', port)
 
-    def add_server(self, protocol, host, port, weight=1):
+    def add_server(self, protocol, node_id, host, port, weight=1):
         proto = protocol.lower()
         if weight is None:
             weight = 1
@@ -252,7 +248,7 @@ class HAProxyDriver(LoadBalancerDriver):
 
         if 'servers' not in self._config[proto]:
             self._config[proto]['servers'] = []
-        self._config[proto]['servers'].append((host, port, weight))
+        self._config[proto]['servers'].append((node_id, host, port, weight))
 
     def set_algorithm(self, protocol, algo):
         proto = protocol.lower()

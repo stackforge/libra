@@ -35,14 +35,14 @@ class TestHAProxyDriver(testtools.TestCase):
         """ Test the HAProxy add_server() method """
         proto = 'http'
         self.driver.add_protocol(proto, None)
-        self.driver.add_server(proto, '1.2.3.4', 7777)
-        self.driver.add_server(proto, '5.6.7.8', 8888)
+        self.driver.add_server(proto, 100, '1.2.3.4', 7777)
+        self.driver.add_server(proto, 101, '5.6.7.8', 8888)
         self.assertIn(proto, self.driver._config)
         self.assertIn('servers', self.driver._config[proto])
         servers = self.driver._config[proto]['servers']
         self.assertEqual(len(servers), 2)
-        self.assertEqual(servers[0], ('1.2.3.4', 7777, 1))
-        self.assertEqual(servers[1], ('5.6.7.8', 8888, 1))
+        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 1))
+        self.assertEqual(servers[1], (101, '5.6.7.8', 8888, 1))
 
     def testSetAlgorithm(self):
         """ Test the HAProxy set_algorithm() method """
@@ -61,30 +61,30 @@ class TestHAProxyDriver(testtools.TestCase):
         """ Test setting integer server weights """
         proto = 'http'
         self.driver.add_protocol(proto, None)
-        self.driver.add_server(proto, '1.2.3.4', 7777, 10)
+        self.driver.add_server(proto, 100, '1.2.3.4', 7777, 10)
         servers = self.driver._config[proto]['servers']
         self.assertEqual(len(servers), 1)
-        self.assertEqual(servers[0], ('1.2.3.4', 7777, 10))
+        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 10))
 
     def testServerWeightStr(self):
         """ Test setting string server weights """
         proto = 'http'
         self.driver.add_protocol(proto, None)
-        self.driver.add_server(proto, '1.2.3.4', 7777, "20")
+        self.driver.add_server(proto, 100, '1.2.3.4', 7777, "20")
         servers = self.driver._config[proto]['servers']
         self.assertEqual(len(servers), 1)
-        self.assertEqual(servers[0], ('1.2.3.4', 7777, 20))
+        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 20))
 
     def testServerWeightInvalid(self):
         """ Test setting string server weights """
         proto = 'http'
         self.driver.add_protocol(proto, None)
         e = self.assertRaises(Exception, self.driver.add_server,
-                              proto, '1.2.3.4', 7777, 257)
+                              proto, 100, '1.2.3.4', 7777, 257)
         self.assertEqual("Server 'weight' 257 exceeds max of 256", e.message)
 
         e = self.assertRaises(Exception, self.driver.add_server,
-                              proto, '1.2.3.4', 7777, "abc")
+                              proto, 100, '1.2.3.4', 7777, "abc")
         self.assertEqual("Non-integer 'weight' value: 'abc'", e.message)
 
     def testArchive(self):

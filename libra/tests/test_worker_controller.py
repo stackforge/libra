@@ -44,6 +44,7 @@ class TestWorkerController(testtools.TestCase):
                     'protocol': 'http',
                     'nodes': [
                         {
+                            'id': 1234,
                             'address': '10.0.0.1',
                             'port': 80
                         }
@@ -83,28 +84,12 @@ class TestWorkerController(testtools.TestCase):
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
-    def testCreateMissingLBs(self):
-        msg = {
-            c.ACTION_FIELD: 'UPDATE'
-        }
-        controller = c(self.logger, self.driver, msg)
-        response = controller.run()
-        self.assertIn('badRequest', response)
-
-    def testCreateMissingNodes(self):
-        msg = {
-            c.ACTION_FIELD: 'UPDATE',
-            c.LBLIST_FIELD: [{'protocol': 'http'}]
-        }
-        controller = c(self.logger, self.driver, msg)
-        response = controller.run()
-        self.assertIn('badRequest', response)
-
-    def testCreateMissingProto(self):
+    def testUpdateMissingNodeID(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',
             c.LBLIST_FIELD: [
                 {
+                    'protocol': 'http',
                     'nodes': [
                         {
                             'address': '10.0.0.1',
@@ -117,6 +102,72 @@ class TestWorkerController(testtools.TestCase):
         controller = c(self.logger, self.driver, msg)
         response = controller.run()
         self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing node 'id'")
+
+    def testUpdateEmptyNodeID(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'id': '',
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ]
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing node 'id'")
+
+    def testUpdateMissingLBs(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE'
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing '%s' element" % c.LBLIST_FIELD)
+
+    def testUpdateMissingNodes(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [{'protocol': 'http'}]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing 'nodes' element")
+
+    def testUpdateMissingProto(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'nodes': [
+                        {
+                            'id': 1234,
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ]
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing required 'protocol' value.")
 
     def testBadAlgorithm(self):
         msg = {
@@ -127,6 +178,7 @@ class TestWorkerController(testtools.TestCase):
                     'algorithm': 'BOGUS',
                     'nodes': [
                         {
+                            'id': 1234,
                             'address': '10.0.0.1',
                             'port': 80
                         }
@@ -159,6 +211,8 @@ class TestWorkerController(testtools.TestCase):
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
         self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing '%s' element" % c.OBJ_STORE_TYPE_FIELD)
 
     def testArchiveInvalidMethod(self):
         msg = {
@@ -184,6 +238,9 @@ class TestWorkerController(testtools.TestCase):
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
         self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg,
+                          "Missing '%s' element" % c.OBJ_STORE_BASEPATH_FIELD)
 
         # Missing endpoint field
         msg = {
@@ -196,6 +253,9 @@ class TestWorkerController(testtools.TestCase):
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
         self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg,
+                          "Missing '%s' element" % c.OBJ_STORE_ENDPOINT_FIELD)
 
         # Missing token field
         msg = {
@@ -208,6 +268,9 @@ class TestWorkerController(testtools.TestCase):
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
         self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg,
+                          "Missing '%s' element" % c.OBJ_STORE_TOKEN_FIELD)
 
         # Missing load balancer field
         msg = {
@@ -220,6 +283,8 @@ class TestWorkerController(testtools.TestCase):
         controller = c(self.logger, null_driver, msg)
         response = controller.run()
         self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing '%s' element" % c.LBLIST_FIELD)
 
     def testArchiveNotImplemented(self):
         msg = {

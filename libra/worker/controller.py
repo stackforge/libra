@@ -173,23 +173,29 @@ class LBaaSController(object):
                 return self.msg
 
             for lb_node in current_lb['nodes']:
-                port, address, weight = None, None, None
+                port, address, node_id, weight = None, None, None, None
 
                 if 'port' in lb_node:
                     port = lb_node['port']
                 else:
-                    return BadRequest("Missing 'port' element.").to_json()
+                    return BadRequest("Missing node 'port'").to_json()
 
                 if 'address' in lb_node:
                     address = lb_node['address']
                 else:
-                    return BadRequest("Missing 'address' element.").to_json()
+                    return BadRequest("Missing node 'address'").to_json()
+
+                if 'id' in lb_node and lb_node['id'] != '':
+                    node_id = lb_node['id']
+                else:
+                    return BadRequest("Missing node 'id'").to_json()
 
                 if 'weight' in lb_node:
                     weight = lb_node['weight']
 
                 try:
                     self.driver.add_server(current_lb['protocol'],
+                                           node_id,
                                            address,
                                            port,
                                            weight)
