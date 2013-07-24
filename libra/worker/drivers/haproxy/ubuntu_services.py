@@ -130,7 +130,7 @@ class UbuntuServices(ServicesBase):
         self.sudo_rm(self._config_file)
         self.sudo_rm(self._backup_config)
 
-    def get_stats(self, protocol):
+    def get_stats(self, protocol=None):
         """
         Query HAProxy socket for stats on the given protocol.
 
@@ -155,8 +155,8 @@ class UbuntuServices(ServicesBase):
         stats = LBStatistics()
         query = HAProxyQuery('/var/run/haproxy-stats.socket')
 
-        # TODO: Do something with the returned results. For now, we are
-        # basically just treating this as a 'ping' to the process.
-        query.show_info()
+        node_status_list = query.get_server_status(protocol)
+        for node, status in node_status_list:
+            stats.add_node_status(node, status)
 
         return stats

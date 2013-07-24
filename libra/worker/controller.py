@@ -50,7 +50,6 @@ class LBaaSController(object):
             return self.msg
 
         action = self.msg[self.ACTION_FIELD].upper()
-        self.logger.info("Requested action: %s" % action)
 
         try:
             if action == 'UPDATE':
@@ -353,7 +352,7 @@ class LBaaSController(object):
 
         try:
             # TODO: Do something with the returned statistics
-            self.driver.get_stats(protocol=None)
+            stats = self.driver.get_stats()
         except NotImplementedError:
             error = "Selected driver does not support STATS action."
             self.logger.error(error)
@@ -368,5 +367,11 @@ class LBaaSController(object):
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
         else:
+            node_status = stats.node_status_map()
+            self.msg['nodes'] = []
+            for node in node_status.keys():
+                self.msg['nodes'].append({'id': node,
+                                          'status': node_status[node]})
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
+
         return self.msg

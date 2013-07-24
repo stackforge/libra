@@ -22,6 +22,7 @@ class LBStatistics(object):
         self.stats = {}
         self.bytes_out = 0L
         self.bytes_in = 0L
+        self.nodes = dict()
         self.utc_timestamp = datetime.datetime.utcnow()
 
     @property
@@ -54,3 +55,10 @@ class LBStatistics(object):
         if not isinstance(value, datetime.datetime):
             raise TypeError("Must be a datetime.datetime: '%s'" % value)
         self._utc_ts = value
+
+    def add_node_status(self, node, status):
+        self.nodes[node] = status
+
+    def node_status_map(self):
+        """ Return a dictionary, indexed by node ID, of the node status """
+        return self.nodes

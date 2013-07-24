@@ -278,7 +278,7 @@ class HAProxyDriver(LoadBalancerDriver):
         # restart, otherwise the log file will be kept open and not reappear.
         self.ossvc.syslog_restart()
 
-    def get_stats(self, protocol):
+    def get_stats(self, protocol=None):
         return self.ossvc.get_stats(protocol)
 
     def archive(self, method, params):

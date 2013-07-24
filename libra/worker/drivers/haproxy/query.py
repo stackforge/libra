@@ -71,21 +71,30 @@ class HAProxyQuery(object):
         list_results = results.split('\n')
         return list_results
 
-    def get_server_status(self, protocol):
+    def get_server_status(self, protocol=None):
         """
         Get status for each server for a protocol backend.
         Return a list of tuples containing server name and status.
         """
 
-        filter_string = protocol.lower() + "-servers"
+        if protocol:
+            filter_string = protocol.lower() + "-servers"
+
         results = self.show_stat(object_type=4)  # servers only
 
         final_results = []
         for line in results[1:]:
             elements = line.split(',')
-            if elements[0] != filter_string:
+            if protocol and elements[0] != filter_string:
                 next
             else:
                 # 1 - server name, 17 - status
-                final_results.append((elements[1], elements[17]))
+                # Here we look for the new server name form of "id-NNNN"
+                # where NNNN is the unique node ID. The old form could
+                # be "serverX", in which case we leave it alone.
+                if elements[1][0:3] == "id-":
+                    junk, node_id = elements[1].split('-')
+                else:
+                    node_id = elements[1]
+                final_results.append((node_id, elements[17]))
         return final_results
