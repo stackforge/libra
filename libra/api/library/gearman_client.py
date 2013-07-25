@@ -16,7 +16,7 @@ import eventlet
 eventlet.monkey_patch()
 import logging
 from libra.common.json_gearman import JSONGearmanClient
-from libra.api.model.lbaas import LoadBalancer, db_session, Device
+from libra.api.model.lbaas import LoadBalancer, db_session, Device, Node
 from libra.api.model.lbaas import loadbalancers_devices
 from sqlalchemy.exc import OperationalError
 from pecan import conf
@@ -135,20 +135,24 @@ class GearmanClientThread(object):
                 filter(LoadBalancer.id == self.lbid).\
                 first()
             if not status:
+                self.logger.error(
+                    "Failed Gearman delete for LB {0}".format(lb.id)
+                )
                 self._set_error(data, response, session)
-            else:
-                lb.status = 'DELETED'
-                if count == 0:
-                    # Device should never be used again
-                    device = session.query(Device).\
-                        filter(Device.id == data).first()
-                    #TODO: change this to 'DELETED' when pool mgm deletes
-                    if device.status != 'ERROR':
-                        device.status = 'OFFLINE'
-                # Remove LB-device join
-                session.execute(loadbalancers_devices.delete().where(
-                    loadbalancers_devices.c.loadbalancer == lb.id
-                ))
+            lb.status = 'DELETED'
+            if count == 0:
+                # Device should never be used again
+                device = session.query(Device).\
+                    filter(Device.id == data).first()
+                #TODO: change this to 'DELETED' when pool mgm deletes
+                if device.status != 'ERROR':
+                    device.status = 'OFFLINE'
+            # Remove LB-device join
+            session.execute(loadbalancers_devices.delete().where(
+                loadbalancers_devices.c.loadbalancer == lb.id
+            ))
+            session.query(Node).\
+                filter(Node.lbid == lb.id).delete()
             session.commit()
 
     def _set_error(self, device_id, errmsg, session):
