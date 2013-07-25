@@ -85,7 +85,7 @@ def config_thread(logger, driver, args):
 
     while (retry):
         try:
-            worker.work()
+            worker.work(args.gearman_poll)
         except KeyboardInterrupt:
             retry = False
         except gearman.errors.ServerUnavailable:

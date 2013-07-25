@@ -59,6 +59,11 @@ Command Line Options
       The number of seconds to sleep between statistics polling of the
       load balancer driver. Default is 300 seconds.
 
+  .. option:: --gearman-poll <SECONDS>
+
+      The number of seconds gearman will poll before re-shuffling it's 
+      connections. Default is 60 seconds.
+      
    .. option:: --syslog
 
       Send log events to syslog.
