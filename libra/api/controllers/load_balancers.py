@@ -32,7 +32,6 @@ from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
-from sqlalchemy import func
 from wsme import types as wtypes
 
 
@@ -79,16 +78,15 @@ class LoadBalancersController(RestController):
                         LoadBalancer.protocol,
                         LoadBalancer.port, LoadBalancer.algorithm,
                         LoadBalancer.status, LoadBalancer.created,
-                        LoadBalancer.updated,
-                        func.count(Node.id).label('nodeCount')
-                    ).join(LoadBalancer.nodes).\
-                        filter(LoadBalancer.tenantid == tenant_id).\
-                        filter(LoadBalancer.status != 'DELETED').\
-                        group_by(LoadBalancer).all()
+                        LoadBalancer.updated
+                    ).filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(LoadBalancer.status != 'DELETED').all()
                 load_balancers = {'loadBalancers': []}
 
                 for lb in lbs:
                     lb = lb._asdict()
+                    lb['nodeCount'] = session.query(Node).\
+                        filter(Node.lbid == lb['id']).count()
                     lb['id'] = str(lb['id'])
                     load_balancers['loadBalancers'].append(lb)
             else:
@@ -96,13 +94,10 @@ class LoadBalancersController(RestController):
                     LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                     LoadBalancer.port, LoadBalancer.algorithm,
                     LoadBalancer.status, LoadBalancer.created,
-                    LoadBalancer.updated, LoadBalancer.statusDescription,
-                    func.count(Node.id).label('nodeCount')
+                    LoadBalancer.updated, LoadBalancer.statusDescription
                 ).join(LoadBalancer.devices).\
-                    join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == self.lbid).\
-                    group_by(LoadBalancer).\
                     first()
 
                 if not load_balancers:
@@ -110,6 +105,8 @@ class LoadBalancersController(RestController):
                     raise NotFound("Load Balancer ID not found")
 
                 load_balancers = load_balancers._asdict()
+                load_balancers['nodeCount'] = session.query(Node).\
+                    filter(Node.lbid == load_balancers['id']).count()
                 virtualIps = session.query(
                     Device.id, Device.floatingIpAddr
                 ).join(LoadBalancer.devices).\
@@ -438,8 +435,6 @@ class LoadBalancersController(RestController):
             if lb is None:
                 session.rollback()
                 raise NotFound("Load Balancer ID is not valid")
-            session.query(Node).\
-                filter(Node.lbid == load_balancer_id).delete()
             lb.status = 'PENDING_DELETE'
             device = session.query(
                 Device.id, Device.name
