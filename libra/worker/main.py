@@ -101,6 +101,11 @@ def main():
         '--stats-poll', dest='stats_poll', type=int, metavar='TIME',
         default=300, help='statistics polling interval in seconds'
     )
+    options.parser.add_argument(
+        '--gearman-poll',
+        dest='gearman_poll', type=int, metavar='TIME',
+        default=60, help='Gearman worker polling timeout'
+    )
     args = options.run()
 
     if not args.server:
