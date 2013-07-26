@@ -12,9 +12,9 @@
 # License for the specific language governing permissions and limitations
 
 known_drivers = {
-    'dummy': 'libra.statsd.drivers.dummy.driver.DummyDriver',
-    'datadog': 'libra.statsd.drivers.datadog.driver.DatadogDriver',
-    'hp_rest': 'libra.statsd.drivers.hp_rest.driver.HPRestDriver'
+    'dummy': 'libra.admin_api.stats.drivers.dummy.driver.DummyDriver',
+    'datadog': 'libra.admin_api.stats.drivers.datadog.driver.DatadogDriver',
+    'database': 'libra.admin_api.stats.drivers.database.driver.DbDriver'
 }
 
 
