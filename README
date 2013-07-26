@@ -11,10 +11,6 @@ Tools
 
     Python daemon that manages a pool of Nova instances.
 
-  * libra_statsd
-
-    Python daemon to receive load balancer statistics from Libra workers.
-
   * libra_worker
 
     Python daemon that will receive messages from an API server via
