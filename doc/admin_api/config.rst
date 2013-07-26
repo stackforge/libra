@@ -54,3 +54,72 @@ Command Line Options
       The path for the SSL key file to be used for the frontend of the API
       server
 
+   .. option:: --gearman_ssl_ca <PATH>
+
+      The path for the Gearman SSL Certificate Authority.
+
+   .. option:: --gearman_ssl_cert <PATH>
+
+      The path for the Gearman SSL certificate.
+
+   .. option:: --gearman_ssl_key <PATH>
+
+      The path for the Gearman SSL key.
+
+   .. option:: --gearman <HOST:PORT>
+
+      Used to specify the Gearman job server hostname and port. This option
+      can be used multiple times to specify multiple job servers
+
+   .. option:: --stats_driver <DRIVER LIST>
+
+      The drivers to be used for alerting.  This option can be used multiple
+      times to specift multiple drivers.
+
+   .. option:: --stats_ping_timeout <PING_INTERVAL>
+
+      How often to run a ping check of load balancers (in seconds), default 60
+
+   .. option:: --stats_poll_timer <POLL_INTERVAL>
+
+      How long to wait until we consider the initial ping check failed and
+      send a second ping. Default is 5 seconds.
+
+   .. option:: --stats_poll_timeout_retry <POLL_INTERVAL>
+
+      How long to wait until we consider the second and final ping check
+      failed. Default is 30 seconds.
+
+   .. option:: --stats_repair_timer <REPAIR_INTERVAL>
+
+      How often to run a check to see if damaged load balancers had been
+      repaired (in seconds), default 180
+
+   .. option:: --number_of_servers <NUMBER_OF_SERVER>
+
+      The number of Admin API servers in the system.
+      Used to calculate which Admin API server should stats ping next
+
+   .. option:: --server_id <SERVER_ID>
+
+      The server ID of this server,  used to calculate which Admin API
+      server should stats ping next (start at 0)
+
+   .. option:: --datadog_api_key <KEY>
+
+      The API key to be used for the datadog driver
+
+   .. option:: --datadog_app_key <KEY>
+
+      The Application key to be used for the datadog driver
+
+   .. option:: --datadog_message_tail <TEXT>
+
+      Some text to add at the end of an alerting message such as a list of
+      users to alert (using @user@email.com format), used for the datadog
+      driver.
+
+   .. option:: --datadog_tags <TAGS>
+
+      A list of tags to be used for the datadog driver
+

@@ -23,6 +23,8 @@ import sys
 import os
 from libra.admin_api import config as api_config
 from libra.admin_api import model
+from libra.admin_api.stats.drivers.base import known_drivers
+from libra.openstack.common import importutils
 from libra.common.options import Options, setup_logging
 from eventlet import wsgi
 
@@ -41,6 +43,12 @@ def setup_app(pecan_config, args):
         pecan_config = get_pecan_config()
     config = dict(pecan_config)
     config['database'] = args.db_sections
+    config['gearman'] = {
+        'server': args.gearman,
+        'ssl_key': args.gearman_ssl_key,
+        'ssl_cert': args.gearman_ssl_cert,
+        'ssl_ca': args.gearman_ssl_ca
+    }
     config['conffile'] = args.config
     if args.debug:
         config['wsme'] = {'debug': True}
@@ -93,8 +101,88 @@ def main():
         '--ssl_keyfile',
         help='Path to an SSL key file'
     )
+    options.parser.add_argument(
+        '--gearman', action='append', metavar='HOST:PORT', default=[],
+        help='Gearman job servers'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_ca', metavar='FILE',
+        help='Gearman SSL certificate authority'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_cert', metavar='FILE',
+        help='Gearman SSL certificate'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_key', metavar='FILE',
+        help='Gearman SSL key'
+    )
+    options.parser.add_argument(
+        '--stats_driver',
+        choices=known_drivers.keys(), default='dummy',
+        help='type of stats device to use'
+    )
+    options.parser.add_argument(
+        '--stats_ping_timer', type=int, default=60,
+        help='how often to ping load balancers (in seconds)'
+    )
+    options.parser.add_argument(
+        '--stats_poll_timeout', type=int, default=5,
+        help='gearman timeout value for initial ping request (in seconds)'
+    )
+    options.parser.add_argument(
+        '--stats_poll_timeout_retry', type=int, default=30,
+        help='gearman timeout value for retry ping request (in seconds)'
+    )
+    options.parser.add_argument(
+        '--stats_repair_timer', type=int, default=180,
+        help='how often to check if a load balancer has been repaired (in '
+             'seconds)'
+    )
+    options.parser.add_argument(
+        '--number_of_servers', type=int, default=1,
+        help='number of Admin API servers, used to calculate which Admin API '
+             'server should stats ping next'
+    )
+    options.parser.add_argument(
+        '--server_id', type=int, default=0,
+        help='server ID of this server,  used to calculate which Admin API '
+             'server should stats ping next (start at 0)'
+    )
+    # Datadog plugin options
+    options.parser.add_argument(
+        '--datadog_api_key', help='API key for datadog alerting'
+    )
+    options.parser.add_argument(
+        '--datadog_app_key', help='Application key for datadog alerting'
+    )
+    options.parser.add_argument(
+        '--datadog_message_tail',
+        help='Text to add at the end of a Datadog alert'
+    )
+    options.parser.add_argument(
+        '--datadog_tags',
+        help='A space separated list of tags for Datadog alerts'
+    )
+    options.parser.add_argument(
+        '--datadog_env', default='unknown',
+        help='Server enironment'
+    )
 
     args = options.run()
+
+    drivers = []
+
+    if not args.gearman:
+        # NOTE(shrews): Can't set a default in argparse method because the
+        # value is appended to the specified default.
+        args.gearman.append('localhost:4730')
+    elif not isinstance(args.gearman, list):
+        # NOTE(shrews): The Options object cannot intelligently handle
+        # creating a list from an option that may have multiple values.
+        # We convert it to the expected type here.
+        svr_list = args.gearman.split()
+        args.gearman = svr_list
 
     required_args = ['db_sections', 'ssl_certfile', 'ssl_keyfile']
 
@@ -132,6 +220,15 @@ def main():
     logger = setup_logging('', args)
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
+    if not isinstance(args.stats_driver, list):
+        args.stats_driver = args.stats_driver.split()
+    for driver in args.stats_driver:
+        drivers.append(importutils.import_class(
+            known_drivers[driver]
+        ))
+    # Include this here so that the DB model doesn't cry
+    from libra.admin_api.stats.scheduler import Stats
+    Stats(logger, args, drivers)
     sys.stderr = LogStdout(logger)
     # TODO: set ca_certs and cert_reqs=CERT_REQUIRED
     ssl_sock = eventlet.wrap_ssl(
