@@ -19,14 +19,14 @@ from libra.common.json_gearman import JSONGearmanClient
 class GearJobs(object):
     def __init__(self, logger, args):
         self.logger = logger
-        self.poll_timeout = args.poll_timeout
-        self.poll_timeout_retry = args.poll_timeout_retry
+        self.poll_timeout = args.stats_poll_timeout
+        self.poll_timeout_retry = args.stats_poll_timeout_retry
 
         if all([args.gearman_ssl_ca, args.gearman_ssl_cert,
                 args.gearman_ssl_key]):
             # Use SSL connections to each Gearman job server.
             ssl_server_list = []
-            for server in args.server:
+            for server in args.gearman:
                 host, port = server.split(':')
                 ssl_server_list.append({'host': host,
                                         'port': int(port),
@@ -35,7 +35,7 @@ class GearJobs(object):
                                         'ca_certs': args.gearman_ssl_ca})
             self.gm_client = JSONGearmanClient(ssl_server_list)
         else:
-            self.gm_client = JSONGearmanClient(args.server)
+            self.gm_client = JSONGearmanClient(args.gearman)
 
     def send_pings(self, node_list):
         # TODO: lots of duplicated code that needs cleanup

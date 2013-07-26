@@ -24,38 +24,6 @@ from pecan import conf
 import logging
 
 
-config = ConfigParser.SafeConfigParser()
-config.read([conf.conffile])
-engines = []
-for section in conf.database:
-    db_conf = config._sections[section]
-
-    conn_string = '''mysql://%s:%s@%s:%d/%s''' % (
-        db_conf['username'],
-        db_conf['password'],
-        db_conf['host'],
-        db_conf.get('port', 3306),
-        db_conf['schema']
-    )
-
-    if 'ssl_key' in db_conf:
-        ssl_args = {'ssl': {
-            'cert': db_conf['ssl_cert'],
-            'key': db_conf['ssl_key'],
-            'ca': db_conf['ssl_ca']
-        }}
-
-        engine = create_engine(
-            conn_string, isolation_level="READ COMMITTED", pool_size=20,
-            connect_args=ssl_args, pool_recycle=3600
-        )
-    else:
-        engine = create_engine(
-            conn_string, isolation_level="READ COMMITTED", pool_size=20,
-            pool_recycle=3600
-        )
-    engines.append(engine)
-
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
 
@@ -145,20 +113,56 @@ class RoutingSession(Session):
         with deadlocks in Galera, see http://tinyurl.com/9h6qlly
         switch engines every 60 seconds of idle time """
 
+    engines = []
     last_engine = None
     last_engine_time = 0
 
     def get_bind(self, mapper=None, clause=None):
+        if not RoutingSession.engines:
+            self._build_engines()
+
         if (
             RoutingSession.last_engine
             and time.time() < RoutingSession.last_engine_time + 60
         ):
             RoutingSession.last_engine_time = time.time()
             return RoutingSession.last_engine
-        engine = random.choice(engines)
+        engine = random.choice(RoutingSession.engines)
         RoutingSession.last_engine = engine
         RoutingSession.last_engine_time = time.time()
         return engine
+
+    def _build_engines(self):
+        config = ConfigParser.SafeConfigParser()
+        config.read([conf.conffile])
+        for section in conf.database:
+            db_conf = config._sections[section]
+
+            conn_string = '''mysql://%s:%s@%s:%d/%s''' % (
+                db_conf['username'],
+                db_conf['password'],
+                db_conf['host'],
+                db_conf.get('port', 3306),
+                db_conf['schema']
+            )
+
+            if 'ssl_key' in db_conf:
+                ssl_args = {'ssl': {
+                    'cert': db_conf['ssl_cert'],
+                    'key': db_conf['ssl_key'],
+                    'ca': db_conf['ssl_ca']
+                }}
+
+                engine = create_engine(
+                    conn_string, isolation_level="READ COMMITTED",
+                    pool_size=20, connect_args=ssl_args, pool_recycle=3600
+                )
+            else:
+                engine = create_engine(
+                    conn_string, isolation_level="READ COMMITTED",
+                    pool_size=20, pool_recycle=3600
+                )
+            RoutingSession.engines.append(engine)
 
 
 class db_session(object):

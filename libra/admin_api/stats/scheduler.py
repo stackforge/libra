@@ -15,16 +15,16 @@
 import threading
 import signal
 import sys
-
-from libra.statsd.admin_api import AdminAPI
-from libra.statsd.statsd_gearman import GearJobs
+from datetime import datetime
+from libra.admin_api.model.lbaas import LoadBalancer, Device, db_session
+from libra.admin_api.stats.stats_gearman import GearJobs
 
 
 class NodeNotFound(Exception):
     pass
 
 
-class Sched(object):
+class Stats(object):
     def __init__(self, logger, args, drivers):
         self.logger = logger
         self.args = args
@@ -34,8 +34,8 @@ class Sched(object):
 
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
+        logger.info("Selected stats drivers: {0}".format(args.stats_driver))
 
-    def start(self):
         self.ping_lbs()
         self.repair_lbs()
 
@@ -58,6 +58,12 @@ class Sched(object):
             sys.exit(1)
 
     def repair_lbs(self):
+        # Work out if it is our turn to run
+        minute = datetime.now().minute
+        if self.args.server_id != minute % self.args.number_of_servers:
+            self.logger.info('Not our turn to run ping check, sleeping')
+            self.start_repair_sched()
+            return
         tested = 0
         repaired = 0
         try:
@@ -70,6 +76,12 @@ class Sched(object):
         self.start_repair_sched()
 
     def ping_lbs(self):
+        # Work out if it is our turn to run
+        minute = datetime.now().minute
+        if self.args.server_id != minute % self.args.number_of_servers:
+            self.logger.info('Not our turn to run ping check, sleeping')
+            self.start_ping_sched()
+            return
         pings = 0
         failed = 0
         try:
@@ -86,24 +98,22 @@ class Sched(object):
         failed = 0
         node_list = []
         self.logger.info('Running ping check')
-        api = AdminAPI(self.args.api_server, self.logger)
-        if api.is_online():
-            lb_list = api.get_ping_list()
-            pings = len(lb_list)
+        with db_session() as session:
+            devices = session.query(
+                Device.id, Device.name
+            ).filter(Device.status == 'ONLINE').all()
+            pings = len(devices)
             if pings == 0:
                 self.logger.info('No LBs to ping')
                 return (0, 0)
-            for lb in lb_list:
-                node_list.append(lb['name'])
+            for lb in devices:
+                node_list.append(lb.name)
             gearman = GearJobs(self.logger, self.args)
             failed_nodes = gearman.send_pings(node_list)
             failed = len(failed_nodes)
             if failed > 0:
-                self._send_fails(failed_nodes, lb_list)
-        else:
-            self.logger.error('No working API server found')
-            return (0, 0)
-
+                self._send_fails(failed_nodes, session)
+            session.commit()
         return pings, failed
 
     def _exec_repair(self):
@@ -111,33 +121,32 @@ class Sched(object):
         repaired = 0
         node_list = []
         self.logger.info('Running repair check')
-        api = AdminAPI(self.args.api_server, self.logger)
-        if api.is_online():
-            lb_list = api.get_repair_list()
-            tested = len(lb_list)
+        with db_session() as session:
+            devices = session.query(
+                Device.id, Device.name
+            ).filter(Device.status == 'ERROR').all()
+
+            tested = len(devices)
             if tested == 0:
                 self.logger.info('No LBs need repair')
                 return (0, 0)
-            for lb in lb_list:
-                node_list.append(lb['name'])
+            for lb in devices:
+                node_list.append(lb.name)
             gearman = GearJobs(self.logger, self.args)
             repaired_nodes = gearman.send_repair(node_list)
             repaired = len(repaired_nodes)
             if repaired > 0:
-                self._send_repair(repaired_nodes, lb_list)
-        else:
-            self.logger.error('No working API server found')
-            return (0, 0)
-
+                self._send_repair(repaired_nodes, session)
+            session.commit()
         return tested, repaired
 
-    def _send_fails(self, failed_nodes, node_list):
+    def _send_fails(self, failed_nodes, session):
         for node in failed_nodes:
-            data = self._get_node(node, node_list)
-            if not len(data['loadBalancers']):
+            data = self._get_node(node, session)
+            if not data:
                 self.logger.error(
                     'Device {0} has no Loadbalancer attached'.
-                    format(data['id'])
+                    format(data.id)
                 )
                 continue
             message = (
@@ -145,8 +154,8 @@ class Sched(object):
                 'ID: {0}\n'
                 'IP: {1}\n'
                 'tenant: {2}\n'.format(
-                    data['id'], data['floatingIpAddr'],
-                    data['loadBalancers'][0]['hpcs_tenantid']
+                    data.id, data.floatingIpAddr,
+                    data.tenantid
                 )
             )
             for driver in self.drivers:
@@ -156,18 +165,18 @@ class Sched(object):
                         node, instance.__class__.__name__
                     )
                 )
-                instance.send_alert(message, data['id'])
+                instance.send_alert(message, data.id)
 
-    def _send_repair(self, repaired_nodes, node_list):
+    def _send_repair(self, repaired_nodes, session):
         for node in repaired_nodes:
-            data = self._get_node(node, node_list)
+            data = self._get_node(node, session)
             message = (
                 'Load balancer repaired\n'
                 'ID: {0}\n'
                 'IP: {1}\n'
                 'tenant: {2}\n'.format(
-                    data['id'], data['floatingIpAddr'],
-                    data['loadBalancers'][0]['hpcs_tenantid']
+                    data.id, data.floatingIpAddr,
+                    data.tenantid
                 )
             )
             for driver in self.drivers:
@@ -177,25 +186,26 @@ class Sched(object):
                         node, instance.__class__.__name__
                     )
                 )
-                instance.send_repair(message, data['id'])
+                instance.send_repair(message, data.id)
 
-    def _get_node(self, node, node_list):
-        for n in node_list:
-            if n['name'] == node:
-                return n
+    def _get_node(self, node, session):
+        lb = session.query(
+            LoadBalancer.tenantid, Device.floatingIpAddr, Device.id
+        ).join(LoadBalancer.devices).\
+            filter(Device.name == node).first()
 
-        raise NodeNotFound
+        return lb
 
     def start_ping_sched(self):
         self.logger.info('LB ping check timer sleeping for {secs} seconds'
-                         .format(secs=self.args.ping_interval))
-        self.ping_timer = threading.Timer(self.args.ping_interval,
+                         .format(secs=self.args.stats_ping_timer))
+        self.ping_timer = threading.Timer(self.args.stats_ping_timer,
                                           self.ping_lbs, ())
         self.ping_timer.start()
 
     def start_repair_sched(self):
         self.logger.info('LB repair check timer sleeping for {secs} seconds'
-                         .format(secs=self.args.repair_interval))
-        self.repair_timer = threading.Timer(self.args.repair_interval,
+                         .format(secs=self.args.stats_repair_timer))
+        self.repair_timer = threading.Timer(self.args.stats_repair_timer,
                                             self.repair_lbs, ())
         self.repair_timer.start()

@@ -22,6 +22,7 @@ import pecan
 import sys
 import os
 import wsme_overrides
+from libra.api.library.expunge import ExpungeScheduler
 from libra.api import config as api_config
 from libra.api import model
 from libra.api import acl
@@ -214,8 +215,6 @@ def main():
     logger = setup_logging('', args)
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
-    # Include this here so that the DB model doesn't cry
-    from libra.api.library.expunge import ExpungeScheduler
     ExpungeScheduler(logger)
     sys.stderr = LogStdout(logger)
     ssl_sock = eventlet.wrap_ssl(
