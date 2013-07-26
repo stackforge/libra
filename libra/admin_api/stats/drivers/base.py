@@ -14,7 +14,7 @@
 known_drivers = {
     'dummy': 'libra.statsd.drivers.dummy.driver.DummyDriver',
     'datadog': 'libra.statsd.drivers.datadog.driver.DatadogDriver',
-    'hp_rest': 'libra.statsd.drivers.hp_rest.driver.HPRestDriver'
+    'database': 'libra.statsd.drivers.database.driver.DbDriver'
 }
 
 
