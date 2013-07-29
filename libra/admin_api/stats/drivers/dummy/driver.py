@@ -11,7 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 
-from libra.statsd.drivers.base import AlertDriver
+from libra.admin_api.stats.drivers.base import AlertDriver
 
 
 class DummyDriver(AlertDriver):
