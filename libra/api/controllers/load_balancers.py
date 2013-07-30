@@ -228,6 +228,24 @@ class LoadBalancersController(RestController):
             old_lb = None
             # if we don't have an id then we want to create a new lb
             lb = LoadBalancer()
+            lb.tenantid = tenant_id
+            lb.name = body.name
+            if body.protocol and body.protocol.lower() == 'tcp':
+                lb.protocol = 'TCP'
+            else:
+                lb.protocol = 'HTTP'
+
+            if body.port:
+                lb.port = body.port
+            else:
+                if lb.protocol == 'HTTP':
+                    lb.port = 80
+                else:
+                    lb.port = 443
+
+            lb.status = 'BUILD'
+            lb.created = None
+
             if body.virtualIps == Unset:
                 # find free device
                 # lock with "for update" so multiple APIs don't grab the same
@@ -256,56 +274,23 @@ class LoadBalancersController(RestController):
                     session.rollback()
                     raise NotFound('Invalid virtual IP provided')
 
-                if body.protocol == Unset or body.protocol.lower() == 'HTTP':
-                    old_count = session.query(
-                        LoadBalancer
-                    ).join(LoadBalancer.devices).\
-                        filter(LoadBalancer.tenantid == tenant_id).\
-                        filter(Device.id == virtual_id).\
-                        filter(LoadBalancer.protocol == 'HTTP').\
-                        count()
-                    if old_count:
-                        session.rollback()
-                        # Error here, can have only one HTTP
-                        raise ClientSideError(
-                            'Only one HTTP load balancer allowed per device'
-                        )
-                elif body.protocol.lower() == 'TCP':
-                    old_count = session.query(
-                        LoadBalancer
-                    ).join(LoadBalancer.devices).\
-                        filter(LoadBalancer.tenantid == tenant_id).\
-                        filter(Device.id == virtual_id).\
-                        filter(LoadBalancer.protocol == 'TCP').\
-                        count()
-                    if old_count:
-                        session.rollback()
-                        # Error here, can have only one TCP
-                        raise ClientSideError(
-                            'Only one TCP load balancer allowed per device'
-                        )
+                old_count = session.query(
+                    LoadBalancer
+                ).join(LoadBalancer.devices).\
+                    filter(LoadBalancer.tenantid == tenant_id).\
+                    filter(Device.id == virtual_id).\
+                    filter(LoadBalancer.port == lb.port).\
+                    count()
+                if old_count:
+                    session.rollback()
+                    # Error here, can have only one LB per port on a device
+                    raise ClientSideError(
+                        'Only one load balancer per port allowed per device'
+                    )
 
             if device is None:
                 session.rollback()
                 raise RuntimeError('No devices available')
-
-            lb.tenantid = tenant_id
-            lb.name = body.name
-            if body.protocol and body.protocol.lower() == 'tcp':
-                lb.protocol = 'TCP'
-            else:
-                lb.protocol = 'HTTP'
-
-            if body.port:
-                lb.port = body.port
-            else:
-                if lb.protocol == 'HTTP':
-                    lb.port = 80
-                else:
-                    lb.port = 443
-
-            lb.status = 'BUILD'
-            lb.created = None
 
             if body.algorithm:
                 lb.algorithm = body.algorithm.upper()
