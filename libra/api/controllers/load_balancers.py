@@ -308,9 +308,10 @@ class LoadBalancersController(RestController):
                     enabled = 0
                 else:
                     enabled = 1
+                node_status = 'ONLINE' if enabled else 'OFFLINE'
                 out_node = Node(
                     lbid=lb.id, port=node.port, address=node.address,
-                    enabled=enabled, status='ONLINE', weight=1
+                    enabled=enabled, status=node_status, weight=1
                 )
                 session.add(out_node)
 

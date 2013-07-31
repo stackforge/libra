@@ -46,3 +46,21 @@ class DbDriver(AlertDriver):
                 session.flush()
 
             session.commit()
+
+    def send_node_change(self, message, lbid, degraded):
+
+        with db_session() as session:
+            lb = session.query(LoadBalancer).\
+                filter(LoadBalancer.id == lbid).first()
+
+            if lb.status == 'ERROR':
+                lb_status = lb.status
+            else:
+                lb_status = 'DEGRADED' if degraded else 'ACTIVE'
+
+            session.query(LoadBalancer).\
+                filter(LoadBalancer.id == lbid).\
+                update({"status": lb_status, "errmsg": message},
+                       synchronize_session='fetch')
+
+            session.commit()
