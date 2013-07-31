@@ -96,5 +96,10 @@ class HAProxyQuery(object):
                     junk, node_id = elements[1].split('-')
                 else:
                     node_id = elements[1]
+
+                # All the way up is UP, otherwise call it DOWN
+                if elements[17] != "UP":
+                    elements[17] = "DOWN"
+
                 final_results.append((node_id, elements[17]))
         return final_results

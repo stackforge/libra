@@ -18,5 +18,8 @@ class DummyDriver(AlertDriver):
     def send_alert(self, message, device_id):
         self.logger.info('Dummy alert of: {0}'.format(message))
 
-    def send_repair(self, message, dervice_id):
+    def send_repair(self, message, device_id):
         self.logger.info('Dummy repair of: {0}'.format(message))
+
+    def send_node_change(self, message, lbid, degraded):
+        self.logger.info('Dummy node change of: {0}'.format(message))
