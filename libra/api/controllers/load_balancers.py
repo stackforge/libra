@@ -306,9 +306,10 @@ class LoadBalancersController(RestController):
             for node in body.nodes:
                 if node.condition == 'DISABLED':
                     enabled = 0
+                    node_status = 'OFFLINE'
                 else:
                     enabled = 1
-                node_status = 'ONLINE' if enabled else 'OFFLINE'
+                    node_status = 'ONLINE'
                 out_node = Node(
                     lbid=lb.id, port=node.port, address=node.address,
                     enabled=enabled, status=node_status, weight=1
