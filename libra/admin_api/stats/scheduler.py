@@ -209,6 +209,7 @@ class Stats(object):
         return lb
 
     def _update_nodes(self, node_status, session):
+        lbids = []
         for lb, nodes in node_status.iteritems():
             data = self._get_lb(lb, session)
             if not data:
@@ -216,11 +217,10 @@ class Stats(object):
                     'Device {0} has no Loadbalancer attached'.
                     format(lb)
                 )
-            continue
+                continue
 
             # Iterate the list of nodes returned from the worker
             # and track any status changes
-            lbids = []
             degraded = []
             failed_nodes = dict()
             repaired_nodes = dict()
@@ -231,26 +231,33 @@ class Stats(object):
 
                 # Note all degraded LBs
                 if (node['status'] == 'DOWN' and
-                        node.data.lbid not in degraded):
+                        node_data.lbid not in degraded):
                     degraded.append(node_data.lbid)
 
+                new_status = None
                 # Compare node status to the workers status
                 if (node['status'] == 'DOWN' and node_data.status == 'ONLINE'):
+                    new_status = 'ERROR'
+                    if node_data.lbid not in failed_nodes:
+                        failed_nodes[node_data.lbid] = []
                     failed_nodes[node_data.lbid].append(node['id'])
                 elif (node['status'] == 'UP' and node_data.status == 'ERROR'):
+                    new_status = 'ONLINE'
+                    if node_data.lbid not in repaired_nodes:
+                        repaired_nodes[node_data.lbid] = []
                     repaired_nodes[node_data.lbid].append(node['id'])
                 else:
                     # No change
                     continue
 
                 # Note all LBs with node status changes
-                if node.data.lbid not in lbids:
+                if node_data.lbid not in lbids:
                     lbids.append(node_data.lbid)
 
                 # Change the node status in the node table
                 session.query(Node).\
                     filter(Node.id == node['id']).\
-                    update({"status": node['status']},
+                    update({"status": new_status},
                            synchronize_session='fetch')
                 session.flush()
 
@@ -259,9 +266,9 @@ class Stats(object):
         # Generate a status message per LB for the alert.
         for lbid in lbids:
             message = 'Node status change\n\
-                    ID: {1}\n\
-                    IP: {2}\n\
-                    tenant: {3}:\n'.format(
+                    ID: {0}\n\
+                    IP: {1}\n\
+                    tenant: {2}:\n'.format(
                 lbid, data.floatingIpAddr, data.tenantid)
 
             if lbid in failed_nodes:
@@ -274,21 +281,25 @@ class Stats(object):
                 message += ','.join(str(x) for x in repaired_nodes[lbid])
 
             # Send the LB node change alert
+            if lbid in degraded:
+                is_degraded = True
+            else:
+                is_degraded = False
             for driver in self.drivers:
                 instance = driver(self.logger, self.args)
                 self.logger.info(
-                    'Sending failure of nodes on LB {0} to {1}'.format(
-                    node, instance.__class__.__name__))
+                    'Sending change of node status on LB {0} to {1}'.format(
+                        lbid, instance.__class__.__name__)
+                )
 
-                degraded = lbid in degraded
                 try:
-                    instance.send_node_change(message, lbid, degraded)
+                    instance.send_node_change(message, lbid, is_degraded)
                 except NotImplementedError:
                     pass
 
     def start_ping_sched(self):
         # Always try to hit the expected second mark for pings
-        seconds = datetime.now().seconds
+        seconds = datetime.now().second
         if seconds < self.PING_SECONDS:
             sleeptime = self.PING_SECONDS - seconds
         else:
@@ -301,7 +312,7 @@ class Stats(object):
 
     def start_repair_sched(self):
         # Always try to hit the expected second mark for repairs
-        seconds = datetime.now().seconds
+        seconds = datetime.now().second
         if seconds < self.REPAIR_SECONDS:
             sleeptime = self.REPAIR_SECONDS - seconds
         else:
