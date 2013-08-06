@@ -62,7 +62,7 @@ Command Line Options
    .. option:: --gearman-poll <SECONDS>
 
       The number of seconds gearman will poll before re-shuffling its 
-      connections. Default is 60 seconds.
+      connections. Default is 1 second.
       
    .. option:: --syslog
 
