@@ -104,7 +104,7 @@ def main():
     options.parser.add_argument(
         '--gearman-poll',
         dest='gearman_poll', type=int, metavar='TIME',
-        default=60, help='Gearman worker polling timeout'
+        default=1, help='Gearman worker polling timeout'
     )
     args = options.run()
 
