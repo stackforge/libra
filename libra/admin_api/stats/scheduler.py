@@ -16,7 +16,7 @@ import threading
 import signal
 import sys
 from datetime import datetime
-from libra.admin_api.model.lbaas import LoadBalancer, Device, db_session
+from libra.admin_api.model.lbaas import LoadBalancer, Device, Node, db_session
 from libra.admin_api.stats.stats_gearman import GearJobs
 
 
@@ -25,6 +25,10 @@ class NodeNotFound(Exception):
 
 
 class Stats(object):
+
+    PING_SECONDS = 15
+    REPAIR_SECONDS = 45
+
     def __init__(self, logger, args, drivers):
         self.logger = logger
         self.args = args
@@ -36,8 +40,8 @@ class Stats(object):
         signal.signal(signal.SIGTERM, self.exit_handler)
         logger.info("Selected stats drivers: {0}".format(args.stats_driver))
 
-        self.ping_lbs()
-        self.repair_lbs()
+        self.start_ping_sched()
+        self.start_repair_sched()
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -109,11 +113,15 @@ class Stats(object):
             for lb in devices:
                 node_list.append(lb.name)
             gearman = GearJobs(self.logger, self.args)
-            failed_nodes = gearman.send_pings(node_list)
-            failed = len(failed_nodes)
+            failed_lbs, node_status = gearman.send_pings(node_list)
+            failed = len(failed_lbs)
             if failed > 0:
-                self._send_fails(failed_nodes, session)
+                self._send_fails(failed_lbs, session)
             session.commit()
+
+            # Process node status after lb status
+            self._update_nodes(node_status, session)
+
         return pings, failed
 
     def _exec_repair(self):
@@ -133,16 +141,20 @@ class Stats(object):
             for lb in devices:
                 node_list.append(lb.name)
             gearman = GearJobs(self.logger, self.args)
-            repaired_nodes = gearman.send_repair(node_list)
-            repaired = len(repaired_nodes)
+            repaired_lbs, node_status = gearman.send_repair(node_list)
+            repaired = len(repaired_lbs)
             if repaired > 0:
-                self._send_repair(repaired_nodes, session)
+                self._send_repair(repaired_lbs, session)
             session.commit()
+
+            # Process node status after lb status
+            self._update_nodes(node_status, session)
+
         return tested, repaired
 
-    def _send_fails(self, failed_nodes, session):
-        for node in failed_nodes:
-            data = self._get_node(node, session)
+    def _send_fails(self, failed_lbs, session):
+        for lb in failed_lbs:
+            data = self._get_lb(lb, session)
             if not data:
                 self.logger.error(
                     'Device {0} has no Loadbalancer attached'.
@@ -162,14 +174,14 @@ class Stats(object):
                 instance = driver(self.logger, self.args)
                 self.logger.info(
                     'Sending failure of {0} to {1}'.format(
-                        node, instance.__class__.__name__
+                        lb, instance.__class__.__name__
                     )
                 )
                 instance.send_alert(message, data.id)
 
     def _send_repair(self, repaired_nodes, session):
-        for node in repaired_nodes:
-            data = self._get_node(node, session)
+        for lb in repaired_nodes:
+            data = self._get_lb(lb, session)
             message = (
                 'Load balancer repaired\n'
                 'ID: {0}\n'
@@ -183,29 +195,120 @@ class Stats(object):
                 instance = driver(self.logger, self.args)
                 self.logger.info(
                     'Sending repair of {0} to {1}'.format(
-                        node, instance.__class__.__name__
+                        lb, instance.__class__.__name__
                     )
                 )
                 instance.send_repair(message, data.id)
 
-    def _get_node(self, node, session):
+    def _get_lb(self, lb, session):
         lb = session.query(
             LoadBalancer.tenantid, Device.floatingIpAddr, Device.id
         ).join(LoadBalancer.devices).\
-            filter(Device.name == node).first()
+            filter(Device.name == lb).first()
 
         return lb
 
+    def _update_nodes(self, node_status, session):
+        for lb, nodes in node_status.iteritems():
+            data = self._get_lb(lb, session)
+            if not data:
+                self.logger.error(
+                    'Device {0} has no Loadbalancer attached'.
+                    format(lb)
+                )
+            continue
+
+            # Iterate the list of nodes returned from the worker
+            # and track any status changes
+            lbids = []
+            degraded = []
+            failed_nodes = dict()
+            repaired_nodes = dict()
+            for node in nodes:
+                # Get the last known status from the nodes table
+                node_data = session.query(Node).\
+                    filter(Node.id == node['id']).first()
+
+                # Note all degraded LBs
+                if (node['status'] == 'DOWN' and
+                        node.data.lbid not in degraded):
+                    degraded.append(node_data.lbid)
+
+                # Compare node status to the workers status
+                if (node['status'] == 'DOWN' and node_data.status == 'ONLINE'):
+                    failed_nodes[node_data.lbid].append(node['id'])
+                elif (node['status'] == 'UP' and node_data.status == 'ERROR'):
+                    repaired_nodes[node_data.lbid].append(node['id'])
+                else:
+                    # No change
+                    continue
+
+                # Note all LBs with node status changes
+                if node.data.lbid not in lbids:
+                    lbids.append(node_data.lbid)
+
+                # Change the node status in the node table
+                session.query(Node).\
+                    filter(Node.id == node['id']).\
+                    update({"status": node['status']},
+                           synchronize_session='fetch')
+                session.flush()
+
+            session.commit()
+
+        # Generate a status message per LB for the alert.
+        for lbid in lbids:
+            message = 'Node status change\n\
+                    ID: {1}\n\
+                    IP: {2}\n\
+                    tenant: {3}:\n'.format(
+                lbid, data.floatingIpAddr, data.tenantid)
+
+            if lbid in failed_nodes:
+                message += ' failed:'
+                message += ','.join(str(x) for x in failed_nodes[lbid])
+                message += '\n'
+
+            if lbid in repaired_nodes:
+                message += ' repaired: '
+                message += ','.join(str(x) for x in repaired_nodes[lbid])
+
+            # Send the LB node change alert
+            for driver in self.drivers:
+                instance = driver(self.logger, self.args)
+                self.logger.info(
+                    'Sending failure of nodes on LB {0} to {1}'.format(
+                        node, instance.__class__.__name__)
+                )
+
+                degraded = lbid in degraded
+                try:
+                    instance.send_node_change(message, lbid, degraded)
+                except NotImplementedError:
+                    pass
+
     def start_ping_sched(self):
+        # Always try to hit the expected second mark for pings
+        seconds = datetime.now().seconds
+        if seconds < self.PING_SECONDS:
+            sleeptime = self.PING_SECONDS - seconds
+        else:
+            sleeptime = 60 - (seconds - self.PING_SECONDS)
+
         self.logger.info('LB ping check timer sleeping for {secs} seconds'
-                         .format(secs=self.args.stats_ping_timer))
-        self.ping_timer = threading.Timer(self.args.stats_ping_timer,
-                                          self.ping_lbs, ())
+                         .format(secs=sleeptime))
+        self.ping_timer = threading.Timer(sleeptime, self.ping_lbs, ())
         self.ping_timer.start()
 
     def start_repair_sched(self):
+        # Always try to hit the expected second mark for repairs
+        seconds = datetime.now().seconds
+        if seconds < self.REPAIR_SECONDS:
+            sleeptime = self.REPAIR_SECONDS - seconds
+        else:
+            sleeptime = 60 - (seconds - self.REPAIR_SECONDS)
+
         self.logger.info('LB repair check timer sleeping for {secs} seconds'
-                         .format(secs=self.args.stats_repair_timer))
-        self.repair_timer = threading.Timer(self.args.stats_repair_timer,
-                                            self.repair_lbs, ())
+                         .format(secs=sleeptime))
+        self.repair_timer = threading.Timer(sleeptime, self.repair_lbs, ())
         self.repair_timer.start()

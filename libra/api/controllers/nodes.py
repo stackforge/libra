@@ -170,9 +170,10 @@ class NodesController(RestController):
                     enabled = 0
                 else:
                     enabled = 1
+                node_status = 'ONLINE' if enabled else 'OFFLINE'
                 new_node = Node(
                     lbid=self.lbid, port=node.port, address=node.address,
-                    enabled=enabled, status='ONLINE', weight=1
+                    enabled=enabled, status=node_status, weight=1
                 )
                 session.add(new_node)
                 session.flush()
@@ -184,7 +185,7 @@ class NodesController(RestController):
                     NodeResp(
                         id=new_node.id, port=new_node.port,
                         address=new_node.address, condition=condition,
-                        status='ONLINE'
+                        status=new_node.status
                     )
                 )
             device = session.query(
@@ -231,8 +232,10 @@ class NodesController(RestController):
             if body.condition != Unset:
                 if body.condition == 'DISABLED':
                     node.enabled = 0
+                    node.status = 'OFFLINE'
                 else:
                     node.enabled = 1
+                    node.status = 'ONLINE'
             if nodecount <= 1:
                 session.rollback()
                 raise ClientSideError(

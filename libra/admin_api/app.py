@@ -124,21 +124,12 @@ def main():
         help='type of stats device to use'
     )
     options.parser.add_argument(
-        '--stats_ping_timer', type=int, default=60,
-        help='how often to ping load balancers (in seconds)'
-    )
-    options.parser.add_argument(
         '--stats_poll_timeout', type=int, default=5,
         help='gearman timeout value for initial ping request (in seconds)'
     )
     options.parser.add_argument(
         '--stats_poll_timeout_retry', type=int, default=30,
         help='gearman timeout value for retry ping request (in seconds)'
-    )
-    options.parser.add_argument(
-        '--stats_repair_timer', type=int, default=180,
-        help='how often to check if a load balancer has been repaired (in '
-             'seconds)'
     )
     options.parser.add_argument(
         '--number_of_servers', type=int, default=1,

@@ -41,6 +41,7 @@ class GearJobs(object):
         # TODO: lots of duplicated code that needs cleanup
         list_of_jobs = []
         failed_list = []
+        node_status = dict()
         retry_list = []
         job_data = {"hpcs_action": "STATS"}
         for node in node_list:
@@ -67,6 +68,9 @@ class GearJobs(object):
                 # Error returned by Gearman
                 failed_list.append(ping.job.task)
                 continue
+            else:
+                if 'nodes' in ping.result:
+                    node_status[ping.job.task] = ping.result['nodes']
 
         list_of_jobs = []
         if len(retry_list) > 0:
@@ -97,12 +101,16 @@ class GearJobs(object):
                     # Error returned by Gearman
                     failed_list.append(ping.job.task)
                     continue
+                else:
+                    if 'nodes' in ping.result:
+                        node_status[ping.job.task] = ping.result['nodes']
 
-        return failed_list
+        return failed_list, node_status
 
     def send_repair(self, node_list):
         list_of_jobs = []
         repaired_list = []
+        node_status = dict()
         job_data = {"hpcs_action": "STATS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
@@ -123,5 +131,7 @@ class GearJobs(object):
                 continue
             else:
                 repaired_list.append(ping.job.task)
+                if 'nodes' in ping.result:
+                    node_status[ping.job.task] = ping.result['nodes']
 
-        return repaired_list
+        return repaired_list, node_status
