@@ -30,7 +30,16 @@ class DbDriver(AlertDriver):
 
             device.status = status
 
-            lb_status = 'ACTIVE' if status == 'ONLINE' else status
+            if status == 'ONLINE':
+                errmsg = "Load Balancer has recovered"
+                lb_status = 'ACTIVE'
+            elif status == 'ERROR':
+                errmsg = "Load Balancer has failed"
+                lb_status = status
+            else:
+                # This shouldnt happen
+                errmsg = ""
+                lb_status = status
 
             lbs = session.query(
                 loadbalancers_devices.c.loadbalancer).\
@@ -40,7 +49,7 @@ class DbDriver(AlertDriver):
             for lb in lbs:
                 session.query(LoadBalancer).\
                     filter(LoadBalancer.id == lb[0]).\
-                    update({"status": lb_status, "errmsg": message},
+                    update({"status": lb_status, "errmsg": errmsg},
                            synchronize_session='fetch')
 
                 session.flush()
@@ -54,13 +63,18 @@ class DbDriver(AlertDriver):
                 filter(LoadBalancer.id == lbid).first()
 
             if lb.status == 'ERROR':
+                errmsg = "Load balancer has failed"
                 lb_status = lb.status
+            elif degraded:
+                errmsg = "A node on the load balancer has failed"
+                lb_status = 'DEGRADED'
             else:
-                lb_status = 'DEGRADED' if degraded else 'ACTIVE'
+                errmsg = "A node on the load balancer has recovered"
+                lb_status = 'ACTIVE'
 
             session.query(LoadBalancer).\
                 filter(LoadBalancer.id == lbid).\
-                update({"status": lb_status, "errmsg": message},
+                update({"status": lb_status, "errmsg": errmsg},
                        synchronize_session='fetch')
 
             session.commit()
