@@ -169,6 +169,179 @@ class TestWorkerController(testtools.TestCase):
         msg = response['badRequest']['validationErrors']['message']
         self.assertEquals(msg, "Missing required 'protocol' value.")
 
+    def testUpdateGoodMonitor(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'id': 1234,
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ],
+                    'monitor':
+                        {
+                            'type': 'CONNECT',
+                            'delay': 60,
+                            'timeout': 30,
+                            'attempts': 1,
+                            'path': '/healthcheck'
+                        }
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertNotIn('badRequest', response)
+        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+
+    def testUpdateMonitorMissingType(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'id': 1234,
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ],
+                    'monitor':
+                        {
+                            'delay': 60,
+                            'timeout': 30,
+                            'attempts': 1,
+                            'path': '/healthcheck'
+                        }
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing monitor value 'type'")
+
+    def testUpdateMonitorMissingDelay(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'id': 1234,
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ],
+                    'monitor':
+                        {
+                            'type': 'CONNECT',
+                            'timeout': 30,
+                            'attempts': 1,
+                            'path': '/healthcheck'
+                        }
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing monitor value 'delay'")
+
+    def testUpdateMonitorMissingTimeout(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'id': 1234,
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ],
+                    'monitor':
+                        {
+                            'type': 'CONNECT',
+                            'delay': 60,
+                            'attempts': 1,
+                            'path': '/healthcheck'
+                        }
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing monitor value 'timeout'")
+
+    def testUpdateMonitorMissingAttempts(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'id': 1234,
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ],
+                    'monitor':
+                        {
+                            'type': 'CONNECT',
+                            'delay': 60,
+                            'timeout': 30,
+                            'path': '/healthcheck'
+                        }
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn('badRequest', response)
+        msg = response['badRequest']['validationErrors']['message']
+        self.assertEquals(msg, "Missing monitor value 'attempts'")
+
+    def testUpdateMonitorMissingPath(self):
+        msg = {
+            c.ACTION_FIELD: 'UPDATE',
+            c.LBLIST_FIELD: [
+                {
+                    'protocol': 'http',
+                    'nodes': [
+                        {
+                            'id': 1234,
+                            'address': '10.0.0.1',
+                            'port': 80
+                        }
+                    ],
+                    'monitor':
+                        {
+                            'type': 'CONNECT',
+                            'delay': 60,
+                            'timeout': 30,
+                            'attempts': 1
+                        }
+                }
+            ]
+        }
+        controller = c(self.logger, self.driver, msg)
+        response = controller.run()
+        self.assertIn(c.RESPONSE_FIELD, response)
+        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+
     def testBadAlgorithm(self):
         msg = {
             c.ACTION_FIELD: 'UPDATE',

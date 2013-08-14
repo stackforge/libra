@@ -56,6 +56,30 @@ class LoadBalancerDriver(object):
         """ Set the algorithm used by the load balancer for this protocol. """
         raise NotImplementedError()
 
+    def add_monitor(self, protocol, mtype, delay, timeout, attempts, path):
+        """
+        Add a health check monitor for this protocol.
+
+        protocol
+           Protocol of the load balancer (HTTP, TCP)
+        mtype
+           Monitor type (CONNECT, HTTP)
+        delay
+           Minimum time in seconds between regular calls to a monitor.
+        timeout
+           Maximum number of seconds for a monitor to wait for a connection
+           to be established to the node before it times out. The value must
+           be less than the delay value.
+        attempts
+           Number of permissible monitor failures before removing a node from
+           rotation.
+        path
+           The HTTP path used in the HTTP request by the monitor. This must
+           be a string beginning with a / (forward slash). The monitor
+           expects a response from the node with an HTTP status code of 200.
+        """
+        raise NotImplementedError()
+
     def create(self):
         """ Create the load balancer. """
         raise NotImplementedError()
