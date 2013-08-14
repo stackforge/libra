@@ -171,6 +171,28 @@ class LBaaSController(object):
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
 
+            if 'monitor' in current_lb:
+                try:
+                    self.driver.add_monitor(current_lb['protocol'],
+                                            current_lb['monitor']['type'],
+                                            current_lb['monitor']['delay'],
+                                            current_lb['monitor']['timeout'],
+                                            current_lb['monitor']['attempts'],
+                                            current_lb['monitor']['path'])
+                except NotImplementedError:
+                    self.logger.error(
+                        "Selected driver does not support adding healthchecks."
+                    )
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
+                except Exception as e:
+                    self.logger.error(
+                        "Selected driver failed adding healthchecks: %s, %s" %
+                        (e.__class__, e)
+                    )
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
+
             for lb_node in current_lb['nodes']:
                 port, address, node_id, weight = None, None, None, None
 
