@@ -102,9 +102,13 @@ class HAProxyDriver(LoadBalancerDriver):
             #------------------------
             # Backend configuration
             #------------------------
+
             output.append('backend %s-servers' % proto)
             output.append('    mode %s' % proto)
             output.append('    balance %s' % protocfg['algorithm'])
+
+            # default healthcheck if none specified
+            monitor = 'check inter 30s'
 
             # HTTP specific options for the backend
             if proto == 'http':
@@ -112,16 +116,37 @@ class HAProxyDriver(LoadBalancerDriver):
                 output.append('    option httpclose')
                 output.append('    option forwardfor')
 
+                if 'monitor' in self._config[proto]:
+                    mon = self._config[proto]['monitor']
+                    if mon['type'] == 'http':
+                        output.append('    option httpchk %s' % mon['path'])
+                    # our timeout will be connect + read time
+                    output.append('    timeout check %ds' % mon['timeout'])
+                    # intentionally set rise/fall to the same value
+                    monitor = "check inter %ds rise %d fall %d" % (
+                              mon['delay'], mon['attempts'], mon['attempts'])
+
                 for (node_id, addr, port, weight) in protocfg['servers']:
-                    output.append('    server id-%s %s:%s check '
-                                  'inter 30000 cookie id-%s weight %d' %
-                                  (node_id, addr, port, node_id, weight))
-            # HTTPS (TCP) specific options for the backend
+                    output.append('    server id-%s %s:%s cookie id-%s '
+                                  'weight %d %s' %
+                                  (node_id, addr, port, node_id,
+                                   weight, monitor))
+
+            # TCP specific options for the backend
             else:
+                if 'monitor' in self._config[proto]:
+                    mon = self._config[proto]['monitor']
+                    if mon['type'] == 'http':
+                        output.append('    option httpchk %s' % mon['path'])
+                    # our timeout will be connect + read time
+                    output.append('    timeout check %ds' % mon['timeout'])
+                    # intentionally set rise/fall to the same value
+                    monitor = "check inter %ds rise %d fall %d" % (
+                              mon['delay'], mon['attempts'], mon['attempts'])
+
                 for (node_id, addr, port, weight) in protocfg['servers']:
-                    output.append('    server id-%s %s:%s check '
-                                  'inter 30000 weight %d' %
-                                  (node_id, addr, port, weight))
+                    output.append('    server id-%s %s:%s weight %d %s' %
+                                  (node_id, addr, port, weight, monitor))
 
         return '\n'.join(output) + '\n'
 
@@ -258,6 +283,45 @@ class HAProxyDriver(LoadBalancerDriver):
             self._config[proto]['algorithm'] = 'leastconn'
         else:
             raise Exception('Invalid algorithm: %s' % protocol)
+
+    def add_monitor(self, protocol, mtype, delay, timeout, attempts, path):
+        proto = protocol.lower()
+        if mtype.lower() not in ['connect', 'http']:
+            raise Exception('Invalid monitor type: %s' % mtype)
+
+        # default values
+        if delay is None:
+            delay = 30
+        if attempts is None:
+            attempts = 2
+        if timeout is None:
+            timeout = delay
+        if path is None:
+            path = '/'
+
+        if path[0] != '/':
+            path = '/' + path
+
+        try:
+            delay = int(delay)
+        except ValueError:
+            raise Exception("Non-integer 'delay' value: '%s'" % delay)
+
+        try:
+            timeout = int(timeout)
+        except ValueError:
+            raise Exception("Non-integer 'timeout' value: '%s'" % timeout)
+
+        try:
+            attempts = int(attempts)
+        except ValueError:
+            raise Exception("Non-integer 'attempts' value: '%s'" % attempts)
+
+        self._config[proto]['monitor'] = {'type': mtype.lower(),
+                                          'delay': delay,
+                                          'timeout': timeout,
+                                          'attempts': attempts,
+                                          'path': path}
 
     def create(self):
         self.ossvc.write_config(self._config_to_string())
