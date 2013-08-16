@@ -65,7 +65,7 @@ class Stats(object):
         # Work out if it is our turn to run
         minute = datetime.now().minute
         if self.args.server_id != minute % self.args.number_of_servers:
-            self.logger.info('Not our turn to run ping check, sleeping')
+            self.logger.info('Not our turn to run repair check, sleeping')
             self.start_repair_sched()
             return
         tested = 0
