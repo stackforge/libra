@@ -296,7 +296,7 @@ class HAProxyDriver(LoadBalancerDriver):
             attempts = 2
         if timeout is None:
             timeout = delay
-        if path is None:
+        if (path is None) or (len(path) == 0):
             path = '/'
 
         if path[0] != '/':
