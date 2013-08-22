@@ -93,3 +93,19 @@ class LBResp(Base):
     updated = wtypes.text
     virtualIps = wsattr(['LBVipResp'])
     nodes = wsattr(['LBRespNode'])
+
+
+class LBMonitorPut(Base):
+    type = Enum(wtypes.text, 'CONNECT', 'HTTP')
+    delay = int
+    timeout = int
+    attemptsBeforeDeactivation = int
+    path = wtypes.text
+
+
+class LBMonitorResp(Base):
+    type = wtypes.text
+    delay = wtypes.text
+    timeout = wtypes.text
+    attemptsBeforeDeactivation = wtypes.text
+    path = wtypes.text

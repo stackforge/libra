@@ -17,6 +17,7 @@ eventlet.monkey_patch()
 import logging
 from libra.common.json_gearman import JSONGearmanClient
 from libra.api.model.lbaas import LoadBalancer, db_session, Device, Node
+from libra.api.model.lbaas import HealthMonitor
 from libra.api.model.lbaas import loadbalancers_devices
 from sqlalchemy.exc import OperationalError
 from pecan import conf
@@ -153,6 +154,8 @@ class GearmanClientThread(object):
             ))
             session.query(Node).\
                 filter(Node.lbid == lb.id).delete()
+            session.query(HealthMonitor).\
+                filter(HealthMonitor.lbid == lb.id).delete()
             session.commit()
 
     def _set_error(self, device_id, errmsg, session):
@@ -204,6 +207,7 @@ class GearmanClientThread(object):
             lbs = session.query(
                 LoadBalancer
             ).join(LoadBalancer.nodes).\
+                join(LoadBalancer.monitors).\
                 join(LoadBalancer.devices).\
                 filter(Device.id == data).\
                 filter(LoadBalancer.status != 'DELETED').\
@@ -218,7 +222,8 @@ class GearmanClientThread(object):
                     'protocol': lb.protocol,
                     'algorithm': lb.algorithm,
                     'port': lb.port,
-                    'nodes': []
+                    'nodes': [],
+                    'monitor': {}
                 }
                 for node in lb.nodes:
                     if not node.enabled:
@@ -230,6 +235,20 @@ class GearmanClientThread(object):
                         'condition': condition
                     }
                     lb_data['nodes'].append(node_data)
+
+                for monitor in lb.monitors:
+                    data = {
+                        'type': monitor.type,
+                        'delay': monitor.delay,
+                        'timeout': monitor.timeout,
+                        'attempts': monitor.attempts,
+                        'path': ''
+                    }
+                    if monitor.path is not None:
+                        data['path'] = monitor.path
+                    lb_data['monitor'] = data
+                    break
+
                 job_data['loadBalancers'].append(lb_data)
             status, response = self._send_message(job_data)
             lb = session.query(LoadBalancer).\
