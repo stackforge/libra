@@ -21,7 +21,9 @@ from wsme import Unset
 # other controllers
 from nodes import NodesController
 from virtualips import VipsController
+from health_monitor import HealthMonitorController
 from logs import LogsController
+
 # models
 from libra.api.model.lbaas import LoadBalancer, Device, Node, db_session
 from libra.api.model.lbaas import loadbalancers_devices, Limits
@@ -319,7 +321,6 @@ class LoadBalancersController(RestController):
             # now save the loadbalancer_id to the device and switch its status
             # to online
             device.status = "ONLINE"
-
             session.flush()
 
             return_data = LBResp()
@@ -463,6 +464,8 @@ class LoadBalancersController(RestController):
                 return VipsController(lbid), remainder[1:]
             if remainder[0] == 'logs':
                 return LogsController(lbid), remainder[1:]
+            if remainder[0] == 'healthmonitor':
+                return HealthMonitorController(lbid), remainder[1:]
 
         # Kludgy fix for PUT since WSME doesn't like IDs on the path
         elif lbid:

@@ -17,6 +17,7 @@ eventlet.monkey_patch()
 import logging
 from libra.common.json_gearman import JSONGearmanClient
 from libra.api.model.lbaas import LoadBalancer, db_session, Device, Node
+from libra.api.model.lbaas import HealthMonitor
 from libra.api.model.lbaas import loadbalancers_devices
 from sqlalchemy.exc import OperationalError
 from pecan import conf
@@ -153,6 +154,8 @@ class GearmanClientThread(object):
             ))
             session.query(Node).\
                 filter(Node.lbid == lb.id).delete()
+            session.query(HealthMonitor).\
+                filter(HealthMonitor.lbid == lb.id).delete()
             session.commit()
 
     def _set_error(self, device_id, errmsg, session):
@@ -218,7 +221,8 @@ class GearmanClientThread(object):
                     'protocol': lb.protocol,
                     'algorithm': lb.algorithm,
                     'port': lb.port,
-                    'nodes': []
+                    'nodes': [],
+                    'monitor': {}
                 }
                 for node in lb.nodes:
                     if not node.enabled:
@@ -230,7 +234,33 @@ class GearmanClientThread(object):
                         'condition': condition
                     }
                     lb_data['nodes'].append(node_data)
+
+                # Add a default health monitor if one does not exist
+                monitor = session.query(HealthMonitor).\
+                    filter(HealthMonitor.lbid == lb.id).first()
+
+                if monitor is None:
+                    # Set it to a default configuration
+                    monitor = HealthMonitor(
+                        lbid=lb.id, type="CONNECT", delay=30,
+                        timeout=30, attempts=2, path=None
+                    )
+                    session.add(monitor)
+                    session.flush()
+
+                monitor_data = {
+                    'type': monitor.type,
+                    'delay': monitor.delay,
+                    'timeout': monitor.timeout,
+                    'attempts': monitor.attempts
+                }
+                if monitor.path is not None:
+                    monitor_data['path'] = monitor.path
+
+                lb_data['monitor'] = monitor_data
                 job_data['loadBalancers'].append(lb_data)
+
+            # Update the worker
             status, response = self._send_message(job_data)
             lb = session.query(LoadBalancer).\
                 filter(LoadBalancer.id == self.lbid).\
