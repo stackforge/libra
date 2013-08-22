@@ -64,3 +64,15 @@ CREATE TABLE `loadbalancers_devices` (
   `device` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1
+
+CREATE TABLE monitors (
+    lbid                              BIGINT                NOT NULL,                  # Loadbalancer who owns this node
+    type                              VARCHAR(128)          NOT NULL,                  # Type of ping. CONNECT, HTTP, HTTPS
+    delay                             INT                   NOT NULL,                  # This is the minimum time in seconds between regular calls to a monitor 
+    timeout                           INT                   NOT NULL,                  # Maximum number of seconds to wait for a connection to the node before it times out.
+    attemptsBeforeDeactivation        INT                   NOT NULL,                  # Number of permissible failures before removing a node from rotation. 1 to 10.
+    path                              VARCHAR(2000)         NULL,                      # The HTTP path used in the request by the monitor. Begins with /
+    PRIMARY KEY (lbid)                                                                   # ids are unique accross all Nodes
+ ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
+
+ 
