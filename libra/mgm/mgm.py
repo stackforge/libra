@@ -21,13 +21,13 @@ import signal
 import time
 import sys
 import os
+from stevedore.extension import ExtensionManager
 import threading
-from libra.mgm.schedulers import modules, known_modules
 
-from libra.openstack.common import importutils
 from libra.common.options import Options, setup_logging
-from libra.mgm.drivers.base import known_drivers
+from libra.common.utils import get_namespace_names
 from libra.mgm.node_list import NodeList, AccessDenied
+from libra.mgm import drivers
 
 
 class Server(object):
@@ -54,27 +54,33 @@ class Server(object):
         signal.signal(signal.SIGTERM, self.exit_handler)
 
         self.logger.info("Selected driver: {0}".format(self.args.driver))
-        self.driver_class = importutils.import_class(
-            known_drivers[self.args.driver]
-        )
+
+        self.driver_class = drivers.get_driver(self.args.driver)
 
         # NOTE(LinuxJedi): Threading lock is due to needing more than one
         # timer and we don't want them to execute their trigger
         # at the same time.
         self.rlock = threading.RLock()
 
-        # Load all the schedulers
-        for module in modules:
-            mod = importutils.import_class(known_modules[module])
-            instance = mod(
-                self.driver_class, self.rlock, self.logger, self.node_list,
-                self.args
-            )
-            self.schedulers.append(instance)
-            instance.run()
+        # Load and log schedulers
+        # NOTE(ekarlso): Should this be chaned into check what schedulers are
+        # enabled ?
+        em = ExtensionManager('libra.mgm_schedulers')
+        em.map(self.run_scheduler)
+        self.logger.info("Loaded schedulers %s", ", ".join(em.names()))
 
         while True:
             time.sleep(1)
+
+    def run_scheduler(self, ep):
+        """
+        Run a scheduler
+        """
+        instance = ep.plugin(self.driver_class, self.rlock, self.logger,
+                             self.node_list, self.args)
+
+        instance.run()
+        self.sheduler.apped(instance)
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -123,7 +129,8 @@ def main():
     )
     options.parser.add_argument(
         '--driver', dest='driver',
-        choices=known_drivers.keys(), default='hp_rest',
+        choices=get_namespace_names(drivers.NAMESPACE),
+        default='hp_rest',
         help='type of device to use'
     )
     options.parser.add_argument(
