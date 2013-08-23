@@ -10,15 +10,6 @@
 # distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
-
-
-# Mapping of --driver options to a class
-known_drivers = {
-    'hp_rest': 'libra.mgm.drivers.hp_rest.driver.HPRestDriver',
-    'dummy': 'libra.mgm.drivers.dummy.driver.DummyDriver'
-}
-
-
 class MgmDriver(object):
     """
     Pool manager device driver base class.
@@ -43,3 +34,5 @@ class MgmDriver(object):
     def get_url(self):
         """ Gets the URL we are currently connected to """
         raise NotImplementedError()
+
+

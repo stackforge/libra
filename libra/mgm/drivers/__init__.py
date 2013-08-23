@@ -11,3 +11,10 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+from stevedore.driver import DriverManager
+
+NAMESPACE = 'libra.mgm_drivers'
+
+def get_driver(name):
+    mgr = DriverManager(NAMESPACE, name)
+    return mgr.driver
