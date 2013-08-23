@@ -12,13 +12,6 @@
 # License for the specific language governing permissions and limitations
 
 
-# Mapping of --driver options to a class
-known_drivers = {
-    'hp_rest': 'libra.mgm.drivers.hp_rest.driver.HPRestDriver',
-    'dummy': 'libra.mgm.drivers.dummy.driver.DummyDriver'
-}
-
-
 class MgmDriver(object):
     """
     Pool manager device driver base class.
