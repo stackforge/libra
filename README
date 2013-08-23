@@ -23,7 +23,7 @@ Tools
 
   * libra_admin_api
 
-    Python daemon providing an admininstrative API server primarily for 
+    Python daemon providing an admininstrative API server primarily for
     libra_pool_mgm and libra_statsd
 
 Running Tests
@@ -37,6 +37,47 @@ via the Python pip command:
 Once it is installed, run the tests:
 
    $ tox
+
+Quick start for developers
+--------------------------
+
+Use the install_venv.py script to create a venv:
+
+1. Install some system deps
+
+    $ sudo apt-get install git python-dev python-pip libmysqlclient-dev
+
+2. Install virtualenv
+
+    $ sudo pip install virtualenv
+
+3. Clone the repo
+
+    $ git clone git://github.com/stackforge/libra
+
+4. Change directory to the repo.
+
+    $ cd libra
+
+5. Create the VirtualEnvironment with all the needed dependencies
+
+    $ python tools/install_venv.py
+
+6. Activate the venv
+
+    $ . .venv/bin/activate
+
+7. Hack the code and have fun using for example SublimeText or your editor of
+    choide!
+
+    $ subl libra.sublime-project
+
+You can test your changes either as in the "Running Tests" section
+(recommended before sending changes to review) or via
+
+    $ python setup.py testr
+
+To test in your active venv.
 
 More Documentation
 ------------------

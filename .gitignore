@@ -3,6 +3,7 @@
 *.pyc
 *.swp
 .cache
+.venv
 .testrepository
 .tox
 AUTHORS
