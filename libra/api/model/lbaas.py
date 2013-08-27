@@ -87,6 +87,11 @@ class LoadBalancer(DeclarativeBase):
     nodes = relationship(
         'Node', backref=backref('loadbalancers', order_by='Node.id')
     )
+    monitors = relationship(
+        'HealthMonitor', backref=backref(
+            'loadbalancers',
+            order_by='HealthMonitor.lbid')
+        )
     devices = relationship(
         'Device', secondary=loadbalancers_devices, backref='loadbalancers',
         lazy='joined'
@@ -106,6 +111,23 @@ class Node(DeclarativeBase):
     port = Column(u'port', INTEGER(), nullable=False)
     status = Column(u'status', VARCHAR(length=128), nullable=False)
     weight = Column(u'weight', INTEGER(), nullable=False)
+
+
+class HealthMonitor(DeclarativeBase):
+    """monitors model"""
+    __tablename__ = 'monitors'
+    #column definitions
+    lbid = Column(
+        u'lbid', BIGINT(), ForeignKey('loadbalancers.id'), primary_key=True,
+        nullable=False
+    )
+    type = Column(u'type', VARCHAR(length=128), nullable=False)
+    delay = Column(u'delay', INTEGER(), nullable=False)
+    timeout = Column(u'timeout', INTEGER(), nullable=False)
+    attempts = Column(
+        u'attemptsBeforeDeactivation', INTEGER(), nullable=False
+    )
+    path = Column(u'path', VARCHAR(length=2000))
 
 
 class RoutingSession(Session):
