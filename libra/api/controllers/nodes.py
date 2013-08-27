@@ -227,21 +227,21 @@ class NodesController(RestController):
                 session.rollback()
                 raise NotFound('Node ID is not valid')
 
-            nodecount = session.query(Node).\
-                filter(Node.lbid == self.lbid).\
-                filter(Node.enabled == 1).count()
             if body.condition != Unset:
                 if body.condition == 'DISABLED':
+                    nodecount = session.query(Node).\
+                        filter(Node.lbid == self.lbid).\
+                        filter(Node.enabled == 1).count()
+                    if nodecount <= 1:
+                        session.rollback()
+                        raise ClientSideError(
+                            "Cannot disable the last enabled node"
+                        )
                     node.enabled = 0
                     node.status = 'OFFLINE'
                 else:
                     node.enabled = 1
                     node.status = 'ONLINE'
-            if nodecount <= 1:
-                session.rollback()
-                raise ClientSideError(
-                    "Cannot disable the last enabled node in a load balancer"
-                )
 
             lb.status = 'PENDING_UPDATE'
             device = session.query(
