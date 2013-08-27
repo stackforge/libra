@@ -69,18 +69,20 @@ class HPRestDriver(MgmDriver):
 
     def delete_node(self, node_id):
         requests.delete(
-            '{url}/devices/{nid}'.format(url=self.url, nid=node_id)
+            '{url}/devices/{nid}'.format(url=self.url, nid=node_id),
+            timeout=30
         )
 
     def update_node(self, node_id, node_data):
         requests.put(
             '{url}/devices/{nid}'.format(url=self.url, nid=node_id),
-            json.dumps(node_data)
+            json.dumps(node_data),
+            timeout=30
         )
 
     def _get(self, url):
         try:
-            r = requests.get(url, verify=False)
+            r = requests.get(url, verify=False, timeout=30)
         except requests.exceptions.RequestException:
             self.logger.error('Exception communicating to server: {exc}'
                               .format(exc=sys.exc_info()[0]))
@@ -96,7 +98,7 @@ class HPRestDriver(MgmDriver):
         try:
             r = requests.post(
                 url, data=json.dumps(node_data), verify=False,
-                headers=self.headers
+                headers=self.headers, timeout=30
             )
         except requests.exceptions.RequestException:
             self.logger.error('Exception communicating to server: {exc}'
