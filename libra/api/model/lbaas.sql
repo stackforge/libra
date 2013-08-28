@@ -75,4 +75,11 @@ CREATE TABLE monitors (
     PRIMARY KEY (lbid)                                                                   # ids are unique accross all Nodes
  ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
 
+CREATE TABLE `pool_building` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `server_id` int(11) NOT NULL,
+  `qty` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `server_id` (`server_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
  

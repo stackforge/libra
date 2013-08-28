@@ -22,6 +22,7 @@ import pecan
 import sys
 import os
 from libra.admin_api.stats.scheduler import Stats
+from libra.admin_api.device_pool.manage_pool import Pool
 from libra.admin_api import config as api_config
 from libra.admin_api import model
 from libra.admin_api.stats.drivers.base import known_drivers
@@ -160,6 +161,10 @@ def main():
         '--datadog_env', default='unknown',
         help='Server enironment'
     )
+    options.parser.add_argument(
+        '--node_pool_size', default=10,
+        help='Number of hot spare devices to keep in the pool'
+    )
 
     args = options.run()
 
@@ -219,6 +224,7 @@ def main():
             known_drivers[driver]
         ))
     Stats(logger, args, drivers)
+    Pool(logger, args)
     sys.stderr = LogStdout(logger)
     # TODO: set ca_certs and cert_reqs=CERT_REQUIRED
     ssl_sock = eventlet.wrap_ssl(

@@ -214,7 +214,7 @@ class HealthMonitorController(RestController):
         with db_session() as session:
             load_balancer, monitor = session.query(
                 LoadBalancer, HealthMonitor
-                ).outerjoin(LoadBalancer.monitors).\
+            ).outerjoin(LoadBalancer.monitors).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.id == self.lbid).\
                 filter(LoadBalancer.status != 'DELETED').\
