@@ -35,33 +35,32 @@ class BuildError(Exception):
 
 
 class Node(object):
-    def __init__(self, username, password, tenant, auth_url, region, keyname,
-                 secgroup, image, node_type, node_basename=None):
+    def __init__(self, args):
         self.nova = client.HTTPClient(
-            username,
-            password,
-            tenant,
-            auth_url,
-            region_name=region,
+            args.nova_user,
+            args.nova_pass,
+            args.nova_tenant,
+            args.nova_auth_url,
+            region_name=args.nova_region,
             no_cache=True,
             service_type='compute'
         )
-        self.keyname = keyname
-        self.secgroup = secgroup
-        self.node_basename = node_basename
+        self.keyname = args.nova_keyname
+        self.secgroup = args.nova_secgroup
+        self.node_basename = args.node_basename
         # Replace '_' with '-' in basename
         if self.node_basename:
             self.node_basename = self.node_basename.replace('_', '-')
 
-        if image.isdigit():
-            self.image = image
+        if args.nova_image.isdigit():
+            self.image = args.nova_image
         else:
-            self.image = self._get_image(image)
+            self.image = self._get_image(args.nova_image)
 
-        if node_type.isdigit():
-            self.node_type = node_type
+        if args.nova_image_size.isdigit():
+            self.node_type = args.nova_image_size
         else:
-            self.node_type = self._get_flavor(node_type)
+            self.node_type = self._get_flavor(args.nova_image_size)
 
     def build(self):
         """ create a node, test it is running """
@@ -75,6 +74,13 @@ class Node(object):
             )
 
         return body['server']['id']
+
+    def vip_create(self):
+        """ create a virtual IP  """
+        url = '/os-floating-ips'
+        body = {"pool": None}
+        resp, body = self.nova.post(url, body=body)
+        return body['floating_ip']
 
     def delete(self, node_id):
         """ delete a node """
