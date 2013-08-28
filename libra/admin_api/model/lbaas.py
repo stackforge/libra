@@ -52,6 +52,23 @@ class Limits(DeclarativeBase):
     value = Column(u'value', BIGINT(), nullable=False)
 
 
+class PoolBuilding(DeclarativeBase):
+    __tablename__ = 'pool_building'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    server_id = Column(u'server_id', Integer, nullable=False)
+    qty = Column(u'qty', Integer, nullable=False)
+
+
+class Vip(DeclarativeBase):
+    __tablename__ = 'vip'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    ip = Column(u'ip', Integer, nullable=True)
+    device_id = Column(u'device', Integer, ForeignKey('device.id'))
+    device = relationship(
+        'Device', backref=backref('vip', order_by='Device.id')
+    )
+
+
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'
