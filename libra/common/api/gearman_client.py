@@ -15,10 +15,11 @@
 import eventlet
 eventlet.monkey_patch()
 import logging
+import ipaddress
 from libra.common.json_gearman import JSONGearmanClient
-from libra.api.model.lbaas import LoadBalancer, db_session, Device, Node
-from libra.api.model.lbaas import HealthMonitor
-from libra.api.model.lbaas import loadbalancers_devices
+from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
+from libra.common.api.lbaas import HealthMonitor
+from libra.common.api.lbaas import loadbalancers_devices
 from sqlalchemy.exc import OperationalError
 from pecan import conf
 
@@ -39,6 +40,13 @@ def submit_job(job_type, host, data, lbid):
     eventlet.spawn_n(client_job, logger, job_type, host, data, lbid)
 
 
+def submit_vip_job(job_type, device, vip):
+    logger = logging.getLogger(__name__)
+    eventlet.spawn_n(
+        client_job, logger, job_type, "libra_pool_mgm", device, vip
+    )
+
+
 def client_job(logger, job_type, host, data, lbid):
     for x in xrange(5):
         try:
@@ -54,6 +62,10 @@ def client_job(logger, job_type, host, data, lbid):
                 client.send_delete(data)
             if job_type == 'ARCHIVE':
                 client.send_archive(data)
+            if job_type == 'ASSIGN':
+                client.send_assign(data)
+            if job_type == 'REMOVE':
+                client.send_remove(data)
             return
         except OperationalError:
             # Auto retry on galera locking error
@@ -86,6 +98,31 @@ class GearmanClientThread(object):
             self.gearman_client = JSONGearmanClient(ssl_server_list)
         else:
             self.gearman_client = JSONGearmanClient(conf.gearman.server)
+
+    def send_assign(self, data):
+        job_data = {
+            'action': 'ASSIGN_IP',
+            'name': data,
+            'ip': self.lbid
+        }
+        status, response = self._send_message(job_data, 'response')
+        if not status:
+            self.logger.error(
+                "Failed to assign IP {0} to device {1}".format(self.lbid, data)
+            )
+
+    def send_remove(self, data):
+        job_data = {
+            'action': 'REMOVE_IP',
+            'name': data,
+            'ip': self.lbid
+        }
+        status, response = self._send_message(job_data, 'response')
+        if not status:
+            self.logger.error(
+                "Failed to remove IP {0} from device {1}"
+                .format(self.lbid, data)
+            )
 
     def send_delete(self, data):
         with db_session() as session:
@@ -129,9 +166,17 @@ class GearmanClientThread(object):
                     job_data['loadBalancers'][0]['nodes'].append(node_data)
             else:
                 # This is a delete
+                dev = session.query(Device.name).\
+                    filter(Device.id == data).first()
+                vip = session.query(Vip).\
+                    filter(Vip.device == data).first()
+                submit_vip_job(
+                    'REMOVE', dev.name, str(ipaddress.IPv4Address(vip.ip))
+                )
+                vip.device = None
                 job_data = {"hpcs_action": "DELETE"}
 
-            status, response = self._send_message(job_data)
+            status, response = self._send_message(job_data, 'hpcs_response')
             lb = session.query(LoadBalancer).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
@@ -145,9 +190,7 @@ class GearmanClientThread(object):
                 # Device should never be used again
                 device = session.query(Device).\
                     filter(Device.id == data).first()
-                #TODO: change this to 'DELETED' when pool mgm deletes
-                if device.status != 'ERROR':
-                    device.status = 'OFFLINE'
+                device.status = 'DELETED'
             # Remove LB-device join
             session.execute(loadbalancers_devices.delete().where(
                 loadbalancers_devices.c.loadbalancer == lb.id
@@ -191,7 +234,7 @@ class GearmanClientThread(object):
                     'protocol': lb.protocol
                 }]
             }
-            status, response = self._send_message(job_data)
+            status, response = self._send_message(job_data, 'hpcs_response')
             device = session.query(Device).\
                 filter(Device.id == data['deviceid']).\
                 first()
@@ -266,7 +309,7 @@ class GearmanClientThread(object):
                 job_data['loadBalancers'].append(lb_data)
 
             # Update the worker
-            status, response = self._send_message(job_data)
+            status, response = self._send_message(job_data, 'hpcs_response')
             lb = session.query(LoadBalancer).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
@@ -279,7 +322,7 @@ class GearmanClientThread(object):
 
             session.commit()
 
-    def _send_message(self, message):
+    def _send_message(self, message, response_name):
         job_status = self.gearman_client.submit_job(
             self.host, message, background=False, wait_until_complete=True,
             max_retries=10, poll_timeout=120.0
@@ -298,7 +341,7 @@ class GearmanClientThread(object):
         if 'badRequest' in job_status.result:
             error = job_status.result['badRequest']['validationErrors']
             return False, error['message']
-        if job_status.result['hpcs_response'] == 'FAIL':
+        if job_status.result[response_name] == 'FAIL':
             # Worker says 'no'
             if 'hpcs_error' in job_status.result:
                 error = job_status.result['hpcs_error']

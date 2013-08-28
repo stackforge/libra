@@ -19,12 +19,12 @@ import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
 #default response objects
-from libra.api.model.lbaas import LoadBalancer, Node, db_session, Limits
-from libra.api.model.lbaas import Device
+from libra.common.api.lbaas import LoadBalancer, Node, db_session, Limits
+from libra.common.api.lbaas import Device
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 from libra.api.model.validators import LBNodePut
-from libra.api.library.gearman_client import submit_job
+from libra.common.api.gearman_client import submit_job
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
