@@ -15,7 +15,7 @@
 
 from pecan import expose
 from pecan.rest import RestController
-from libra.api.model.lbaas import Limits, db_session
+from libra.common.api.lbaas import Limits, db_session
 
 
 class LimitsController(RestController):

@@ -22,7 +22,6 @@ import pecan
 import sys
 import os
 import wsme_overrides
-from libra.api.library.expunge import ExpungeScheduler
 from libra.api import config as api_config
 from libra.api import model
 from libra.api import acl
@@ -59,7 +58,6 @@ def setup_app(pecan_config, args):
         'ssl_cert': args.gearman_ssl_cert,
         'ssl_ca': args.gearman_ssl_ca
     }
-    config['expire_days'] = args.expire_days
     config['ip_filters'] = args.ip_filters
     if args.debug:
         config['wsme'] = {'debug': True}
@@ -151,10 +149,6 @@ def main():
         help='Path to an SSL key file'
     )
     options.parser.add_argument(
-        '--expire_days', default=0,
-        help='Number of days until deleted load balancers are expired'
-    )
-    options.parser.add_argument(
         '--ip_filters', action='append', default=[],
         help='IP filters for backend nodes in the form xxx.xxx.xxx.xxx/yy'
     )
@@ -215,7 +209,6 @@ def main():
     logger = setup_logging('', args)
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
-    ExpungeScheduler(logger)
     sys.stderr = LogStdout(logger)
     ssl_sock = eventlet.wrap_ssl(
         eventlet.listen((args.host, args.port)),

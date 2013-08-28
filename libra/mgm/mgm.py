@@ -12,85 +12,34 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import eventlet
+eventlet.monkey_patch()
 import daemon
 import daemon.pidfile
 import daemon.runner
 import grp
 import pwd
-import signal
-import time
 import sys
 import os
-import threading
-from libra.mgm.schedulers import modules, known_modules
 
-from libra.openstack.common import importutils
 from libra.common.options import Options, setup_logging
-from libra.mgm.drivers.base import known_drivers
-from libra.mgm.node_list import NodeList, AccessDenied
+from libra.mgm.gearman_worker import worker_thread
 
 
 class Server(object):
     def __init__(self, args):
         self.args = args
-        self.ft = None
-        self.api = None
-        self.driver_class = None
-        self.schedulers = []
-        try:
-            self.node_list = NodeList(self.args.datadir)
-        except AccessDenied as exc:
-            print(str(exc))
-            self.shutdown(True)
+        self.logger = None
 
     def main(self):
         self.logger = setup_logging('libra_mgm', self.args)
 
         self.logger.info(
-            'Libra Pool Manager started with a float of {nodes} nodes'
-            .format(nodes=self.args.nodes)
+            'Libra Pool Manager worker started'
         )
-        signal.signal(signal.SIGINT, self.exit_handler)
-        signal.signal(signal.SIGTERM, self.exit_handler)
-
-        self.logger.info("Selected driver: {0}".format(self.args.driver))
-        self.driver_class = importutils.import_class(
-            known_drivers[self.args.driver]
-        )
-
-        # NOTE(LinuxJedi): Threading lock is due to needing more than one
-        # timer and we don't want them to execute their trigger
-        # at the same time.
-        self.rlock = threading.RLock()
-
-        # Load all the schedulers
-        for module in modules:
-            mod = importutils.import_class(known_modules[module])
-            instance = mod(
-                self.driver_class, self.rlock, self.logger, self.node_list,
-                self.args
-            )
-            self.schedulers.append(instance)
-            instance.run()
-
-        while True:
-            time.sleep(1)
-
-    def exit_handler(self, signum, frame):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        self.shutdown(False)
-
-    def shutdown(self, error):
-        for sched in self.schedulers:
-            sched.timer.cancel()
-
-        if not error:
-            self.logger.info('Safely shutting down')
-            sys.exit(0)
-        else:
-            self.logger.info('Shutting down due to error')
-            sys.exit(1)
+        thd = eventlet.spawn(worker_thread, self.logger, self.args)
+        thd.wait()
+        self.logger.info("Shutting down")
 
 
 def main():
@@ -100,31 +49,9 @@ def main():
         help='a list of API servers to connect to (for HP REST API driver)'
     )
     options.parser.add_argument(
-        '--datadir', dest='datadir',
-        help='directory to store data files'
-    )
-    options.parser.add_argument(
         '--az', type=int,
         help='The az number the node will reside in (to be passed to the API'
              ' server)'
-    )
-    options.parser.add_argument(
-        '--nodes', type=int, default=1,
-        help='number of nodes'
-    )
-    options.parser.add_argument(
-        '--check_interval', type=int, default=5,
-        help='how often to check if new nodes are needed (in minutes)'
-    )
-    options.parser.add_argument(
-        '--submit_interval', type=int, default=15,
-        help='how often to test nodes for submission to the API'
-             ' server (in minutes)'
-    )
-    options.parser.add_argument(
-        '--driver', dest='driver',
-        choices=known_drivers.keys(), default='hp_rest',
-        help='type of device to use'
     )
     options.parser.add_argument(
         '--node_basename', dest='node_basename',
@@ -168,11 +95,32 @@ def main():
         help='the image size ID (flavor ID) or name to use for new nodes spun'
              ' up in the Nova API'
     )
+    options.parser.add_argument(
+        '--gearman', action='append', metavar='HOST:PORT', default=[],
+        help='Gearman job servers'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_ca', metavar='FILE',
+        help='Gearman SSL certificate authority'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_cert', metavar='FILE',
+        help='Gearman SSL certificate'
+    )
+    options.parser.add_argument(
+        '--gearman_ssl_key', metavar='FILE',
+        help='Gearman SSL key'
+    )
+    options.parser.add_argument(
+        '--gearman-poll',
+        dest='gearman_poll', type=int, metavar='TIME',
+        default=1, help='Gearman worker polling timeout'
+    )
 
     args = options.run()
 
     required_args = [
-        'datadir', 'az',
+        'az',
         'nova_image', 'nova_image_size', 'nova_secgroup', 'nova_keyname',
         'nova_tenant', 'nova_region', 'nova_user', 'nova_pass', 'nova_auth_url'
     ]
@@ -191,16 +139,16 @@ def main():
     if missing_args:
         return 2
 
-    if not args.api_server:
+    if not args.gearman:
         # NOTE(shrews): Can't set a default in argparse method because the
         # value is appended to the specified default.
-        args.api_server.append('localhost:8889')
-    elif not isinstance(args.api_server, list):
+        args.gearman.append('localhost:4730')
+    elif not isinstance(args.gearman, list):
         # NOTE(shrews): The Options object cannot intelligently handle
         # creating a list from an option that may have multiple values.
         # We convert it to the expected type here.
-        svr_list = args.api_server.split()
-        args.api_server = svr_list
+        svr_list = args.gearman.split()
+        args.gearman = svr_list
 
     server = Server(args)
 
