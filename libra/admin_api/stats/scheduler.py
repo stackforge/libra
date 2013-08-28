@@ -13,10 +13,8 @@
 # under the License.
 
 import threading
-import signal
-import sys
 from datetime import datetime
-from libra.admin_api.model.lbaas import LoadBalancer, Device, Node, db_session
+from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
 from libra.admin_api.stats.stats_gearman import GearJobs
 
 
@@ -36,30 +34,17 @@ class Stats(object):
         self.ping_timer = None
         self.repair_timer = None
 
-        signal.signal(signal.SIGINT, self.exit_handler)
-        signal.signal(signal.SIGTERM, self.exit_handler)
         logger.info("Selected stats drivers: {0}".format(args.stats_driver))
 
         self.start_ping_sched()
-        self.start_repair_sched()
+        # TODO: completely remove repaid sched, rebuild instead
+        #self.start_repair_sched()
 
-    def exit_handler(self, signum, frame):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        self.shutdown(False)
-
-    def shutdown(self, error):
+    def shutdown(self):
         if self.ping_timer:
             self.ping_timer.cancel()
         if self.repair_timer:
             self.repair_timer.cancel()
-
-        if not error:
-            self.logger.info('Safely shutting down')
-            sys.exit(0)
-        else:
-            self.logger.info('Shutting down due to error')
-            sys.exit(1)
 
     def repair_lbs(self):
         # Work out if it is our turn to run
@@ -115,6 +100,8 @@ class Stats(object):
             gearman = GearJobs(self.logger, self.args)
             failed_lbs, node_status = gearman.send_pings(node_list)
             failed = len(failed_lbs)
+            # TODO: if failed over a threshold (5?) error instead of rebuild,
+            # something bad probably happened
             if failed > 0:
                 self._send_fails(failed_lbs, session)
             session.commit()
@@ -130,9 +117,11 @@ class Stats(object):
         node_list = []
         self.logger.info('Running repair check')
         with db_session() as session:
+            # Join to ensure device is in-use
             devices = session.query(
                 Device.id, Device.name
-            ).filter(Device.status == 'ERROR').all()
+            ).join(LoadBalancer.devices).\
+                filter(Device.status == 'ERROR').all()
 
             tested = len(devices)
             if tested == 0:
