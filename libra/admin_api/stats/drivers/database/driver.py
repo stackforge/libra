@@ -34,7 +34,7 @@ class DbDriver(AlertDriver):
                 errmsg = "Load Balancer has recovered"
                 lb_status = 'ACTIVE'
             elif status == 'ERROR':
-                errmsg = "Load Balancer has failed"
+                errmsg = "Load Balancer has failed, attempting rebuild"
                 lb_status = status
             else:
                 # This shouldnt happen
@@ -55,6 +55,7 @@ class DbDriver(AlertDriver):
                 session.flush()
 
             session.commit()
+            self._rebuild_device(device_id)
 
     def send_node_change(self, message, lbid, degraded):
 
