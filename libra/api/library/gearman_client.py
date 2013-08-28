@@ -39,6 +39,13 @@ def submit_job(job_type, host, data, lbid):
     eventlet.spawn_n(client_job, logger, job_type, host, data, lbid)
 
 
+def submit_vip_job(job_type, device, vip):
+    logger = logging.getLogger(__name__)
+    eventlet.spawn_n(
+        client_job, logger, job_type, "libra_pool_mgm", device, vip
+    )
+
+
 def client_job(logger, job_type, host, data, lbid):
     for x in xrange(5):
         try:
@@ -54,6 +61,8 @@ def client_job(logger, job_type, host, data, lbid):
                 client.send_delete(data)
             if job_type == 'ARCHIVE':
                 client.send_archive(data)
+            if job_type == 'ASSIGN':
+                client.send_assign(data)
             return
         except OperationalError:
             # Auto retry on galera locking error
@@ -86,6 +95,18 @@ class GearmanClientThread(object):
             self.gearman_client = JSONGearmanClient(ssl_server_list)
         else:
             self.gearman_client = JSONGearmanClient(conf.gearman.server)
+
+    def send_assign(self, data):
+        job_data = {
+            'action': 'ASSIGN',
+            'name': data,
+            'ip': self.lbid
+        }
+        status, response = self._send_message(job_data)
+        if not status:
+            self.logger.error(
+                "Failed to assign IP {0} to device {1}".format(self.lbid, data)
+            )
 
     def send_delete(self, data):
         with db_session() as session:
@@ -145,9 +166,7 @@ class GearmanClientThread(object):
                 # Device should never be used again
                 device = session.query(Device).\
                     filter(Device.id == data).first()
-                #TODO: change this to 'DELETED' when pool mgm deletes
-                if device.status != 'ERROR':
-                    device.status = 'OFFLINE'
+                device.status = 'DELETED'
             # Remove LB-device join
             session.execute(loadbalancers_devices.delete().where(
                 loadbalancers_devices.c.loadbalancer == lb.id
