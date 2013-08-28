@@ -119,7 +119,8 @@ class HAProxyDriver(LoadBalancerDriver):
                 if 'monitor' in self._config[proto]:
                     mon = self._config[proto]['monitor']
                     if mon['type'] == 'http':
-                        output.append('    option httpchk %s' % mon['path'])
+                        output.append('    option httpchk GET %s' %
+                                      mon['path'])
                     # our timeout will be connect + read time
                     output.append('    timeout check %ds' % mon['timeout'])
                     # intentionally set rise/fall to the same value
@@ -137,7 +138,8 @@ class HAProxyDriver(LoadBalancerDriver):
                 if 'monitor' in self._config[proto]:
                     mon = self._config[proto]['monitor']
                     if mon['type'] == 'http':
-                        output.append('    option httpchk %s' % mon['path'])
+                        output.append('    option httpchk GET %s' %
+                                      mon['path'])
                     # our timeout will be connect + read time
                     output.append('    timeout check %ds' % mon['timeout'])
                     # intentionally set rise/fall to the same value
