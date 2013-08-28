@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import ipaddress
 # pecan imports
 from pecan import expose, abort, response, request
 from pecan.rest import RestController
@@ -25,11 +26,11 @@ from health_monitor import HealthMonitorController
 from logs import LogsController
 
 # models
-from libra.api.model.lbaas import LoadBalancer, Device, Node, db_session
-from libra.api.model.lbaas import loadbalancers_devices, Limits
+from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
+from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
-from libra.api.library.gearman_client import submit_job
+from libra.common.api.gearman_client import submit_job, submit_vip_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.ip_filter import ipfilter
@@ -96,8 +97,10 @@ class LoadBalancersController(RestController):
                     LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                     LoadBalancer.port, LoadBalancer.algorithm,
                     LoadBalancer.status, LoadBalancer.created,
-                    LoadBalancer.updated, LoadBalancer.statusDescription
+                    LoadBalancer.updated, LoadBalancer.statusDescription,
+                    Vip.id.label('vipid'), Vip.ip
                 ).join(LoadBalancer.devices).\
+                    join(Device.vip).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == self.lbid).\
                     first()
@@ -109,21 +112,17 @@ class LoadBalancersController(RestController):
                 load_balancers = load_balancers._asdict()
                 load_balancers['nodeCount'] = session.query(Node).\
                     filter(Node.lbid == load_balancers['id']).count()
-                virtualIps = session.query(
-                    Device.id, Device.floatingIpAddr
-                ).join(LoadBalancer.devices).\
-                    filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(LoadBalancer.id == self.lbid).\
-                    all()
 
-                load_balancers['virtualIps'] = []
-                for item in virtualIps:
-                    vip = item._asdict()
-                    vip['type'] = 'PUBLIC'
-                    vip['ipVersion'] = 'IPV4'
-                    vip['address'] = vip['floatingIpAddr']
-                    del(vip['floatingIpAddr'])
-                    load_balancers['virtualIps'].append(vip)
+                load_balancers['virtualIps'] = [{
+                    "id": load_balancers['vipid'],
+                    "type": "PUBLIC",
+                    "ipVersion": "IPV4",
+                    "address": str(ipaddress.IPv4Address(
+                        load_balancers['ip']
+                    )),
+                }]
+                del(load_balancers['ip'])
+                del(load_balancers['vipid'])
 
                 nodes = session.query(
                     Node.id, Node.address, Node.port, Node.status, Node.enabled
@@ -259,18 +258,39 @@ class LoadBalancersController(RestController):
                     filter(Device.status == "OFFLINE").\
                     with_lockmode('update').\
                     first()
+                NULL = None  # For pep8
+                vip = session.query(Vip).\
+                    filter(Vip.device == NULL).\
+                    with_lockmode('update').\
+                    first()
+                vip.device = device.id
+                if device is None:
+                    session.rollback()
+                    raise RuntimeError('No devices available')
+                if vip is None:
+                    session.rollback()
+                    raise RuntimeError('No virtual IPs available')
+                vip.device = device.id
+                submit_vip_job(
+                    'ASSIGN', device.name, str(ipaddress.IPv4Address(vip.ip))
+                )
             else:
                 virtual_id = body.virtualIps[0].id
                 # This is an additional load balancer
                 device = session.query(
                     Device
-                ).filter(Device.id == virtual_id).\
+                ).join(Device.vip).\
+                    filter(Vip.id == virtual_id).\
                     first()
                 old_lb = session.query(
                     LoadBalancer
                 ).join(LoadBalancer.devices).\
+                    join(Device.vip).\
                     filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(Device.id == virtual_id).\
+                    filter(Vip.id == virtual_id).\
+                    first()
+                vip = session.query(Vip).\
+                    filter(Vip.device == device.id).\
                     first()
                 if old_lb is None:
                     session.rollback()
@@ -289,10 +309,6 @@ class LoadBalancersController(RestController):
                     raise ClientSideError(
                         'Only one load balancer per port allowed per device'
                     )
-
-            if device is None:
-                session.rollback()
-                raise RuntimeError('No devices available')
 
             if body.algorithm:
                 lb.algorithm = body.algorithm.upper()
@@ -333,8 +349,8 @@ class LoadBalancersController(RestController):
             return_data.created = lb.created
             return_data.updated = lb.updated
             vip_resp = LBVipResp(
-                address=device.floatingIpAddr, id=str(device.id),
-                type='PUBLIC', ipVersion='IPV4'
+                address=str(ipaddress.IPv4Address(vip.ip)),
+                id=str(vip.id), type='PUBLIC', ipVersion='IPV4'
             )
             return_data.virtualIps = [vip_resp]
             return_data.nodes = []
@@ -346,12 +362,9 @@ class LoadBalancersController(RestController):
                 return_data.nodes.append(out_node)
             session.commit()
             # trigger gearman client to create new lb
-            result = submit_job(
+            submit_job(
                 'UPDATE', device.name, device.id, lb.id
             )
-            # do something with result
-            if result:
-                pass
             return return_data
 
     @wsme_pecan.wsexpose(None, body=LBPut, status_code=202)
@@ -429,11 +442,10 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == load_balancer_id).\
                 first()
-            session.flush()
-            session.commit()
             submit_job(
                 'DELETE', device.name, device.id, lb.id
             )
+            session.commit()
             return None
 
     def usage(self, load_balancer_id):

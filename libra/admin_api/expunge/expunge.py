@@ -13,37 +13,35 @@
 # under the License.
 
 import threading
-import signal
-import sys
 from datetime import datetime, timedelta
-from pecan import conf
-from libra.api.model.lbaas import LoadBalancer, db_session
+from libra.common.api.lbaas import LoadBalancer, db_session
 
 
 class ExpungeScheduler(object):
-    def __init__(self, logger):
-        if not conf.expire_days:
+    def __init__(self, logger, args):
+        self.expunge_timer = None
+        if not args.expire_days:
             logger.info('Expunge not configured, disabled')
             return
         self.logger = logger
-        self.expunge_timer = None
-        signal.signal(signal.SIGINT, self.exit_handler)
-        signal.signal(signal.SIGTERM, self.exit_handler)
+        self.args = args
         self.run_expunge()
 
-    def exit_handler(self, signum, frame):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    def shutdown(self):
         if self.expunge_timer:
             self.expunge_timer.cancel()
-        self.logger.info('Safely shutting down')
-        sys.exit(0)
 
     def run_expunge(self):
+        day = datetime.now().day
+        if self.args.server_id != day % self.args.number_of_servers:
+            self.logger.info('Not our turn to run expunge check, sleeping')
+            self.expunge_timer = threading.Timer(
+                24*60*60, self.run_expunge, ()
+            )
         with db_session() as session:
             try:
                 exp = datetime.now() - timedelta(
-                    days=int(conf.expire_days)
+                    days=int(self.args.expire_days)
                 )
                 exp_time = exp.strftime('%Y-%m-%d %H:%M:%S')
                 self.logger.info(

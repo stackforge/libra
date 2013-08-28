@@ -52,6 +52,20 @@ class Limits(DeclarativeBase):
     value = Column(u'value', BIGINT(), nullable=False)
 
 
+class PoolBuilding(DeclarativeBase):
+    __tablename__ = 'pool_building'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    server_id = Column(u'server_id', Integer, nullable=False)
+    qty = Column(u'qty', Integer, nullable=False)
+
+
+class Vip(DeclarativeBase):
+    __tablename__ = 'vips'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    ip = Column(u'ip', Integer, nullable=True)
+    device = Column(u'device', Integer, ForeignKey('devices.id'))
+
+
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'
@@ -67,6 +81,7 @@ class Device(DeclarativeBase):
     status = Column(u'status', VARCHAR(length=128), nullable=False)
     type = Column(u'type', VARCHAR(length=128), nullable=False)
     updated = Column(u'updated', FormatedDateTime(), nullable=False)
+    vip = relationship("Vip", uselist=False, backref="devices")
 
 
 class LoadBalancer(DeclarativeBase):
@@ -91,7 +106,7 @@ class LoadBalancer(DeclarativeBase):
         'HealthMonitor', backref=backref(
             'loadbalancers',
             order_by='HealthMonitor.lbid')
-        )
+    )
     devices = relationship(
         'Device', secondary=loadbalancers_devices, backref='loadbalancers',
         lazy='joined'

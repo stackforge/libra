@@ -11,6 +11,19 @@ fake_body = open(
     os.path.join(os.path.dirname(__file__), "fake_body.json"), 'r').read()
 
 
+class Args(object):
+    nova_user = "password"
+    nova_pass = "auth_test"
+    nova_tenant = "tenant1"
+    nova_region = "region1"
+    nova_keyname = "default"
+    nova_secgroup = "default"
+    nova_image = '1234'
+    nova_image_size = '100'
+    nova_auth_url = ''
+    node_basename = ''
+
+
 class TestResponse(requests.Response):
     """
     Class used to wrap requests.Response and provide some
@@ -56,10 +69,8 @@ class TestLBaaSMgmTask(testtools.TestCase):
 class TestLBaaSMgmNova(testtools.TestCase):
     def setUp(self):
         super(TestLBaaSMgmNova, self).setUp()
-        self.api = Node(
-            "username", "password", "auth_test", "tenant1", "region1",
-            "default", "default", '1234', '100'
-        )
+        args = Args()
+        self.api = Node(args)
         self.api.nova.management_url = "http://example.com"
         self.api.nova.auth_token = "token"
 

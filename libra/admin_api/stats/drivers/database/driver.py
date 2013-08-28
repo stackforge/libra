@@ -11,8 +11,11 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 
-from libra.admin_api.model.lbaas import Device, LoadBalancer, db_session
-from libra.admin_api.model.lbaas import loadbalancers_devices
+import logging
+import ipaddress
+from libra.common.api.lbaas import Device, LoadBalancer, db_session
+from libra.common.api.lbaas import loadbalancers_devices, Vip
+from libra.common.api.gearman_client import submit_job, submit_vip_job
 from libra.admin_api.stats.drivers.base import AlertDriver
 
 
@@ -34,7 +37,7 @@ class DbDriver(AlertDriver):
                 errmsg = "Load Balancer has recovered"
                 lb_status = 'ACTIVE'
             elif status == 'ERROR':
-                errmsg = "Load Balancer has failed"
+                errmsg = "Load Balancer has failed, attempting rebuild"
                 lb_status = status
             else:
                 # This shouldnt happen
@@ -55,6 +58,7 @@ class DbDriver(AlertDriver):
                 session.flush()
 
             session.commit()
+            self._rebuild_device(device_id)
 
     def send_node_change(self, message, lbid, degraded):
 
@@ -77,4 +81,62 @@ class DbDriver(AlertDriver):
                 update({"status": lb_status, "errmsg": errmsg},
                        synchronize_session='fetch')
 
+            session.commit()
+
+    def _rebuild_device(self, device_id):
+        logger = logging.getLogger(__name__)
+        new_device_id = None
+        new_device_name = None
+        with db_session() as session:
+            new_device = session.query(Device).\
+                filter(~Device.id.in_(
+                    session.query(loadbalancers_devices.c.device)
+                )).\
+                filter(Device.status == "OFFLINE").\
+                with_lockmode('update').\
+                first()
+            if new_device is None:
+                session.rollback()
+                logger.error(
+                    'No spare devices when trying to rebuild device {0}'
+                    .format(device_id)
+                )
+                return
+            new_device_id = new_device.id
+            new_device_name = new_device.name
+            logger.info(
+                "Moving device {0} to device {1}"
+                .format(device_id, new_device_id)
+            )
+            lbs = session.query(LoadBalancer).\
+                join(LoadBalancer.devices).\
+                filter(Device.id == device_id).all()
+            for lb in lbs:
+                lb.devices = [new_device]
+                lb.status = "ERROR(REBUILDING)"
+            submit_job(
+                'UPDATE', new_device.name, new_device.id, lbs[0].id
+            )
+            new_device.status = 'ONLINE'
+            session.commit()
+        with db_session() as session:
+            vip = session.query(Vip).filter(Vip.device == device_id).first()
+            vip.device = new_device_id
+            device = session.query(Device).\
+                filter(Device.id == device_id).first()
+            device.status = 'DELETED'
+            lbs = session.query(LoadBalancer).\
+                join(LoadBalancer.devices).\
+                filter(Device.id == device_id).all()
+            for lb in lbs:
+                lb.devices = [new_device]
+                lb.status = "ACTIVE"
+                lb.errmsg = "Load Balancer rebuild on new device"
+            logger.info(
+                "Moving IP {0} and marking device {1} for deletion"
+                .format(str(ipaddress.IPv4Address(vip.ip)), device_id)
+            )
+            submit_vip_job(
+                'ASSIGN', new_device_name, str(ipaddress.IPv4Address(vip.ip))
+            )
             session.commit()

@@ -20,8 +20,8 @@ from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from libra.admin_api.model.validators import DeviceResp, DevicePost, DevicePut
-from libra.admin_api.model.lbaas import LoadBalancer, Device, db_session
-from libra.admin_api.model.lbaas import loadbalancers_devices
+from libra.common.api.lbaas import LoadBalancer, Device, db_session
+from libra.common.api.lbaas import loadbalancers_devices
 
 
 class DevicesController(RestController):
