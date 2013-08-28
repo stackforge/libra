@@ -145,9 +145,7 @@ class GearmanClientThread(object):
                 # Device should never be used again
                 device = session.query(Device).\
                     filter(Device.id == data).first()
-                #TODO: change this to 'DELETED' when pool mgm deletes
-                if device.status != 'ERROR':
-                    device.status = 'OFFLINE'
+                device.status = 'DELETED'
             # Remove LB-device join
             session.execute(loadbalancers_devices.delete().where(
                 loadbalancers_devices.c.loadbalancer == lb.id

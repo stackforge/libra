@@ -13,8 +13,6 @@
 # under the License.
 
 import threading
-import signal
-import sys
 from datetime import datetime
 from libra.admin_api.model.lbaas import LoadBalancer, Device, Node, db_session
 from libra.admin_api.stats.stats_gearman import GearJobs
@@ -36,30 +34,16 @@ class Stats(object):
         self.ping_timer = None
         self.repair_timer = None
 
-        signal.signal(signal.SIGINT, self.exit_handler)
-        signal.signal(signal.SIGTERM, self.exit_handler)
         logger.info("Selected stats drivers: {0}".format(args.stats_driver))
 
         self.start_ping_sched()
         self.start_repair_sched()
 
-    def exit_handler(self, signum, frame):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        self.shutdown(False)
-
-    def shutdown(self, error):
+    def shutdown(self):
         if self.ping_timer:
             self.ping_timer.cancel()
         if self.repair_timer:
             self.repair_timer.cancel()
-
-        if not error:
-            self.logger.info('Safely shutting down')
-            sys.exit(0)
-        else:
-            self.logger.info('Shutting down due to error')
-            sys.exit(1)
 
     def repair_lbs(self):
         # Work out if it is our turn to run

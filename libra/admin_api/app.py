@@ -20,8 +20,11 @@ import grp
 import pwd
 import pecan
 import sys
+import signal
 import os
 from libra.admin_api.stats.scheduler import Stats
+from libra.admin_api.device_pool.manage_pool import Pool
+from libra.admin_api.expunge.expunge import ExpungeScheduler
 from libra.admin_api import config as api_config
 from libra.admin_api import model
 from libra.admin_api.stats.drivers.base import known_drivers
@@ -70,6 +73,33 @@ def setup_app(pecan_config, args):
     )
 
     return app
+
+
+class MaintThreads(object):
+    def __init__(self, logger, args, drivers):
+        self.classes = []
+        self.logger = logger
+        self.args = args
+        self.drivers = drivers
+        signal.signal(signal.SIGINT, self.exit_handler)
+        signal.signal(signal.SIGTERM, self.exit_handler)
+        self.run_threads()
+
+    def run_threads(self):
+        stats = Stats(self.logger, self.args, self.drivers)
+        pool = Pool(self.logger, self.args)
+        expunge = ExpungeScheduler(self.logger, self.args)
+        self.classes.append(stats)
+        self.classes.append(pool)
+        self.classes.append(expunge)
+
+    def exit_handler(self, signum, frame):
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        for function in self.classes:
+            function.shutdown()
+        self.logger.info("Safely shutting down")
+        sys.exit()
 
 
 class LogStdout(object):
@@ -160,6 +190,14 @@ def main():
         '--datadog_env', default='unknown',
         help='Server enironment'
     )
+    options.parser.add_argument(
+        '--node_pool_size', default=10, type=int,
+        help='Number of hot spare devices to keep in the pool'
+    )
+    options.parser.add_argument(
+        '--expire_days', default=0,
+        help='Number of days until deleted load balancers are expired'
+    )
 
     args = options.run()
 
@@ -218,7 +256,7 @@ def main():
         drivers.append(importutils.import_class(
             known_drivers[driver]
         ))
-    Stats(logger, args, drivers)
+    MaintThreads(logger, args, drivers)
     sys.stderr = LogStdout(logger)
     # TODO: set ca_certs and cert_reqs=CERT_REQUIRED
     ssl_sock = eventlet.wrap_ssl(

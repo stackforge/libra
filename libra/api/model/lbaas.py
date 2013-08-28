@@ -91,7 +91,7 @@ class LoadBalancer(DeclarativeBase):
         'HealthMonitor', backref=backref(
             'loadbalancers',
             order_by='HealthMonitor.lbid')
-        )
+    )
     devices = relationship(
         'Device', secondary=loadbalancers_devices, backref='loadbalancers',
         lazy='joined'

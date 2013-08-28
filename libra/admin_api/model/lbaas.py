@@ -52,6 +52,13 @@ class Limits(DeclarativeBase):
     value = Column(u'value', BIGINT(), nullable=False)
 
 
+class PoolBuilding(DeclarativeBase):
+    __tablename__ = 'pool_building'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    server_id = Column(u'server_id', Integer, nullable=False)
+    qty = Column(u'qty', Integer, nullable=False)
+
+
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'
