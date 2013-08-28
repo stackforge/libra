@@ -210,6 +210,9 @@ class Stats(object):
 
     def _update_nodes(self, node_status, session):
         lbids = []
+        degraded = []
+        failed_nodes = dict()
+        repaired_nodes = dict()
         for lb, nodes in node_status.iteritems():
             data = self._get_lb(lb, session)
             if not data:
@@ -221,9 +224,6 @@ class Stats(object):
 
             # Iterate the list of nodes returned from the worker
             # and track any status changes
-            degraded = []
-            failed_nodes = dict()
-            repaired_nodes = dict()
             for node in nodes:
                 # Get the last known status from the nodes table
                 node_data = session.query(Node).\
