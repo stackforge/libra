@@ -13,9 +13,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import ipaddress
 from pecan import response, expose, request
 from pecan.rest import RestController
-from libra.api.model.lbaas import LoadBalancer, Device, db_session
+from libra.api.model.lbaas import LoadBalancer, Vip, Device, db_session
 from libra.api.acl import get_limited_to_project
 
 
@@ -42,13 +43,14 @@ class VipsController(RestController):
                 details="Load Balancer ID not provided"
             )
         with db_session() as session:
-            device = session.query(
-                Device.id, Device.floatingIpAddr
+            vip = session.query(
+                Vip.id, Vip.ip
             ).join(LoadBalancer.devices).\
+                join(Device.vip).\
                 filter(LoadBalancer.id == self.lbid).\
                 filter(LoadBalancer.tenantid == tenant_id).first()
 
-            if not device:
+            if not vip:
                 session.rollback()
                 response.status = 404
                 return dict(
@@ -57,8 +59,8 @@ class VipsController(RestController):
                 )
             resp = {
                 "virtualIps": [{
-                    "id": device.id,
-                    "address": device.floatingIpAddr,
+                    "id": vip.id,
+                    "address": str(ipaddress.IPv4Address(vip.ip)),
                     "type": "PUBLIC",
                     "ipVersion": "IPV4"
                 }]
