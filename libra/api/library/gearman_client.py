@@ -267,7 +267,7 @@ class GearmanClientThread(object):
                 first()
             if not status:
                 self._set_error(data, response, session)
-            else:
+            elif lb.status != 'DEGRADED':
                 lb.status = 'ACTIVE'
             session.commit()
 
