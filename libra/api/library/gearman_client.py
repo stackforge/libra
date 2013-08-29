@@ -215,6 +215,8 @@ class GearmanClientThread(object):
                 'hpcs_action': 'UPDATE',
                 'loadBalancers': []
             }
+
+            is_degraded = False
             for lb in lbs:
                 lb_data = {
                     'name': lb.name,
@@ -234,6 +236,9 @@ class GearmanClientThread(object):
                         'condition': condition
                     }
                     lb_data['nodes'].append(node_data)
+                    # Track if we have a DEGRADED LB
+                    if lb.id == self.lbid and node.status == 'ERROR':
+                        is_degraded = True
 
                 # Add a default health monitor if one does not exist
                 monitor = session.query(HealthMonitor).\
@@ -267,8 +272,11 @@ class GearmanClientThread(object):
                 first()
             if not status:
                 self._set_error(data, response, session)
+            elif is_degraded:
+                lb.status = 'DEGRADED'
             else:
                 lb.status = 'ACTIVE'
+
             session.commit()
 
     def _send_message(self, message):
