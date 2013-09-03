@@ -1,4 +1,4 @@
-description "libra_worker"
+description "libra_admin_api"
 
 start on (net-device-up
           and local-filesystems
@@ -6,7 +6,7 @@ start on (net-device-up
 stop on runlevel [!2345]
 
 script
-   libra_worker -c /etc/libra.cfg
+   libra_admin_api -c /etc/libra.cfg
 
 end script
 

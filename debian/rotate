@@ -1,0 +1,7 @@
+/var/log/libra/libra-_change_.log {
+    daily
+    missingok
+    compress
+    delaycompress
+    notifempty
+}
