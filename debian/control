@@ -1,16 +1,106 @@
 Source: libra
 Section: python
 Priority: optional
-Maintainer: Andrew Hutchings (LinuxJedi)
-Build-Depends: debhelper (>=9), python-support (>=1.0), cdbs (>=0.4.111), python-all-dev, python-eventlet (>=0.9), python-gearman (>=2.0), python-daemon (>=1.5), python-novaclient (>=2.9), python-requests (>=0.12)
+Maintainer: Endre Karlson (ekarlso) <endre.karlson@hp.com>
+Build-Depends:
+  debhelper (>=9),
+  python-support (>=1.0),
+  python-all-dev,
+  python-daemon (>=1.5),
+  python-eventlet (>=0.12),
+  python-gearman (>=2.0.2),
+  python-ipaddress (>=1.0.4),
+  python-pecan (>=0.2.0),
+  python-pbr (>=0.5.20),
+  python-pbr (<<0.6),
+  python-novaclient (>=2.9),
+  python-requests (>=0.12),
+  python-sqlalchemy (>=0.8.0),
 Build-Depends-Indep: python-sphinx (>=1.0), rst2pdf (>=0.16)
 Standards-Version: 3.9.4
+XB-Python-Version: ${python-Versions}
 Homepage: https://launchpad.net/libra
+Vcs-Git: https://github.com/stackforge/libra.git
+Vcs-Browser: https://github.com/stackforge/libra
 
 Package: libra
 Architecture: all
-XB-Python-Version: ${python-Versions}
-Depends: ${misc:Depends}, ${python:Depends}
-Provides: ${python:Provides}
-Description: Tools for an Openstack Load Balancer as a Service
+Depends:
+    python-libra (= ${binary:Version}),
+    libra-common (= ${binary:Version}),
+    libra-worker (= ${binary:Version}),
+    libra-pool-mgm (= ${binary:Version}),
+    libra-api-admin (= ${binary:Version}),
+    libra-api (= ${binary:Version}),
+    ${python:Depends},
+    ${misc:Depends}
+Description: Tools for creating LoadBalancer as a Service anywhere
 
+Package: libra-common
+Architecture: all
+Depends:
+    python-libra (= ${binary:Version}),
+    ${misc:Depends}
+Description: Libra Common
+
+Package: libra-worker
+Architecture: all
+Depends:
+    python-libra (= ${binary:Version}),
+    libra-common (= ${binary:Version}),
+    ${python:Depends},
+    ${misc:Depends}
+Description: libra worker
+ libra worker
+
+Package: libra-pool-mgm
+Architecture: all
+Depends:
+    python-libra (= ${binary:Version}),
+    libra-common (= ${binary:Version}),
+    ${python:Depends},
+    ${misc:Depends}
+Description: libra pool-manager
+ libra pool-manager
+
+Package: libra-api
+Architecture: all
+Depends:
+    python-libra (= ${binary:Version}),
+    libra-common (= ${binary:Version}),
+    ${python:Depends},
+    ${misc:Depends}
+Description: libra API
+ libra API
+
+Package: libra-api-admin
+Architecture: all
+Depends:
+    python-libra (= ${binary:Version}),
+    libra-common (= ${binary:Version}),
+    ${python:Depends},
+    ${misc:Depends}
+Description: libra Admin API
+ libra Admin API
+
+Package: python-lira
+Architecture: all
+Depends:
+    debhelper (>=9),
+    python-support (>=1.0),
+    python-all-dev,
+    python-daemon (>=1.5),
+    python-eventlet (>=0.12),
+    python-gearman (>=2.0.2),
+    python-ipaddress (>=1.0.4),
+    python-pecan (>=0.2.0),
+    python-pbr (>=0.5.20),
+    python-pbr (<<0.6),
+    python-novaclient (>=2.9),
+    python-requests (>=0.12),
+    python-sqlalchemy (>=0.8.0),
+Provides:
+    ${python:Provides}
+XB-Python-Version: ${python:Versions}
+Description: Libra Python Libraries
+ Libra Python Libraries

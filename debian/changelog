@@ -1,4 +1,17 @@
-libra (1.0-1) UNRELEASED; urgency=low
+libra (4.0-2libra1) precise; urgency=high
+
+  * Update dependencies
+  * Split into multiple packages
+
+ -- Endre Karlson <endre.karlson@hp.com>  Mon, 03 Sep 2013 13:58:18 +0200
+
+libra (4.0-1libra1) precise; urgency=high
+
+  * Pin dependancy on python-gearman
+
+ -- Endre Karlson <endre.karlson@hp.com>  Mon, 02 Sep 2013 17:59:18 +0200
+
+libra (1.0-1) precise; urgency=low
 
   * Initial release.
 
