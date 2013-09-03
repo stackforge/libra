@@ -10,3 +10,7 @@ override_dh_installinit:
 	dh_installinit --name=libra_worker
 	dh_installinit --name=libra_pool_mgm --no-start
 	dh_installinit --name=libra_statsd --no-start
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf doc/build build *.egg-info

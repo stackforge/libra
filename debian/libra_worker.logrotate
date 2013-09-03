@@ -1,0 +1,7 @@
+/var/log/libra/libra-worker.log {
+    daily
+    missingok
+    compress
+    delaycompress
+    notifempty
+}

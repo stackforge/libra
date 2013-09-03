@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "purge" ]
+then
+    rm -rf /var/run/libra /var/log/libra || true
+
+    if (which deluser && getent passwd libra) > /dev/null 2>&1; then
+        deluser --system --quiet --backup-to /var/lib libra
+    fi
+    if (which delgroup && getent group libra) > /dev/null 2>&1; then
+        delgroup --system --quiet libra
+    fi
+fi
+
+#DEBHELPER#
