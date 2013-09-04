@@ -13,7 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from pecan import request
+from pecan import request, response
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
@@ -39,23 +39,23 @@ class HealthMonitorController(RestController):
 
         Returns: dict
         """
-
         if not self.lbid:
             raise ClientSideError('Load Balancer ID has not been supplied')
 
         tenant_id = get_limited_to_project(request.headers)
         with db_session() as session:
             # grab the lb
-            lb, monitor = session.query(LoadBalancer, HealthMonitor).\
-                outerjoin(LoadBalancer.monitors).\
+            monitor = session.query(
+                HealthMonitor.type, HealthMonitor.delay,
+                HealthMonitor.timeout, HealthMonitor.attempts,
+                HealthMonitor.path
+            ).join(LoadBalancer.monitors).\
                 filter(LoadBalancer.id == self.lbid).\
                 filter(LoadBalancer.tenantid == tenant_id).\
-                filter(LoadBalancer.status != 'DELETED').first()
+                filter(LoadBalancer.status != 'DELETED').\
+                first()
 
-            if lb is None:
-                session.rollback()
-                raise NotFound('Load Balancer ID is not valid')
-
+            response.status = 200
             if monitor is None:
                 session.rollback()
                 return {}
@@ -70,6 +70,7 @@ class HealthMonitorController(RestController):
             if monitor.path:
                 monitor_data['path'] = monitor.path
 
+        session.commit()
         return monitor_data
 
     @wsme_pecan.wsexpose(LBMonitorResp, body=LBMonitorPut, status_code=202)
@@ -90,15 +91,21 @@ class HealthMonitorController(RestController):
         tenant_id = get_limited_to_project(request.headers)
         with db_session() as session:
             # grab the lb
-            lb, monitor = session.query(LoadBalancer, HealthMonitor).\
+            query = session.query(LoadBalancer, HealthMonitor).\
                 outerjoin(LoadBalancer.monitors).\
                 filter(LoadBalancer.id == self.lbid).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.status != 'DELETED').first()
 
+            if query is None:
+                session.rollback()
+                raise NotFound("Load Balancer not found")
+
+            lb, monitor = query
+
             if lb is None:
                 session.rollback()
-                raise NotFound('Load Balancer ID is not valid')
+                raise NotFound('Load Balancer not found')
 
             # Check inputs
             if (
@@ -206,20 +213,26 @@ class HealthMonitorController(RestController):
 
         Returns: void
         """
-
         if not self.lbid:
             raise ClientSideError('Load Balancer ID has not been supplied')
 
         tenant_id = get_limited_to_project(request.headers)
         with db_session() as session:
-            load_balancer, monitor = session.query(
+            query = session.query(
                 LoadBalancer, HealthMonitor
                 ).outerjoin(LoadBalancer.monitors).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.id == self.lbid).\
                 filter(LoadBalancer.status != 'DELETED').\
                 first()
-            if load_balancer is None:
+
+            if query is None:
+                session.rollback()
+                raise NotFound("Load Balancer not found")
+
+            lb, monitor = query
+
+            if lb is None:
                 session.rollback()
                 raise NotFound("Load Balancer not found")
 
