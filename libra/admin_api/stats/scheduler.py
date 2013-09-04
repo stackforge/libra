@@ -213,6 +213,7 @@ class Stats(object):
         degraded = []
         failed_nodes = dict()
         repaired_nodes = dict()
+        errormsg = dict()
         for lb, nodes in node_status.iteritems():
             data = self._get_lb(lb, session)
             if not data:
@@ -253,6 +254,11 @@ class Stats(object):
                 # Note all LBs with node status changes
                 if node_data.lbid not in lbids:
                     lbids.append(node_data.lbid)
+                    errormsg[node_data.lbid] =\
+                        'Node status change ID: {0}, IP: {1}, tenant: {2}'.\
+                        format(
+                            node_data.lbid, data.floatingIpAddr, data.tenantid
+                        )
 
                 # Change the node status in the node table
                 session.query(Node).\
@@ -265,12 +271,7 @@ class Stats(object):
 
         # Generate a status message per LB for the alert.
         for lbid in lbids:
-            message = 'Node status change\n\
-                    ID: {0}\n\
-                    IP: {1}\n\
-                    tenant: {2}:\n'.format(
-                lbid, data.floatingIpAddr, data.tenantid)
-
+            message = errormsg[lbid]
             if lbid in failed_nodes:
                 message += ' failed:'
                 message += ','.join(str(x) for x in failed_nodes[lbid])
