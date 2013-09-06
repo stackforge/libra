@@ -25,39 +25,12 @@ Configuration File
        nova_secgroup = default
        nova_image = 12345
        nova_image_size = standard.medium
-       api_server = 10.0.0.1:8889 10.0.0.2:8889
-       nodes = 10
-       check_interval = 5
-       submit_interval = 15
+       gearman=127.0.0.1:4730
        node_basename = 'libra'
 
 Command Line Options
 --------------------
    .. program:: libra_pool_mgm
-
-   .. option:: --api_server <HOST:PORT>
-
-      The hostname/IP and port colon separated pointed to an Admin API server
-      for use with the HP REST API driver.  Can be specified multiple times for
-      multiple servers
-
-   .. option:: --check_interval <CHECK_INTERVAL>
-
-      How often to check the API server to see if new nodes are needed
-      (value is minutes)
-
-   .. option:: --submit_interval <SUBMIT_INTERVAL>
-
-      How often to check the list of nodes to see if the nodes
-      are now in a good state (value is in minutes)
-
-   .. option:: --driver <DRIVER>
-
-      API driver to use. Valid driver options are:
-
-      * *hp_rest* - HP REST API, talks to the HP Cloud API server (based
-        on Atlas API)
-        This is the default driver.
 
    .. option:: --datadir <DATADIR>
 
@@ -72,10 +45,6 @@ Command Line Options
 
       A name to prefix the UUID name given to the nodes the pool manager
       generates.
-
-   .. option:: --nodes <NODES>
-
-      The size of the pool of spare nodes the pool manager should keep.
 
    .. option:: --nova_auth_url <NOVA_AUTH_URL>
 
@@ -113,4 +82,21 @@ Command Line Options
 
       The flavor ID (image size ID) or name to use for new nodes spun up in
       the Nova API
+
+   .. option:: --gearman_ssl_ca <PATH>
+
+      The path for the Gearman SSL Certificate Authority.
+
+   .. option:: --gearman_ssl_cert <PATH>
+
+      The path for the Gearman SSL certificate.
+
+   .. option:: --gearman_ssl_key <PATH>
+
+      The path for the Gearman SSL key.
+
+   .. option:: --gearman <HOST:PORT>
+
+      Used to specify the Gearman job server hostname and port. This option
+      can be used multiple times to specify multiple job servers
 

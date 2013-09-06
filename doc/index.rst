@@ -7,7 +7,6 @@ Load Balancer as a Service Device Tools
    introduction
    worker/index
    pool_mgm/index
-   statsd/index
    api/index
    admin_api/index
    config

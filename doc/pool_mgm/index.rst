@@ -6,4 +6,4 @@ Libra Node Pool Manager
 
    about
    config
-   code
+   commands

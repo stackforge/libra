@@ -97,11 +97,6 @@ Command Line Options
       The path for the SSL key file to be used for the frontend of the API
       server
 
-   .. option:: --expire_days <DAYS>
-
-      Deleted Load Balancers older than this number of days will be expunged
-      from the database using a sceduler that is executed every 24 hours.
-
    .. option:: --ip_filters <FILTERS>
 
       A mask of IP addresses to filter for backend nodes in the form
