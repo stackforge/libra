@@ -16,6 +16,7 @@ Configuration File
       db_section=mysql1
       ssl_certfile=/opt/server.crt
       ssl_keyfile=/opt/server.key
+      gearman=127.0.0.1:4730
 
       [mysql1]
       host=localhost
@@ -39,7 +40,7 @@ Command Line Options
 
       The port number to listen on, default is 8889
 
-   .. option:: --db_secions <SECTIONNAME>
+   .. option:: --db_sections <SECTIONNAME>
 
       Config file sections that describe the MySQL servers.  This option can
       be specified multiple times for Galera or NDB clusters.
@@ -90,11 +91,6 @@ Command Line Options
       How long to wait until we consider the second and final ping check
       failed. Default is 30 seconds.
 
-   .. option:: --stats_repair_timer <REPAIR_INTERVAL>
-
-      How often to run a check to see if damaged load balancers had been
-      repaired (in seconds), default 180
-
    .. option:: --number_of_servers <NUMBER_OF_SERVER>
 
       The number of Admin API servers in the system.
@@ -123,3 +119,17 @@ Command Line Options
 
       A list of tags to be used for the datadog driver
 
+   .. option:: --node_pool_size <SIZE>
+
+      The number of hot spare load balancer devices to keep in the pool,
+      default 10
+
+   .. option:: --vip_pool_size <SIZE>
+
+      The number of hot spare floating IPs to keep in the pool, default 10
+
+   .. option:: --expire_days <DAYS>
+
+      The number of days before DELETED load balancers are purged from the
+      database.  The purge is run every 24 hours.  Purge is not run if no
+      value is provided.

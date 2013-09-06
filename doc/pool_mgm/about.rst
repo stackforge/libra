@@ -4,15 +4,16 @@ Description
 Purpose
 -------
 
-The Libra Node Pool manager is designed to keep a constant pool of spare load
-balancer nodes so that when a new one is needed it simply needs configuring.
-This saves on time needed to spin up new nodes upon customer request and extra
-delays due to new nodes failing.
+The Libra Node Pool manager is designed to communicate with Openstack Nova or
+any other compute API to provide nodes and floating IPs to the libra system
+for use.  It does this by providing a gearman worker interface to the Nova
+API.  This means you can have multiple pool managers running and gearman will
+decide on the next available pool manager to take a job. 
 
 Design
 ------
 
-It is designed to probe the API server every X minutes (5 by default) to find
-out how many free nodes there are.  If this falls below a certain defined level
-the pool manager will spin up new nodes and supply their details to the
-API server.
+It is designed to accept requests from the Libra components to manipulate Nova
+instances and floating IPs.  It is a daemon which is a gearman worker.  Any
+commands sent to that worker are converted into Nova commands and the results
+are sent back to the client.

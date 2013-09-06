@@ -45,10 +45,6 @@ class Server(object):
 def main():
     options = Options('mgm', 'Node Management Daemon')
     options.parser.add_argument(
-        '--api_server', action='append', metavar='HOST:PORT', default=[],
-        help='a list of API servers to connect to (for HP REST API driver)'
-    )
-    options.parser.add_argument(
         '--az', type=int,
         help='The az number the node will reside in (to be passed to the API'
              ' server)'

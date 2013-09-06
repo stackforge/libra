@@ -319,6 +319,8 @@ by the LBaaS service.
 +-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
 | Virtual IP      | :ref:`Get list of virtual IPs <api-vips>`                  | GET      | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/virtualips       |
 +-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
+| Logs            | :ref:`Archive log file to Object Storage <api-logs>`       | POST     | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/logs             |
++-----------------+------------------------------------------------------------+----------+-----------------------------------------------------------------+
 
 5.2 Common Request Headers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2270,6 +2272,74 @@ if not found.
                     ]
     }
 
+.. _api-logs:
+
+22. Archive log file to Object Storage
+--------------------------------------
+
+22.1 Operation
+~~~~~~~~~~~~~~
+
++----------+------------------------------------+--------+-----------------------------------------------------+
+| Resource | Operation                          | Method | Path                                                |
++==========+====================================+========+=====================================================+
+| Logs     | Archive log file to Object Storage | POST   | {baseURI}/{ver}/loadbalancers/{loadbalancerId}/logs |
++----------+------------------------------------+--------+-----------------------------------------------------+
+
+22.2 Description
+~~~~~~~~~~~~~~~~
+
+The operation tells the load balancer to push the current log file into an HP Cloud Object Storage container. The status of the load balancer will be set to 'PENDING_UPDATE' during the operation and back to 'ACTIVE' upon success or failure. A success/failure message can be found in the 'statusDescription' field when getting the load balancer details.
+
+**Load Balancer Status Values**
+
++----------------+---------------+--------------------------------+
+| Status         | Name          | Description                    |
++================+===============+================================+
+| ACTIVE         | Load balancer | is in an operational state     |
+| PENDING_UPDATE | Load balancer | is in the process of an update |
++----------------+---------------+--------------------------------+
+
+By default with empty POST data the load balancer will upload to the swift account owned by the same tenant as the load balancer in a container called 'lbaaslogs'. To change this the following optional parameters need to be provided in the POST body:
+
+**objectStoreBasePath** : the object store container to use
+
+**objectStoreEndpoint** : the object store endpoint to use including tenantID, for example: https://region-b.geo-1.objects.hpcloudsvc.com:443/v1/1234567890123
+
+**authToken** : an authentication token to the object store for the load balancer to use
+
+22.3 Request Data
+~~~~~~~~~~~~~~~~~
+
+The caller is required to provide a request data with the POST which includes the appropriate information to upload logs.
+
+22.4 Query Parameters Supported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+None required.
+
+22.5 Required HTTP Header Values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**X-Auth-Token**
+
+22.6 Request Body
+~~~~~~~~~~~~~~~~~
+
+The request body must follow the correct format for new load balancer creation, examples....
+
+A request that uploads the logs to a different object store
+
+::
+
+   {
+        "objectStoreBasePath": "mylblogs",
+        "objectStoreEndpoint": "https://region-b.geo-1.objects.hpcloudsvc.com:443/v1/1234567890123",
+            "authToken": "HPAuth_d17efd"
+   } 
+
+
+
 Features Currently Not Implemented or Supported
 -----------------------------------------------
 
@@ -2281,7 +2351,3 @@ The following features are not supported.
    advertised in /protocols request.  Instead TCP will be used for port 443
    and the HTTPS connections will be passed through the load balancer with no
    termination at the load balancer.
-
-3. The ability to list deleted load balancers is not yet supported.
-
-

@@ -6,4 +6,5 @@ Libra Admin API Server
 
    about
    config
+   schedulers
    api
