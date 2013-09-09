@@ -3,7 +3,7 @@ gearman>=2.0.2
 pbr>=0.5.21,<1.0
 python-daemon>=1.6
 python-logstash
-python_novaclient<2.14.0
+python_novaclient<2.14.2
 python_swiftclient>=1.3.0
 requests>=1.0.0
 dogapi

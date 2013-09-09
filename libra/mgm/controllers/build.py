@@ -96,7 +96,7 @@ class BuildController(object):
             status = status['server']
             if status['status'] == 'ACTIVE':
                 self.msg['name'] = status['name']
-                addresses = status['addresses']['private']
+                addresses = status['addresses'].itervalues().next()
                 for address in addresses:
                     if not address['addr'].startswith('10.'):
                         break

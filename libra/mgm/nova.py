@@ -43,19 +43,20 @@ class Node(object):
             args.nova_auth_url,
             region_name=args.nova_region,
             no_cache=True,
+            insecure=args.nova_insecure,
+            tenant_id=args.nova_tenant_id,
+            bypass_url=args.nova_bypass_url,
             service_type='compute'
         )
         self.keyname = args.nova_keyname
         self.secgroup = args.nova_secgroup
         self.node_basename = args.node_basename
+        self.az = args.nova_az_name
         # Replace '_' with '-' in basename
         if self.node_basename:
             self.node_basename = self.node_basename.replace('_', '-')
 
-        if args.nova_image.isdigit():
-            self.image = args.nova_image
-        else:
-            self.image = self._get_image(args.nova_image)
+        self.image = args.nova_image
 
         if args.nova_image_size.isdigit():
             self.node_type = args.nova_image_size
@@ -142,6 +143,7 @@ class Node(object):
                 "flavorRef": self.node_type,
                 "max_count": 1,
                 "min_count": 1,
+                "availability_zone": self.az,
                 "networks": [],
                 "security_groups": [{"name": self.secgroup}]
                 }}

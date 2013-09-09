@@ -46,7 +46,7 @@ def main():
     options = Options('mgm', 'Node Management Daemon')
     options.parser.add_argument(
         '--az', type=int,
-        help='The az number the node will reside in (to be passed to the API'
+        help='The az the nodes and IPs will reside in (to be passed to the API'
              ' server)'
     )
     options.parser.add_argument(
@@ -71,7 +71,11 @@ def main():
     )
     options.parser.add_argument(
         '--nova_tenant',
-        help='the tenant for the Nova API'
+        help='the tenant name for the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_tenant_id',
+        help='the tenant ID for the Nova API'
     )
     options.parser.add_argument(
         '--nova_keyname',
@@ -90,6 +94,18 @@ def main():
         '--nova_image_size',
         help='the image size ID (flavor ID) or name to use for new nodes spun'
              ' up in the Nova API'
+    )
+    options.parser.add_argument(
+        '--nova_az_name',
+        help='the az name to build in'
+    )
+    options.parser.add_argument(
+        '--nova_insecure', action='store_true',
+        help='do not attempt to verify Nova/Keystone SSL certificates'
+    )
+    options.parser.add_argument(
+        '--nova_bypass_url',
+        help='use a different URL to the one supplied by the service'
     )
     options.parser.add_argument(
         '--gearman', action='append', metavar='HOST:PORT', default=[],
@@ -118,7 +134,7 @@ def main():
     required_args = [
         'az',
         'nova_image', 'nova_image_size', 'nova_secgroup', 'nova_keyname',
-        'nova_tenant', 'nova_region', 'nova_user', 'nova_pass', 'nova_auth_url'
+        'nova_region', 'nova_user', 'nova_pass', 'nova_auth_url'
     ]
 
     # NOTE(LinuxJedi): We are checking for required args here because the
