@@ -63,7 +63,7 @@ CREATE TABLE `loadbalancers_devices` (
   `loadbalancer` int(11) DEFAULT NULL,
   `device` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
 
 CREATE TABLE monitors (
     lbid                              BIGINT                NOT NULL,                  # Loadbalancer who owns this node
@@ -90,3 +90,13 @@ CREATE TABLE `vips` (
   PRIMARY KEY (`id`),
   KEY `device` (`device`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1; 
+
+CREATE TABLE `global_limits` (
+  `id` int(11) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `value` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO `global_limits` VALUES (1,'maxLoadBalancerNameLength',128),(2,'maxVIPsPerLoadBalancer',1),(3,'maxNodesPerLoadBalancer',50),(4,'maxLoadBalancers',20);
+
