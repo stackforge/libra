@@ -191,6 +191,14 @@ def main():
         args.ip_filters = ip_list
 
     pc = get_pecan_config()
+
+    ssl_sock = eventlet.wrap_ssl(
+        eventlet.listen((args.host, args.port)),
+        certfile=args.ssl_certfile,
+        keyfile=args.ssl_keyfile,
+        server_side=True
+    )
+
     if not args.nodaemon:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
         if daemon.runner.is_pidfile_stale(pidfile):
@@ -198,7 +206,8 @@ def main():
         context = daemon.DaemonContext(
             working_directory='/',
             umask=0o022,
-            pidfile=pidfile
+            pidfile=pidfile,
+            files_preserve=[ssl_sock.fileno()]
         )
         if args.user:
             context.uid = pwd.getpwnam(args.user).pw_uid
@@ -210,12 +219,6 @@ def main():
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
     sys.stderr = LogStdout(logger)
-    ssl_sock = eventlet.wrap_ssl(
-        eventlet.listen((args.host, args.port)),
-        certfile=args.ssl_certfile,
-        keyfile=args.ssl_keyfile,
-        server_side=True
-    )
     wsgi.server(ssl_sock, api, keepalive=False, debug=args.debug)
 
     return 0
