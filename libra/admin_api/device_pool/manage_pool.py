@@ -82,7 +82,7 @@ class Pool(object):
     def probe_vips(self):
         minute = datetime.now().minute
         if self.args.server_id != minute % self.args.number_of_servers:
-            self.logging.info('Not our turn to run vips check, sleeping')
+            self.logger.info('Not our turn to run vips check, sleeping')
             self.start_vips_sched()
             return
         self.logger.info('Running vips count probe check')
