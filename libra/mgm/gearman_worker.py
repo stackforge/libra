@@ -36,7 +36,7 @@ def worker_thread(logger, args):
 
     if all([args.gearman_ssl_key, args.gearman_ssl_cert, args.gearman_ssl_ca]):
         ssl_server_list = []
-        for host_port in args.server:
+        for host_port in args.gearman:
             host, port = host_port.split(':')
             ssl_server_list.append({'host': host,
                                     'port': int(port),
