@@ -37,7 +37,7 @@ gearman_workers = [
 
 def submit_job(job_type, host, data, lbid):
     logger = logging.getLogger(__name__)
-    eventlet.spawn_n(client_job, logger, job_type, host, data, lbid)
+    eventlet.spawn_n(client_job, logger, job_type, str(host), data, lbid)
 
 
 def submit_vip_job(job_type, device, vip):
