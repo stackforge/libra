@@ -114,11 +114,11 @@ class DbDriver(AlertDriver):
             for lb in lbs:
                 lb.devices = [new_device]
                 lb.status = "ERROR(REBUILDING)"
-            submit_job(
-                'UPDATE', new_device.name, new_device.id, lbs[0].id
-            )
             new_device.status = 'BULDING'
             session.commit()
+        submit_job(
+            'UPDATE', new_device.name, new_device.id, lbs[0].id
+        )
         with db_session() as session:
             vip = session.query(Vip).filter(Vip.device == device_id).first()
             vip.device = new_device_id
