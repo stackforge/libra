@@ -117,7 +117,7 @@ class DbDriver(AlertDriver):
             submit_job(
                 'UPDATE', new_device.name, new_device.id, lbs[0].id
             )
-            new_device.status = 'ONLINE'
+            new_device.status = 'BULDING'
             session.commit()
         with db_session() as session:
             vip = session.query(Vip).filter(Vip.device == device_id).first()
@@ -139,4 +139,5 @@ class DbDriver(AlertDriver):
             submit_vip_job(
                 'ASSIGN', new_device_name, str(ipaddress.IPv4Address(vip.ip))
             )
+            new_device.status = 'ONLINE'
             session.commit()
