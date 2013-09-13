@@ -115,9 +115,10 @@ class DbDriver(AlertDriver):
                 lb.devices = [new_device]
                 lb.status = "ERROR(REBUILDING)"
             new_device.status = 'BULDING'
+            lbid = lbs[0].id
             session.commit()
         submit_job(
-            'UPDATE', new_device.name, new_device.id, lbs[0].id
+            'UPDATE', new_device_name, new_device_id, lbid
         )
         with db_session() as session:
             vip = session.query(Vip).filter(Vip.device == device_id).first()
