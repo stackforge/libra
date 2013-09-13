@@ -18,7 +18,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, Session
 import sqlalchemy.types as types
 import time
-import random
 import ConfigParser
 from pecan import conf
 import logging
@@ -146,12 +145,14 @@ class HealthMonitor(DeclarativeBase):
 
 
 class RoutingSession(Session):
-    """ If an engine is already in use, re-use it.  Otherwise we can end up
-        with deadlocks in Galera, see http://tinyurl.com/9h6qlly
-        switch engines every 60 seconds of idle time """
+    """ Try to use the first engine provided.  If this fails use the next in
+        sequence and so on.  Reset to the first after 60 seconds
+        we do this because we can end up with deadlocks in Galera, see
+        http://tinyurl.com/9h6qlly """
 
-    engines = []
-    last_engine = None
+    engines = {}
+    engines_count = 0
+    use_engine = 0
     last_engine_time = 0
 
     def get_bind(self, mapper=None, clause=None):
@@ -159,14 +160,12 @@ class RoutingSession(Session):
             self._build_engines()
 
         if (
-            RoutingSession.last_engine
+            RoutingSession.use_engine > 0
             and time.time() < RoutingSession.last_engine_time + 60
         ):
             RoutingSession.last_engine_time = time.time()
-            return RoutingSession.last_engine
-        engine = random.choice(RoutingSession.engines)
-        RoutingSession.last_engine = engine
-        RoutingSession.last_engine_time = time.time()
+            RoutingSession.use_engine = 0
+        engine = RoutingSession.engines[RoutingSession.use_engine]
         return engine
 
     def _build_engines(self):
@@ -175,7 +174,7 @@ class RoutingSession(Session):
         for section in conf.database:
             db_conf = config._sections[section]
 
-            conn_string = '''mysql://%s:%s@%s:%d/%s''' % (
+            conn_string = '''mysql+mysqlconnector://%s:%s@%s:%d/%s''' % (
                 db_conf['username'],
                 db_conf['password'],
                 db_conf['host'],
@@ -199,7 +198,8 @@ class RoutingSession(Session):
                     conn_string, isolation_level="READ COMMITTED",
                     pool_size=20, pool_recycle=3600
                 )
-            RoutingSession.engines.append(engine)
+            RoutingSession.engines[RoutingSession.engines_count] = engine
+            RoutingSession.engines_count += 1
 
 
 class db_session(object):
@@ -216,10 +216,14 @@ class db_session(object):
             except:
                 self.logger.error(
                     'Could not connect to DB server: {0}'.format(
-                        RoutingSession.last_engine.url
+                        RoutingSession.engines[RoutingSession.use_engine].url
                     )
                 )
-                RoutingSession.last_engine = None
+                RoutingSession.last_engine_time = time.time()
+                if RoutingSession.use_engine == RoutingSession.engines_count:
+                    RoutingSession.use_engine = 0
+                else:
+                    RoutingSession.use_engine += 1
         self.logger.error('Could not connect to any DB server')
         return None
 
