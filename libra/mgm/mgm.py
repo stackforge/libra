@@ -12,8 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import eventlet
-eventlet.monkey_patch()
 import daemon
 import daemon.pidfile
 import daemon.runner
@@ -21,6 +19,7 @@ import grp
 import pwd
 import sys
 import os
+import threading
 
 from libra.common.options import Options, setup_logging
 from libra.mgm.gearman_worker import worker_thread
@@ -35,11 +34,19 @@ class Server(object):
         self.logger = setup_logging('libra_mgm', self.args)
 
         self.logger.info(
-            'Libra Pool Manager worker started'
+            'Libra Pool Manager worker started, spawning {0} threads'
+            .format(self.args.threads)
         )
-        thd = eventlet.spawn(worker_thread, self.logger, self.args)
-        thd.wait()
-        self.logger.info("Shutting down")
+        thread_list = []
+        for x in xrange(0, self.args.threads):
+            thd = threading.Thread(
+                target=worker_thread, args=[self.logger, self.args]
+            )
+            thd.daemon = True
+            thread_list.append(thd)
+            thd.start()
+        for thd in thread_list:
+            thd.join()
 
 
 def main():
@@ -127,6 +134,11 @@ def main():
         '--gearman-poll',
         dest='gearman_poll', type=int, metavar='TIME',
         default=1, help='Gearman worker polling timeout'
+    )
+    options.parser.add_argument(
+        '--threads',
+        dest='threads', type=int, default=4,
+        help='Number of worker threads to spawn'
     )
 
     args = options.run()
