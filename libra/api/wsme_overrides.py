@@ -110,7 +110,7 @@ def wsexpose(*args, **kwargs):
                 except (OperationalError, ResourceClosedError):
                     logger = logging.getLogger(__name__)
                     logger.warning(
-                        "Galera deadlock, retry {0}".format(x+1)
+                        "Galera deadlock, retry {0}".format(x + 1)
                     )
                     args = old_args
                     kwargs = old_kwargs
