@@ -36,7 +36,7 @@ class ExpungeScheduler(object):
         if self.args.server_id != day % self.args.number_of_servers:
             self.logger.info('Not our turn to run expunge check, sleeping')
             self.expunge_timer = threading.Timer(
-                24*60*60, self.run_expunge, ()
+                24 * 60 * 60, self.run_expunge, ()
             )
         with db_session() as session:
             try:
@@ -59,4 +59,5 @@ class ExpungeScheduler(object):
             except:
                 self.logger.exception('Exception occurred during expunge')
         self.logger.info('Expunge thread sleeping for 24 hours')
-        self.expunge_timer = threading.Timer(24*60*60, self.run_expunge, ())
+        self.expunge_timer = threading.Timer(
+            24 * 60 * 60, self.run_expunge, ())
