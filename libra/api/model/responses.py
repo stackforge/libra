@@ -44,12 +44,8 @@ class Responses(object):
                 'port': '80'
             },
             {
-                'name': 'HTTPS',
-                'port': '443'
-            },
-            {
                 'name': 'TCP',
-                'port': '*'
+                'port': '443'
             }
         ]
     }
