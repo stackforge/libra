@@ -28,6 +28,7 @@ from logs import LogsController
 # models
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
 from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip
+from libra.common.api.lbaas import HealthMonitor
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
 from libra.common.api.gearman_client import submit_job, submit_vip_job
@@ -442,9 +443,20 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == load_balancer_id).\
                 first()
-            submit_job(
-                'DELETE', device.name, device.id, lb.id
-            )
+            if device is None:
+                # This can happen if a device was manually deleted from the DB
+                lb.status = 'DELETED'
+                session.execute(loadbalancers_devices.delete().where(
+                    loadbalancers_devices.c.loadbalancer == lb.id
+                ))
+                session.query(Node).\
+                    filter(Node.lbid == lb.id).delete()
+                session.query(HealthMonitor).\
+                    filter(HealthMonitor.lbid == lb.id).delete()
+            else:
+                submit_job(
+                    'DELETE', device.name, device.id, lb.id
+                )
             session.commit()
             return None
 
