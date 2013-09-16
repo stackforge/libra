@@ -71,6 +71,22 @@ def main():
         help='type of device to use'
     )
     options.parser.add_argument(
+        '--gearman_keepalive', action="store_true",
+        help='use KEEPALIVE to Gearman server'
+    )
+    options.parser.add_argument(
+        '--gearman_keepcnt', type=int, metavar='COUNT',
+        help='max keepalive probes to send before killing connection'
+    )
+    options.parser.add_argument(
+        '--gearman_keepidle', type=int, metavar='SECONDS',
+        help='seconds of idle time before sending keepalive probes'
+    )
+    options.parser.add_argument(
+        '--gearman_keepintvl', type=int, metavar='SECONDS',
+        help='seconds between TCP keepalive probes'
+    )
+    options.parser.add_argument(
         '--gearman_ssl_ca', dest='gearman_ssl_ca', metavar='FILE',
         help='Gearman SSL certificate authority'
     )
