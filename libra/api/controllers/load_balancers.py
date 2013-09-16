@@ -185,6 +185,11 @@ class LoadBalancersController(RestController):
                 raise ClientSideError(
                     'Node {0} is missing a port'.format(node.address)
                 )
+            if node.port < 1 or node.port > 65535:
+                raise ClientSideError(
+                    'Node {0} port number {1} is invalid'
+                    .format(node.address, node.port)
+                )
             try:
                 node.address = ipfilter(node.address, conf.ip_filters)
             except IPOutOfRange:
@@ -238,6 +243,10 @@ class LoadBalancersController(RestController):
                 lb.protocol = 'HTTP'
 
             if body.port:
+                if body.port < 1 or body.port > 65535:
+                    raise ClientSideError(
+                        'Port number {0} is invalid'.format(body.port)
+                    )
                 lb.port = body.port
             else:
                 if lb.protocol == 'HTTP':
