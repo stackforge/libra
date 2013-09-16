@@ -55,6 +55,25 @@ Command Line Options
       The path for the SSL key file to be used for the frontend of the API
       server
 
+   .. option:: --gearman_keepalive
+
+      Use TCP KEEPALIVE to the Gearman job server. Not supported on all
+      systems.
+
+   .. option:: --gearman_keepcnt <COUNT>
+
+      Maximum number of TCP KEEPALIVE probes to send before killing the
+      connection to the Gearman job server.
+
+   .. option:: --gearman_keepidle <SECONDS>
+
+      Seconds of idle time on the Gearman job server connection before
+      sending TCP KEEPALIVE probes.
+
+   .. option:: --gearman_keepintvl <SECONDS>
+
+      Seconds between TCP KEEPALIVE probes.
+
    .. option:: --gearman_ssl_ca <PATH>
 
       The path for the Gearman SSL Certificate Authority.

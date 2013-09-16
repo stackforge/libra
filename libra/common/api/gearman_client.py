@@ -84,20 +84,19 @@ class GearmanClientThread(object):
         self.host = host
         self.lbid = lbid
 
-        if all([conf.gearman.ssl_key, conf.gearman.ssl_cert,
-                conf.gearman.ssl_ca]):
-            # Use SSL connections to each Gearman job server.
-            ssl_server_list = []
-            for server in conf.gearman.server:
-                ghost, gport = server.split(':')
-                ssl_server_list.append({'host': ghost,
-                                        'port': int(gport),
-                                        'keyfile': conf.gearman.ssl_key,
-                                        'certfile': conf.gearman.ssl_cert,
-                                        'ca_certs': conf.gearman.ssl_ca})
-            self.gearman_client = JSONGearmanClient(ssl_server_list)
-        else:
-            self.gearman_client = JSONGearmanClient(conf.gearman.server)
+        server_list = []
+        for server in conf.gearman.server:
+            ghost, gport = server.split(':')
+            server_list.append({'host': ghost,
+                                'port': int(gport),
+                                'keyfile': conf.gearman.ssl_key,
+                                'certfile': conf.gearman.ssl_cert,
+                                'ca_certs': conf.gearman.ssl_ca,
+                                'keepalive': conf.gearman.keepalive,
+                                'keepcnt': conf.gearman.keepcnt,
+                                'keepidle': conf.gearman.keepidle,
+                                'keepintvl': conf.gearman.keepintvl})
+        self.gearman_client = JSONGearmanClient(server_list)
 
     def send_assign(self, data):
         job_data = {

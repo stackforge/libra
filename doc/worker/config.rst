@@ -28,6 +28,25 @@ Command Line Options
       * *haproxy* - `HAProxy <http://haproxy.1wt.eu>`_ software load balancer.
         This is the default driver.
 
+   .. option:: --gearman_keepalive
+
+      Use TCP KEEPALIVE to the Gearman job server. Not supported on all
+      systems.
+
+   .. option:: --gearman_keepcnt <COUNT>
+
+      Maximum number of TCP KEEPALIVE probes to send before killing the
+      connection to the Gearman job server.
+
+   .. option:: --gearman_keepidle <SECONDS>
+
+      Seconds of idle time on the Gearman job server connection before
+      sending TCP KEEPALIVE probes.
+
+   .. option:: --gearman_keepintvl <SECONDS>
+
+      Seconds between TCP KEEPALIVE probes.
+
    .. option:: --gearman_ssl_ca <FILE>
 
       Full path to the file with the CA public key to use when
@@ -61,9 +80,9 @@ Command Line Options
 
    .. option:: --gearman-poll <SECONDS>
 
-      The number of seconds gearman will poll before re-shuffling its 
+      The number of seconds gearman will poll before re-shuffling its
       connections. Default is 1 second.
-      
+
    .. option:: --syslog
 
       Send log events to syslog.

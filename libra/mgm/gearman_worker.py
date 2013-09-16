@@ -34,18 +34,19 @@ def worker_thread(logger, args):
     logger.info("Registering task libra_pool_mgm")
     hostname = socket.gethostname()
 
-    if all([args.gearman_ssl_key, args.gearman_ssl_cert, args.gearman_ssl_ca]):
-        ssl_server_list = []
-        for host_port in args.gearman:
-            host, port = host_port.split(':')
-            ssl_server_list.append({'host': host,
-                                    'port': int(port),
-                                    'keyfile': args.gearman_ssl_key,
-                                    'certfile': args.gearman_ssl_cert,
-                                    'ca_certs': args.gearman_ssl_ca})
-        worker = JSONGearmanWorker(ssl_server_list)
-    else:
-        worker = JSONGearmanWorker(args.gearman)
+    server_list = []
+    for host_port in args.gearman:
+        host, port = host_port.split(':')
+        server_list.append({'host': host,
+                            'port': int(port),
+                            'keyfile': args.gearman_ssl_key,
+                            'certfile': args.gearman_ssl_cert,
+                            'ca_certs': args.gearman_ssl_ca,
+                            'keepalive': args.gearman_keepalive,
+                            'keepcnt': args.gearman_keepcnt,
+                            'keepidle': args.gearman_keepidle,
+                            'keepintvl': args.gearman_keepintvl})
+    worker = JSONGearmanWorker(server_list)
 
     worker.set_client_id(hostname)
     worker.register_task('libra_pool_mgm', handler)

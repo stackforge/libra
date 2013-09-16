@@ -51,7 +51,11 @@ def setup_app(pecan_config, args):
         'server': args.gearman,
         'ssl_key': args.gearman_ssl_key,
         'ssl_cert': args.gearman_ssl_cert,
-        'ssl_ca': args.gearman_ssl_ca
+        'ssl_ca': args.gearman_ssl_ca,
+        'keepalive': args.gearman_keepalive,
+        'keepcnt': args.gearman_keepcnt,
+        'keepidle': args.gearman_keepidle,
+        'keepintvl': args.gearman_keepintvl
     }
     config['conffile'] = args.config
     if args.debug:
@@ -135,6 +139,22 @@ def main():
     options.parser.add_argument(
         '--gearman', action='append', metavar='HOST:PORT', default=[],
         help='Gearman job servers'
+    )
+    options.parser.add_argument(
+        '--gearman_keepalive', action="store_true",
+        help='use KEEPALIVE to Gearman server'
+    )
+    options.parser.add_argument(
+        '--gearman_keepcnt', type=int, metavar='COUNT',
+        help='max keepalive probes to send before killing connection'
+    )
+    options.parser.add_argument(
+        '--gearman_keepidle', type=int, metavar='SECONDS',
+        help='seconds of idle time before sending keepalive probes'
+    )
+    options.parser.add_argument(
+        '--gearman_keepintvl', type=int, metavar='SECONDS',
+        help='seconds between TCP keepalive probes'
     )
     options.parser.add_argument(
         '--gearman_ssl_ca', metavar='FILE',

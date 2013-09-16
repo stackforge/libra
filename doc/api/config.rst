@@ -60,6 +60,25 @@ Command Line Options
       Used to specify the Gearman job server hostname and port. This option
       can be used multiple times to specify multiple job servers.
 
+   .. option:: --gearman_keepalive
+
+      Use TCP KEEPALIVE to the Gearman job server. Not supported on all
+      systems.
+
+   .. option:: --gearman_keepcnt <COUNT>
+
+      Maximum number of TCP KEEPALIVE probes to send before killing the
+      connection to the Gearman job server.
+
+   .. option:: --gearman_keepidle <SECONDS>
+
+      Seconds of idle time on the Gearman job server connection before
+      sending TCP KEEPALIVE probes.
+
+   .. option:: --gearman_keepintvl <SECONDS>
+
+      Seconds between TCP KEEPALIVE probes.
+
    .. option:: --gearman_ssl_ca <PATH>
 
       The path for the Gearman SSL Certificate Authority
@@ -79,7 +98,7 @@ Command Line Options
       class.
 
    .. option:: --swift_basepath <CONTAINER>
-      
+
       The default container to be used for customer log uploads.
 
    .. option:: --swift_endpoint <URL>
