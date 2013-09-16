@@ -119,6 +119,22 @@ def main():
         help='Gearman job servers'
     )
     options.parser.add_argument(
+        '--gearman_keepalive', action="store_true",
+        help='use KEEPALIVE to Gearman server'
+    )
+    options.parser.add_argument(
+        '--gearman_keepcnt', type=int, metavar='COUNT',
+        help='max keepalive probes to send before killing connection'
+    )
+    options.parser.add_argument(
+        '--gearman_keepidle', type=int, metavar='SECONDS',
+        help='seconds of idle time before sending keepalive probes'
+    )
+    options.parser.add_argument(
+        '--gearman_keepintvl', type=int, metavar='SECONDS',
+        help='seconds between TCP keepalive probes'
+    )
+    options.parser.add_argument(
         '--gearman_ssl_ca', metavar='FILE',
         help='Gearman SSL certificate authority'
     )
@@ -131,8 +147,7 @@ def main():
         help='Gearman SSL key'
     )
     options.parser.add_argument(
-        '--gearman-poll',
-        dest='gearman_poll', type=int, metavar='TIME',
+        '--gearman_poll', type=int, metavar='TIME',
         default=1, help='Gearman worker polling timeout'
     )
     options.parser.add_argument(

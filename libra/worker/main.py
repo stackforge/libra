@@ -71,6 +71,22 @@ def main():
         help='type of device to use'
     )
     options.parser.add_argument(
+        '--gearman_keepalive', action="store_true",
+        help='use KEEPALIVE to Gearman server'
+    )
+    options.parser.add_argument(
+        '--gearman_keepcnt', type=int, metavar='COUNT',
+        help='max keepalive probes to send before killing connection'
+    )
+    options.parser.add_argument(
+        '--gearman_keepidle', type=int, metavar='SECONDS',
+        help='seconds of idle time before sending keepalive probes'
+    )
+    options.parser.add_argument(
+        '--gearman_keepintvl', type=int, metavar='SECONDS',
+        help='seconds between TCP keepalive probes'
+    )
+    options.parser.add_argument(
         '--gearman_ssl_ca', dest='gearman_ssl_ca', metavar='FILE',
         help='Gearman SSL certificate authority'
     )
@@ -83,13 +99,12 @@ def main():
         help='Gearman SSL key'
     )
     options.parser.add_argument(
-        '--haproxy-service', dest='haproxy_service',
+        '--haproxy_service',
         choices=haproxy_services.keys(), default='ubuntu',
         help='os services to use with HAProxy driver (when used)'
     )
     options.parser.add_argument(
-        '-s', '--reconnect_sleep',
-        dest='reconnect_sleep', type=int, metavar='TIME',
+        '-s', '--reconnect_sleep', type=int, metavar='TIME',
         default=60, help='seconds to sleep between job server reconnects'
     )
     options.parser.add_argument(
@@ -98,12 +113,11 @@ def main():
         help='add a Gearman job server to the connection list'
     )
     options.parser.add_argument(
-        '--stats-poll', dest='stats_poll', type=int, metavar='TIME',
+        '--stats_poll', type=int, metavar='TIME',
         default=300, help='statistics polling interval in seconds'
     )
     options.parser.add_argument(
-        '--gearman-poll',
-        dest='gearman_poll', type=int, metavar='TIME',
+        '--gearman_poll', type=int, metavar='TIME',
         default=1, help='Gearman worker polling timeout'
     )
     args = options.run()
