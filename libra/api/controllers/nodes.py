@@ -130,6 +130,11 @@ class NodesController(RestController):
                 raise ClientSideError(
                     'Node {0} is missing a port'.format(node.address)
                 )
+            if node.port < 1 or node.port > 65535:
+                raise ClientSideError(
+                    'Node {0} port number {1} is invalid'
+                    .format(node.address, node.port)
+                )
             try:
                 node.address = ipfilter(node.address, conf.ip_filters)
             except IPOutOfRange:
