@@ -25,7 +25,6 @@ CREATE TABLE loadbalancers (
     algorithm VARCHAR(80)              NOT NULL,                 # LB Algorithm in use e.g. ROUND_ROBIN, see ATLAS API 1.1 for all possible values
     created   TIMESTAMP                NOT NULL,                 # timestamp of when LB was created
     updated   TIMESTAMP                NOT NULL,                 # timestamp of when LB was last updated
-    device    BIGINT                   NOT NULL,                 # reference to associated device OR '0' for unassigned
     errmsg    VARCHAR(128),                                      # optional error message which can describe details regarding LBs state, can be blank if no error state exists
     PRIMARY KEY (id)                                             # ids are unique accross all LBs
  ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
