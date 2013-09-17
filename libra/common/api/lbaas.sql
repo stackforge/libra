@@ -49,7 +49,6 @@ CREATE TABLE devices (
     name           VARCHAR(128)          NOT NULL,                  # admin assigned device name, this is the unique gearman worker function name
     floatingIpAddr VARCHAR(128)          NOT NULL,                  # IPV4 or IPV6 address of device for floating IP
     publicIpAddr   VARCHAR(128)          NOT NULL,                  # IPV4 or IPV6 address of device for floating IP
-    loadbalancers  VARCHAR(128)          NOT NULL,                  # Reference to loadbalancers using this device ( JSON array )
     az             INT                   NOT NULL,                  # availability zone in which this device exists
     type           VARCHAR(128)          NOT NULL,                  # text description of type of device, e.g. 'HAProxy'
     created        TIMESTAMP             NOT NULL,                  # timestamp of when device was created
