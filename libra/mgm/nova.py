@@ -52,6 +52,8 @@ class Node(object):
         self.secgroup = args.nova_secgroup
         self.node_basename = args.node_basename
         self.az = args.nova_az_name
+        self.rm_fip_ignore_500 = args.rm_fip_ignore_500
+
         # Replace '_' with '-' in basename
         if self.node_basename:
             self.node_basename = self.node_basename.replace('_', '-')
@@ -107,7 +109,9 @@ class Node(object):
             }
         }
         resp, body = self.nova.post(url, body=body)
-        if resp.status_code != 202:
+        if resp.status_code == 500 and self.rm_fip_ignore_500:
+            pass
+        elif resp.status_code != 202:
             raise Exception(
                 'Response code {0}, message {1} when assigning vip'
                 .format(resp.status_code, body)
