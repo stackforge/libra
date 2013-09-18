@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import eventlet
+eventlet.monkey_patch()
 import daemon
 import daemon.pidfile
 import daemon.runner
