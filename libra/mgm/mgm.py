@@ -155,6 +155,10 @@ def main():
         dest='threads', type=int, default=4,
         help='Number of worker threads to spawn'
     )
+    options.parser.add_argument(
+        '--rm_fip_ignore_500', action='store_true',
+        help='Ignore HTTP 500 error when removing a floating IP'
+    )
 
     args = options.run()
 
