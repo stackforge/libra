@@ -52,6 +52,7 @@ CREATE TABLE devices (
     type           VARCHAR(128)          NOT NULL,                  # text description of type of device, e.g. 'HAProxy'
     created        TIMESTAMP             NOT NULL DEFAULT '0000-00-00 00:00:00',                  # timestamp of when device was created (default sets to current timestamp on row create)
     updated        TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,                  # timestamp of when device was last updated
+    pingCount      INT                   NOT NULL,                  # Number of ping failures against an OFFLINE device
     status         VARCHAR(128)          NOT NULL,                  # status of device 'OFFLINE', 'ONLINE', 'ERROR', this value is reported by the device
     PRIMARY KEY (id)
 ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;

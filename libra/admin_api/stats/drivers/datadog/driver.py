@@ -32,9 +32,10 @@ class DatadogDriver(AlertDriver):
         )
         self.logger.info('Datadog alert response: {0}'.format(resp))
 
-    def send_repair(self, message, device_id):
-        title = 'Load balancer recovered in {0}'.format(self.args.datadog_env)
-        text = 'Load balancer recovered with message {0} {1}'.format(
+    def send_delete(self, message, device_id):
+        title = 'Load balancer unreachable in {0}'.\
+            format(self.args.datadog_env)
+        text = 'Load balancer unreachable with message {0} {1}'.format(
             message, self.args.datadog_message_tail
         )
         tags = self.args.datadog_tags.split()
