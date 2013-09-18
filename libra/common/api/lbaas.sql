@@ -23,9 +23,9 @@ CREATE TABLE loadbalancers (
     port      INT                      NOT NULL,                 # TCP port number associated with protocol and used by loadbalancer northbound interface
     status    VARCHAR(50)              NOT NULL,                 # current status, see ATLAS API 1.1 for all possible values
     algorithm VARCHAR(80)              NOT NULL,                 # LB Algorithm in use e.g. ROUND_ROBIN, see ATLAS API 1.1 for all possible values
-    created   TIMESTAMP                NOT NULL,                 # timestamp of when LB was created
-    updated   TIMESTAMP                NOT NULL,                 # timestamp of when LB was last updated
-    errmsg    VARCHAR(128),                                      # optional error message which can describe details regarding LBs state, can be blank if no error state exists
+    created   TIMESTAMP                NOT NULL DEFAULT '0000-00-00 00:00:00',                 # timestamp of when LB was created
+    updated   TIMESTAMP                NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,                 # timestamp of when LB was last updated
+    errmsg    VARCHAR(128)             DEFAULT NULL,                                      # optional error message which can describe details regarding LBs state, can be blank if no error state exists
     PRIMARY KEY (id)                                             # ids are unique accross all LBs
  ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
 
@@ -50,8 +50,8 @@ CREATE TABLE devices (
     publicIpAddr   VARCHAR(128)          NOT NULL,                  # IPV4 or IPV6 address of device for floating IP
     az             INT                   NOT NULL,                  # availability zone in which this device exists
     type           VARCHAR(128)          NOT NULL,                  # text description of type of device, e.g. 'HAProxy'
-    created        TIMESTAMP             NOT NULL,                  # timestamp of when device was created
-    updated        TIMESTAMP             NOT NULL,                  # timestamp of when device was last updated
+    created        TIMESTAMP             NOT NULL DEFAULT '0000-00-00 00:00:00',                  # timestamp of when device was created (default sets to current timestamp on row create)
+    updated        TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,                  # timestamp of when device was last updated
     status         VARCHAR(128)          NOT NULL,                  # status of device 'OFFLINE', 'ONLINE', 'ERROR', this value is reported by the device
     PRIMARY KEY (id)
 ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
