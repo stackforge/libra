@@ -317,8 +317,9 @@ class LoadBalancersController(RestController):
                 old_count = session.query(
                     LoadBalancer
                 ).join(LoadBalancer.devices).\
+                    join(Device.vip).\
                     filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(Device.id == virtual_id).\
+                    filter(vip.id == virtual_id).\
                     filter(LoadBalancer.port == lb.port).\
                     count()
                 if old_count:
