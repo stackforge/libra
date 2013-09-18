@@ -171,6 +171,7 @@ class DevicesController(RestController):
         device.floatingIpAddr = body.floatingIpAddr
         device.az = body.az
         device.type = body.type
+        device.pingCount = 0
         device.status = 'OFFLINE'
         device.created = None
 
