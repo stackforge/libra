@@ -26,7 +26,7 @@ class AlertDriver(object):
     def send_alert(self, message, device_id):
         raise NotImplementedError()
 
-    def send_repair(self, message, device_id):
+    def send_delete(self, message, device_id):
         raise NotImplementedError()
 
     def send_node_change(self, message, lbid, degraded):

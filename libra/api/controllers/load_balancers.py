@@ -292,6 +292,13 @@ class LoadBalancersController(RestController):
                 ).join(Device.vip).\
                     filter(Vip.id == virtual_id).\
                     first()
+
+                if device.status == 'ERROR':
+                    session.rollback()
+                    raise ClientSideError(
+                        'Cannot add a Load Balancer in an ERROR state'
+                    )
+
                 old_lb = session.query(
                     LoadBalancer
                 ).join(LoadBalancer.devices).\
@@ -409,10 +416,17 @@ class LoadBalancersController(RestController):
 
             lb.status = 'PENDING_UPDATE'
             device = session.query(
-                Device.id, Device.name
+                Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
+
+            if device.status == 'ERROR':
+                session.rollback()
+                raise ClientSideError(
+                    'Cannot update a Load Balancer in an ERROR state'
+                )
+
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, lb.id

@@ -107,10 +107,9 @@ class GearJobs(object):
 
         return failed_list, node_status
 
-    def send_repair(self, node_list):
+    def offline_check(self, node_list):
         list_of_jobs = []
-        repaired_list = []
-        node_status = dict()
+        failed_list = []
         job_data = {"hpcs_action": "STATS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
@@ -120,18 +119,11 @@ class GearJobs(object):
         )
         for ping in submitted_pings:
             if ping.state == JOB_UNKNOWN:
-                # TODO: Gearman server failed, ignoring for now
-                self.logger.error('Gearman Job server fail')
-                continue
+                self.logger.error(
+                    "Gearman Job server failed during OFFLINE check of {0}".
+                    format(ping.job.task)
+                )
             elif ping.timed_out:
-                # Ping timeout
-                continue
-            elif ping.result['hpcs_response'] == 'FAIL':
-                # Error returned by Gearman
-                continue
-            else:
-                repaired_list.append(ping.job.task)
-                if 'nodes' in ping.result:
-                    node_status[ping.job.task] = ping.result['nodes']
+                failed_list.append(ping.job.task)
 
-        return repaired_list, node_status
+        return failed_list
