@@ -119,3 +119,7 @@ Command Line Options
       Used to specify the Gearman job server hostname and port. This option
       can be used multiple times to specify multiple job servers
 
+   .. option:: --rm_fip_ignore_500
+
+      When removing a floating IP, ignore the HTTP 500 error and treat it as
+      a successful response.
