@@ -21,28 +21,12 @@ from libra.admin_api.stats.drivers.base import AlertDriver
 
 class DbDriver(AlertDriver):
     def send_alert(self, message, device_id):
-        self.update_status(message, device_id, 'ERROR')
-
-    def send_repair(self, message, device_id):
-        self.update_status(message, device_id, 'ONLINE')
-
-    def update_status(self, message, device_id, status):
         with db_session() as session:
             device = session.query(Device).\
                 filter(Device.id == device_id).first()
 
-            device.status = status
-
-            if status == 'ONLINE':
-                errmsg = "Load Balancer has recovered"
-                lb_status = 'ACTIVE'
-            elif status == 'ERROR':
-                errmsg = "Load Balancer has failed, attempting rebuild"
-                lb_status = status
-            else:
-                # This shouldnt happen
-                errmsg = ""
-                lb_status = status
+            device.status = "ERROR"
+            errmsg = "Load Balancer has failed, attempting rebuild"
 
             lbs = session.query(
                 loadbalancers_devices.c.loadbalancer).\
@@ -52,7 +36,7 @@ class DbDriver(AlertDriver):
             for lb in lbs:
                 session.query(LoadBalancer).\
                     filter(LoadBalancer.id == lb[0]).\
-                    update({"status": lb_status, "errmsg": errmsg},
+                    update({"status": "ERROR", "errmsg": errmsg},
                            synchronize_session='fetch')
 
                 session.flush()
@@ -60,8 +44,14 @@ class DbDriver(AlertDriver):
             session.commit()
             self._rebuild_device(device_id)
 
-    def send_node_change(self, message, lbid, degraded):
+    def send_delete(self, message, device_id):
+        with db_session() as session:
+            session.query(Device).\
+                filter(Device.id == device_id).\
+                update({"status": "DELETED"}, synchronize_session='fetch')
+            session.commit()
 
+    def send_node_change(self, message, lbid, degraded):
         with db_session() as session:
             lb = session.query(LoadBalancer).\
                 filter(LoadBalancer.id == lbid).first()

@@ -190,10 +190,17 @@ class NodesController(RestController):
                     )
                 )
             device = session.query(
-                Device.id, Device.name
+                Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
+
+            if device.status == 'ERROR':
+                session.rollback()
+                raise ClientSideError(
+                    'Cannot modify a Load Balancer in an ERROR state'
+                )
+
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid
@@ -245,10 +252,17 @@ class NodesController(RestController):
 
             lb.status = 'PENDING_UPDATE'
             device = session.query(
-                Device.id, Device.name
+                Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
+
+            if device.status == 'ERROR':
+                session.rollback()
+                raise ClientSideError(
+                    'Cannot modify a Load Balancer in an ERROR state'
+                )
+
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, lb.id

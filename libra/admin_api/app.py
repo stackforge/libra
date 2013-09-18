@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import eventlet
-eventlet.monkey_patch()
 import daemon
 import daemon.pidfile
 import daemon.runner
@@ -160,6 +159,14 @@ def main():
     options.parser.add_argument(
         '--stats_poll_timeout_retry', type=int, default=30,
         help='gearman timeout value for retry ping request (in seconds)'
+    )
+    options.parser.add_argument(
+        '--stats_offline_ping_limit', type=int, default=10,
+        help='Number of failed pings to an OFFLINE device before deleting it'
+    )
+    options.parser.add_argument(
+        '--stats_device_error_limit', type=int, default=5,
+        help='Max number of simultaneous device failures to allow recovery on'
     )
     options.parser.add_argument(
         '--number_of_servers', type=int, default=1,

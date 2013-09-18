@@ -182,10 +182,16 @@ class HealthMonitorController(RestController):
 
             lb.status = 'PENDING_UPDATE'
             device = session.query(
-                Device.id, Device.name
+                Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
+
+            if device.status == 'ERROR':
+                session.rollback()
+                raise ClientSideError(
+                    'Cannot modify a Load Balancer in an ERROR state'
+                )
 
             return_data = LBMonitorResp()
             return_data.type = data["type"]

@@ -91,6 +91,15 @@ Command Line Options
       How long to wait until we consider the second and final ping check
       failed. Default is 30 seconds.
 
+   .. option:: --stats_offline_ping_limit <COUNT>
+
+      How many times to ping an OFFLINE load balancer before considering
+      it unreachable and marking it for deletion.
+
+   .. option:: --stats_device_error_limit <COUNT>
+
+      Maximum number of simultaneous device failures to allow recovery on
+
    .. option:: --number_of_servers <NUMBER_OF_SERVER>
 
       The number of Admin API servers in the system.

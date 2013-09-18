@@ -79,6 +79,7 @@ class Device(DeclarativeBase):
     publicIpAddr = Column(u'publicIpAddr', VARCHAR(length=128), nullable=False)
     status = Column(u'status', VARCHAR(length=128), nullable=False)
     type = Column(u'type', VARCHAR(length=128), nullable=False)
+    pingCount = Column(u'pingCount', INTEGER(), nullable=False)
     updated = Column(u'updated', FormatedDateTime(), nullable=False)
     vip = relationship("Vip", uselist=False, backref="devices")
 
