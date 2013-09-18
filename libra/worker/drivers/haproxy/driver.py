@@ -135,6 +135,12 @@ class HAProxyDriver(LoadBalancerDriver):
 
             # TCP specific options for the backend
             else:
+                # Allow session stickiness for TCP connections. The 'size'
+                # value affects memory usage (about 50 bytes per entry).
+                output.append('    stick-table type ip size 200k expire 30m')
+                output.append('    stick store-request src')
+                output.append('    stick match src')
+
                 if 'monitor' in self._config[proto]:
                     mon = self._config[proto]['monitor']
                     if mon['type'] == 'http':
