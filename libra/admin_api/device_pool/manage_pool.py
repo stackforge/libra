@@ -343,6 +343,7 @@ class GearmanWork(object):
         device.floatingIpAddr = data['addr']
         device.az = data['az']
         device.type = data['type']
+        device.pingCount = 0
         device.status = 'OFFLINE'
         device.created = None
         with db_session() as session:
