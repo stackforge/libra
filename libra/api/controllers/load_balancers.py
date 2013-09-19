@@ -319,7 +319,7 @@ class LoadBalancersController(RestController):
                 ).join(LoadBalancer.devices).\
                     join(Device.vip).\
                     filter(LoadBalancer.tenantid == tenant_id).\
-                    filter(vip.id == virtual_id).\
+                    filter(Vip.id == virtual_id).\
                     filter(LoadBalancer.port == lb.port).\
                     count()
                 if old_count:
