@@ -1,23 +1,21 @@
-Introduction
-============
+=============
+Logical architecture
+=============
 
-Libra is a Load Balancer as a Service (LBaaS) system originally designed by
-Hewlett-Packard Cloud Services.  It consists of five core components
-required to get LBaaS working:
+See information for each component for more information.
 
-* A node pool manager to keep a warm spare pool of load balancers ready
-* A node worker to asynchronously communicate to the API server
-* A monitoring system for the load balancers
-* A customer API server
-* An administrative API server
+* :ref:`libra-pool-mgr` - A node pool manager to keep a warm spare pool of load balancers ready
+* :ref:`libra-worker` - A node worker to asynchronously communicate to the API server
+* :ref:`libra-api` - A customer API server
+* :ref:`libra-admin-api` - An administrative API server
 
 The API server is based on a modified version of the `Atlas API specification
 <https://wiki.openstack.org/wiki/Atlas-LB>`_.
 
-Layout
-------
+High level overview
+-------------------
 
-.. image:: libralayout.png
+.. image:: /img/libralayout.png
 
 Here you can see that the pool manager spins up the required Nova nodes with
 the load balancer image.  It then hands the details of these nodes over to the

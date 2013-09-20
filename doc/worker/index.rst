@@ -1,3 +1,5 @@
+.. _libra-worker:
+
 Libra Gearman Worker
 ====================
 
