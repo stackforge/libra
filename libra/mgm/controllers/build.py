@@ -47,7 +47,7 @@ class BuildController(object):
             name = exc.node_name
             # Node may have built despite error
             try:
-                node_id = self.get_node(name)
+                node_id = nova.get_node(name)
             except NotFound:
                 self.logger.error(
                     "No node found for {0}, giving up on it".format(name)
