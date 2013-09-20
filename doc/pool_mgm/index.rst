@@ -1,4 +1,4 @@
-.. _libra-pool-mgr:
+.. _libra-pool-mgm:
 
 Libra Node Pool Manager
 =======================

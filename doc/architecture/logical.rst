@@ -1,6 +1,6 @@
-=============
+====================
 Logical architecture
-=============
+====================
 
 See information for each component for more information.
 
