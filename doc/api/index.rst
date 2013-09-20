@@ -1,3 +1,5 @@
+.. _libra-api:
+
 Libra API Server
 ================
 

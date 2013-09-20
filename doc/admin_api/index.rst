@@ -1,3 +1,5 @@
+.. _libra-admin-api:
+
 Libra Admin API Server
 ======================
 
