@@ -57,19 +57,13 @@ class DbDriver(AlertDriver):
                 filter(LoadBalancer.id == lbid).first()
 
             if lb.status == 'ERROR':
-                errmsg = "Load balancer has failed"
-                lb_status = lb.status
+                lb.errmsg = "Load balancer has failed"
             elif degraded:
-                errmsg = "A node on the load balancer has failed"
-                lb_status = 'DEGRADED'
+                lb.errmsg = "A node on the load balancer has failed"
+                lb.status = 'DEGRADED'
             else:
-                errmsg = "A node on the load balancer has recovered"
-                lb_status = 'ACTIVE'
-
-            session.query(LoadBalancer).\
-                filter(LoadBalancer.id == lbid).\
-                update({"status": lb_status, "errmsg": errmsg},
-                       synchronize_session='fetch')
+                lb.errmsg = "A node on the load balancer has recovered"
+                lb.status = 'ACTIVE'
 
             session.commit()
 
