@@ -70,11 +70,12 @@ class Node(object):
         node_id = uuid.uuid1()
         try:
             body = self._create(node_id)
-        except exceptions.ClientException:
-            raise BuildError(
-                'Error creating node, exception {exc}'
-                .format(exc=sys.exc_info()[0]), node_id
-            )
+        except exceptions.ClientException, e:
+            msg = 'Error creating node, exception {exc}' \
+                  'Message: {msg} Details: {details}'
+            raise BuildError(msg.format(exc=sys.exc_info()[0], msg=e.message,
+                             details=e.details), node_id)
+
 
         return body['server']['id']
 
