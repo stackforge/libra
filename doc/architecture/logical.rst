@@ -4,7 +4,7 @@ Logical architecture
 
 See information for each component for more information.
 
-* :ref:`libra-pool-mgr` - A node pool manager to keep a warm spare pool of load balancers ready
+* :ref:`libra-pool-mgm` - A node pool manager to keep a warm spare pool of load balancers ready
 * :ref:`libra-worker` - A node worker to asynchronously communicate to the API server
 * :ref:`libra-api` - A customer API server
 * :ref:`libra-admin-api` - An administrative API server
