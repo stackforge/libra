@@ -1,12 +1,12 @@
-===============
-Getting started
-===============
+=======================
+Development environment
+=======================
 
 Libra is a system to provide LoadBalancing as a Service on top of
 various platforms. It is comprised of four components :ref:`libra-api`,
 :ref:`libra-admin-api`, :ref:`libra-pool-mgm` and :ref:`libra-worker`,
 supported by a few other open source components. For more information see
-:doc:`architecture/index`.
+:doc:`/architecture/index`.
 
 
 Development environment
@@ -48,7 +48,7 @@ Installing
 .. index::
     double: install; libra
 
-1. Do steps in :ref:`ppa`
+1. Do steps in :doc:`ppa`
 
 2. Do steps in 'Common steps'
 
