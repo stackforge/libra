@@ -1,3 +1,9 @@
+.. _configuration:
+
+=============
+Configuration
+=============
+
 Configuration of Services
 =========================
 
