@@ -52,6 +52,7 @@ class Node(object):
         self.secgroup = args.nova_secgroup
         self.node_basename = args.node_basename
         self.az = args.nova_az_name
+        self.net_id = args.nova_net_id
         self.rm_fip_ignore_500 = args.rm_fip_ignore_500
 
         # Replace '_' with '-' in basename
@@ -144,6 +145,11 @@ class Node(object):
             node_name = '{0}-{1}'.format(self.node_basename, node_id)
         else:
             node_name = '{0}'.format(node_id)
+
+        networks = []
+        if self.net_id:
+            networks.append({"uuid": self.net_id})
+
         body = {"server": {
                 "name": node_name,
                 "imageRef": self.image,
@@ -152,7 +158,7 @@ class Node(object):
                 "max_count": 1,
                 "min_count": 1,
                 "availability_zone": self.az,
-                "networks": [],
+                "networks": networks,
                 "security_groups": [{"name": self.secgroup}]
                 }}
         resp, body = self.nova.post(url, body=body)
