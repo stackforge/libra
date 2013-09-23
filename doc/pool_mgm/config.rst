@@ -78,6 +78,10 @@ Command Line Options
 
       The image ID or name to use on new nodes spun up in the Nova API
 
+   .. option:: --nova_net_id <Neutron Network ID>
+
+      Specify which Neutron Network ID workers should be started with.
+
    .. option:: --nova_image_size <NOVA_IMAGE_SIZE>
 
       The flavor ID (image size ID) or name to use for new nodes spun up in
