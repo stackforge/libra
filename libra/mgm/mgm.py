@@ -115,6 +115,10 @@ def main():
         help='use a different URL to the one supplied by the service'
     )
     options.parser.add_argument(
+        '--nova_net_id',
+        help="The ID of the network to put loadbalancer on"
+             "(Required if multiple Neutron networks)")
+    options.parser.add_argument(
         '--gearman', action='append', metavar='HOST:PORT', default=[],
         help='Gearman job servers'
     )
