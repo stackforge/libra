@@ -89,13 +89,12 @@ class LoadBalancer(DeclarativeBase):
     __tablename__ = 'loadbalancers'
     #column definitions
     algorithm = Column(u'algorithm', VARCHAR(length=80), nullable=False)
-    errmsg = Column(u'errmsg', VARCHAR(length=128))
+    errmsg = Column(u'errmsg', VARCHAR(length=128), nullable=True)
     id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
     name = Column(u'name', VARCHAR(length=128), nullable=False)
     port = Column(u'port', INTEGER(), nullable=False)
     protocol = Column(u'protocol', VARCHAR(length=128), nullable=False)
     status = Column(u'status', VARCHAR(length=50), nullable=False)
-    statusDescription = Column(u'errmsg', VARCHAR(length=128), nullable=True)
     tenantid = Column(u'tenantid', VARCHAR(length=128), nullable=False)
     updated = Column(u'updated', FormatedDateTime(), nullable=False)
     created = Column(u'created', FormatedDateTime(), nullable=False)
