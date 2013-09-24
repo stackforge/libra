@@ -75,7 +75,7 @@ Installing
 
     This is a custom version with patches commited upstream but not release yet.
 
-   sudo pip install  https://launchpad.net/~libra-core/+archive/ppa/+files/gearman_2.0.2.git2.orig.tar.gz
+   sudo pip install https://launchpad.net/~libra-core/+archive/ppa/+files/gearman_2.0.2.git2.orig.tar.gz
 
 6. Install dependencies using pip
 
