@@ -114,10 +114,8 @@ class DbDriver(AlertDriver):
             device.status = 'DELETED'
             lbs = session.query(LoadBalancer).\
                 join(LoadBalancer.devices).\
-                filter(Device.id == device_id).all()
+                filter(Device.id == new_device_id).all()
             for lb in lbs:
-                lb.devices = [new_device]
-                lb.status = "ACTIVE"
                 lb.errmsg = "Load Balancer rebuild on new device"
             logger.info(
                 "Moving IP {0} and marking device {1} for deletion"
