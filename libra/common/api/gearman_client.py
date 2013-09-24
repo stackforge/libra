@@ -258,7 +258,7 @@ class GearmanClientThread(object):
                 'loadBalancers': []
             }
 
-            is_degraded = False
+            degraded = []
             for lb in lbs:
                 lb_data = {
                     'name': lb.name,
@@ -279,8 +279,8 @@ class GearmanClientThread(object):
                     }
                     lb_data['nodes'].append(node_data)
                     # Track if we have a DEGRADED LB
-                    if lb.id == self.lbid and node.status == 'ERROR':
-                        is_degraded = True
+                    if node.status == 'ERROR':
+                        degraded.append(lb.id)
 
                 # Add a default health monitor if one does not exist
                 monitor = session.query(HealthMonitor).\
@@ -309,15 +309,16 @@ class GearmanClientThread(object):
 
             # Update the worker
             status, response = self._send_message(job_data, 'hpcs_response')
-            lb = session.query(LoadBalancer).\
-                filter(LoadBalancer.id == self.lbid).\
-                first()
             if not status:
                 self._set_error(data, response, session)
-            elif is_degraded:
-                lb.status = 'DEGRADED'
             else:
-                lb.status = 'ACTIVE'
+                for lb in lbs:
+                    if lb.id in degraded:
+                        lb.status = 'DEGRADED'
+                        lb.errmsg = "A node on the load balancer has failed"
+                    else:
+                        lb.status = 'ACTIVE'
+                        lb.errmsg = None
 
             session.commit()
 

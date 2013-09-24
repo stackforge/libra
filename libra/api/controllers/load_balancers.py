@@ -98,7 +98,7 @@ class LoadBalancersController(RestController):
                     LoadBalancer.name, LoadBalancer.id, LoadBalancer.protocol,
                     LoadBalancer.port, LoadBalancer.algorithm,
                     LoadBalancer.status, LoadBalancer.created,
-                    LoadBalancer.updated, LoadBalancer.statusDescription,
+                    LoadBalancer.updated, LoadBalancer.errmsg,
                     Vip.id.label('vipid'), Vip.ip
                 ).join(LoadBalancer.devices).\
                     join(Device.vip).\
@@ -133,8 +133,12 @@ class LoadBalancersController(RestController):
                     all()
 
                 load_balancers['id'] = str(load_balancers['id'])
-                if not load_balancers['statusDescription']:
+                if not load_balancers['errmsg']:
                     load_balancers['statusDescription'] = ''
+                else:
+                    load_balancers['statusDescription'] =\
+                        load_balancers['errmsg']
+                del(load_balancers['errmsg'])
 
                 load_balancers['nodes'] = []
                 for item in nodes:
