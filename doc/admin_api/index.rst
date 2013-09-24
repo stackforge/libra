@@ -9,4 +9,5 @@ Libra Admin API Server
    about
    config
    schedulers
+   stats-drivers
    api

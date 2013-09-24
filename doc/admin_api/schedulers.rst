@@ -14,15 +14,39 @@ Stats Scheduler
 This scheduler is actually a monitoring scheduler and at a later date will also
 gather statistics for billing purposes.  It is executed once a minute.
 
-It sends a gearman message to active Load Balancer device.  There are three
+It sends a gearman 'ping' message to active Load Balancer device.  There are three
 possible outcomes from the results:
+
+It has support for multiple different :doc:`stats-drivers`.
 
 #. If all is good, no action is taken
 #. If a node connected to a load balancer has failed the node is marked as
    ERROR and the load balancer is marked as DEGRADED
 #. If a device has failed the device will automatically be rebuilt on a new
    device and the associated floating IP will be re-pointed to that device.  The
-   old device will be marked for deletion
+   old device will be marked for deletion.
+
+
+Rebuild (AutoFailover)
+**********************
+
+Libra LBaaS supports auto-failover or auto-rebuild of a broken :term:`device`.
+
+This basically means typically re-allocating / re-building the :term:`device` to a new :term:`device`.
+
+# A ping is sent to each :term:`device` (ping_lbs > _exec_ping)
+# Send failures to drivers (_exec_ping > _send_fails)
+# Driver does
+    # Marks the :term:`device` as being in ERROR state.
+    # Triggers a rebuild
+    # Looks for a free :term:`device` that is in OFFLINE state in the db.
+    # Assigns the failed :term:`device` to the OFFLINE :term:`device`
+    # Assigns the :term:`vip` to the new :term:`device`
+    # Marks :term:`device` as DELETED
+    # Puts the new :term:`device` into ACTIVE in the db.
+# A scheduled function remove the :term:`device` from DB and unconfigures it.
+# A scheduled function ensures that there are standby :term:`device`s in the pool.
+
 
 Delete Scheduler
 ----------------
