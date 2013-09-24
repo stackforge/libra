@@ -268,25 +268,39 @@ API nodes
 
 5. Login / or script the next actions
 
-6. Do steps in :doc:`ppa` for each instance
+6. Add the Ubuntu CloudArchive PPA
 
-7. Install latest version of Libra
+::
+
+    $ sudo apt-get install -qy ubuntu-cloud-keyring
+    $ sudo su -c "echo 'deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/havana main' > /etc/apt/sources.list.d/cloudarchive.list"
+    $ sudo apt-get -q update
+
+7. Install python-keystoneclient
+
+::
+
+    $ sudo apt-get install -qy python-keystoneclient
+
+8. Do steps in :doc:`ppa` for each instance
+
+9. Install latest version of Libra
 
 ::
 
     $ sudo apt-get install -qy libra-api libra-admin-api
 
-8. Copy the configuration file from one of the :ref:`libra-pool-mgm` instances
+10. Copy the configuration file from one of the :ref:`libra-pool-mgm` instances
    to each instance.
 
-9. Restart :ref:`libra-api` and :ref:`libra-admin-api` on each instance.
+11. Restart :ref:`libra-api` and :ref:`libra-admin-api` on each instance.
 
 ::
 
     $ for i in api admin-api; do sudo service libra-$i restart; done
 
-10. Now you're done with the API services
+12. Now you're done with the API services
 
-11. Check that the logs have any errors.
+13. Check that the logs have any errors.
 
-12. See :ref:`install-verify` to verify that the system works!
+14. See :ref:`install-verify` to verify that the system works!
