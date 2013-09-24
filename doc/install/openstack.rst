@@ -268,25 +268,31 @@ API nodes
 
 5. Login / or script the next actions
 
-6. Do steps in :doc:`ppa` for each instance
+6. Install python-keystoneclient
 
-7. Install latest version of Libra
+::
+
+    $ sudo apt-get install -qy python-keystoneclient
+
+7. Do steps in :doc:`ppa` for each instance
+
+8. Install latest version of Libra
 
 ::
 
     $ sudo apt-get install -qy libra-api libra-admin-api
 
-8. Copy the configuration file from one of the :ref:`libra-pool-mgm` instances
+9. Copy the configuration file from one of the :ref:`libra-pool-mgm` instances
    to each instance.
 
-9. Restart :ref:`libra-api` and :ref:`libra-admin-api` on each instance.
+10. Restart :ref:`libra-api` and :ref:`libra-admin-api` on each instance.
 
 ::
 
     $ for i in api admin-api; do sudo service libra-$i restart; done
 
-10. Now you're done with the API services
+11. Now you're done with the API services
 
-11. Check that the logs have any errors.
+12. Check that the logs have any errors.
 
-12. See :ref:`install-verify` to verify that the system works!
+13. See :ref:`install-verify` to verify that the system works!
