@@ -202,7 +202,11 @@ class LBaaSController(object):
                     return self.msg
 
             for lb_node in current_lb['nodes']:
-                port, address, node_id, weight = None, None, None, None
+                port = None
+                address = None
+                node_id = None
+                weight = None
+                backup = False
 
                 if 'port' in lb_node:
                     port = lb_node['port']
@@ -222,21 +226,30 @@ class LBaaSController(object):
                 if 'weight' in lb_node:
                     weight = lb_node['weight']
 
+                if 'backup' in lb_node and lb_node['backup'].lower() == 'true':
+                    backup = True
+
                 try:
                     self.driver.add_server(current_lb['protocol'],
                                            node_id,
                                            address,
                                            port,
-                                           weight)
+                                           weight,
+                                           backup)
                 except NotImplementedError:
-                    self.logger.error(
-                        "Selected driver does not support adding a server."
-                    )
                     lb_node['condition'] = self.NODE_ERR
+                    error = "Selected driver does not support adding a server"
+                    self.logger.error(error)
+                    self.msg[self.ERROR_FIELD] = error
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
                 except Exception as e:
-                    self.logger.error("Failure trying adding server: %s, %s" %
-                                      (e.__class__, e))
                     lb_node['condition'] = self.NODE_ERR
+                    error = "Failure adding server %s: %s" % (node_id, e)
+                    self.logger.error(error)
+                    self.msg[self.ERROR_FIELD] = error
+                    self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                    return self.msg
                 else:
                     self.logger.debug("Added server: %s:%s" % (address, port))
                     lb_node['condition'] = self.NODE_OK
