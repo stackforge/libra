@@ -180,6 +180,16 @@ class LoadBalancersController(RestController):
             raise ClientSideError(
                 'At least one backend node needs to be supplied'
             )
+
+        # When the load balancer is used for Galera, we need to do some
+        # sanity checking of the nodes to make sure 1 and only 1 node is
+        # defined as the primary node.
+        if body.protocol and body.protocol.lower() == 'galera':
+            is_galera = True
+        else:
+            is_galera = False
+        num_galera_primary_nodes = 0
+
         for node in body.nodes:
             if node.address == Unset:
                 raise ClientSideError(
@@ -194,6 +204,7 @@ class LoadBalancersController(RestController):
                     'Node {0} port number {1} is invalid'
                     .format(node.address, node.port)
                 )
+
             try:
                 node.address = ipfilter(node.address, conf.ip_filters)
             except IPOutOfRange:
@@ -205,6 +216,19 @@ class LoadBalancersController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
+
+            is_backup = False
+            if node.backup != Unset and node.backup == 'TRUE':
+                is_backup = True
+            if is_galera and not is_backup:
+                num_galera_primary_nodes += 1
+
+        # Galera sanity checks
+        if is_galera and num_galera_primary_nodes != 1:
+            raise ClientSideError(
+                'Galera load balancer must have exactly one primary node'
+            )
+
         with db_session() as session:
             lblimit = session.query(Limits.value).\
                 filter(Limits.name == 'maxLoadBalancers').scalar()
@@ -241,8 +265,13 @@ class LoadBalancersController(RestController):
             lb = LoadBalancer()
             lb.tenantid = tenant_id
             lb.name = body.name
-            if body.protocol and body.protocol.lower() == 'tcp':
-                lb.protocol = 'TCP'
+            if body.protocol:
+                if body.protocol.lower() in ('tcp', 'http', 'galera'):
+                    lb.protocol = body.protocol.upper()
+                else:
+                    raise ClientSideError(
+                        'Invalid protocol %s' % body.protocol
+                    )
             else:
                 lb.protocol = 'HTTP'
 
@@ -351,9 +380,16 @@ class LoadBalancersController(RestController):
                 else:
                     enabled = 1
                     node_status = 'ONLINE'
+
+                if node.backup == 'TRUE':
+                    backup = 1
+                else:
+                    backup = 0
+
                 out_node = Node(
                     lbid=lb.id, port=node.port, address=node.address,
-                    enabled=enabled, status=node_status, weight=1
+                    enabled=enabled, status=node_status, weight=1,
+                    backup=backup
                 )
                 session.add(out_node)
 
