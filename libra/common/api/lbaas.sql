@@ -38,6 +38,7 @@ CREATE TABLE loadbalancers (
     weight         INT                   NOT NULL,                  # Node weight if applicable to algorithm used
     enabled        BOOLEAN               NOT NULL,                  # is node enabled or not
     status         VARCHAR(128)          NOT NULL,                  # status of node 'OFFLINE', 'ONLINE', 'ERROR', this value is reported by the device
+    backup         BOOLEAN               NOT NULL DEFAULT FALSE,    # true if a backup node
     PRIMARY KEY (id)                                                # ids are unique accross all Nodes
  ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
 

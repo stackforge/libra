@@ -180,6 +180,7 @@ class LoadBalancersController(RestController):
             raise ClientSideError(
                 'At least one backend node needs to be supplied'
             )
+
         for node in body.nodes:
             if node.address == Unset:
                 raise ClientSideError(
@@ -194,6 +195,7 @@ class LoadBalancersController(RestController):
                     'Node {0} port number {1} is invalid'
                     .format(node.address, node.port)
                 )
+
             try:
                 node.address = ipfilter(node.address, conf.ip_filters)
             except IPOutOfRange:
@@ -205,6 +207,7 @@ class LoadBalancersController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
+
         with db_session() as session:
             lblimit = session.query(Limits.value).\
                 filter(Limits.name == 'maxLoadBalancers').scalar()
@@ -241,8 +244,13 @@ class LoadBalancersController(RestController):
             lb = LoadBalancer()
             lb.tenantid = tenant_id
             lb.name = body.name
-            if body.protocol and body.protocol.lower() == 'tcp':
-                lb.protocol = 'TCP'
+            if body.protocol:
+                if body.protocol.lower() in ('tcp', 'http', 'galera'):
+                    lb.protocol = body.protocol.upper()
+                else:
+                    raise ClientSideError(
+                        'Invalid protocol %s' % body.protocol
+                    )
             else:
                 lb.protocol = 'HTTP'
 
@@ -351,9 +359,16 @@ class LoadBalancersController(RestController):
                 else:
                     enabled = 1
                     node_status = 'ONLINE'
+
+                if node.backup == 'TRUE':
+                    backup = 1
+                else:
+                    backup = 0
+
                 out_node = Node(
                     lbid=lb.id, port=node.port, address=node.address,
-                    enabled=enabled, status=node_status, weight=1
+                    enabled=enabled, status=node_status, weight=1,
+                    backup=backup
                 )
                 session.add(out_node)
 
