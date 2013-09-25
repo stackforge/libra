@@ -146,6 +146,7 @@ class NodesController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
+
         with db_session() as session:
             load_balancer = session.query(LoadBalancer).\
                 filter(LoadBalancer.tenantid == tenant_id).\
@@ -157,20 +158,32 @@ class NodesController(RestController):
                 raise NotFound('Load Balancer not found')
 
             load_balancer.status = 'PENDING_UPDATE'
+
             # check if we are over limit
             nodelimit = session.query(Limits.value).\
                 filter(Limits.name == 'maxNodesPerLoadBalancer').scalar()
             nodecount = session.query(Node).\
                 filter(Node.lbid == self.lbid).count()
-
             if (nodecount + len(body.nodes)) > nodelimit:
                 session.rollback()
                 raise OverLimit(
                     'Command would exceed Load Balancer node limit'
                 )
+
             return_data = LBNodeResp()
             return_data.nodes = []
+
+            is_galera = False
+            if load_balancer.protocol.lower() == 'galera':
+                is_galera = True
+
             for node in body.nodes:
+                # Galera load balancer sanity checking. Only allowed to add
+                # backup nodes since a primary is presumably already defined.
+                if is_galera and node.backup == 'FALSE':
+                    raise ClientSideError(
+                        'Galera load balancer may have only one primary node'
+                    )
                 if node.condition == 'DISABLED':
                     enabled = 0
                     node_status = 'OFFLINE'
@@ -194,6 +207,7 @@ class NodesController(RestController):
                         status=new_node.status
                     )
                 )
+
             device = session.query(
                 Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
@@ -214,6 +228,7 @@ class NodesController(RestController):
 
     @wsme_pecan.wsexpose(None, body=LBNodePut, status_code=202)
     def put(self, body=None):
+        """ Update a node condition: ENABLED or DISABLED """
         if not self.lbid:
             raise ClientSideError('Load Balancer ID has not been supplied')
         if not self.nodeid:
@@ -301,7 +316,9 @@ class NodesController(RestController):
             if load_balancer is None:
                 session.rollback()
                 raise NotFound("Load Balancer not found")
+
             load_balancer.status = 'PENDING_UPDATE'
+
             nodecount = session.query(Node).\
                 filter(Node.lbid == self.lbid).\
                 filter(Node.enabled == 1).count()
@@ -311,6 +328,7 @@ class NodesController(RestController):
                 raise ClientSideError(
                     "Cannot delete the last enabled node in a load balancer"
                 )
+
             node = session.query(Node).\
                 filter(Node.lbid == self.lbid).\
                 filter(Node.id == node_id).\
@@ -320,6 +338,14 @@ class NodesController(RestController):
                 raise NotFound(
                     "Node not found in supplied Load Balancer"
                 )
+
+            # May not delete the primary node of a Galera LB
+            if load_balancer.protocol.lower() == 'galera' and node.backup == 0:
+                session.rollback()
+                raise ClientSideError(
+                    "Cannot delete the primary node in a Galera load balancer"
+                )
+
             session.delete(node)
             device = session.query(
                 Device.id, Device.name
