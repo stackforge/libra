@@ -82,36 +82,39 @@ class HAProxyDriver(LoadBalancerDriver):
 
         for proto in self._config:
             protocfg = self._config[proto]
+            real_proto = proto
+            if proto == 'galera':
+                real_proto = 'tcp'
 
             #------------------------
             # Frontend configuration
             #------------------------
-            output.append('frontend %s-in' % proto)
-            output.append('    mode %s' % proto)
+            output.append('frontend %s-in' % real_proto)
+            output.append('    mode %s' % real_proto)
             output.append('    bind %s:%s' % (protocfg['bind_address'],
                                               protocfg['bind_port']))
-            output.append('    default_backend %s-servers' % proto)
+            output.append('    default_backend %s-servers' % real_proto)
 
             # HTTP specific options for the frontend
-            if proto == 'http':
+            if real_proto == 'http':
                 output.append('    option httplog')
             # TCP specific options for the frontend
-            elif proto == 'tcp':
+            elif real_proto == 'tcp':
                 output.append('    option tcplog')
 
             #------------------------
             # Backend configuration
             #------------------------
 
-            output.append('backend %s-servers' % proto)
-            output.append('    mode %s' % proto)
+            output.append('backend %s-servers' % real_proto)
+            output.append('    mode %s' % real_proto)
             output.append('    balance %s' % protocfg['algorithm'])
 
             # default healthcheck if none specified
             monitor = 'check inter 30s'
 
             # HTTP specific options for the backend
-            if proto == 'http':
+            if real_proto == 'http':
                 output.append('    cookie SERVERID insert indirect')
                 output.append('    option httpclose')
                 output.append('    option forwardfor')
@@ -127,19 +130,40 @@ class HAProxyDriver(LoadBalancerDriver):
                     monitor = "check inter %ds rise %d fall %d" % (
                               mon['delay'], mon['attempts'], mon['attempts'])
 
-                for (node_id, addr, port, weight) in protocfg['servers']:
-                    output.append('    server id-%s %s:%s cookie id-%s '
-                                  'weight %d %s' %
-                                  (node_id, addr, port, node_id,
-                                   weight, monitor))
+                for (node_id, addr, port, wt, bkup) in protocfg['servers']:
+                    if bkup:
+                        output.append(
+                            '    server id-%s %s:%s backup cookie id-%s'
+                            ' weight %d %s' %
+                            (node_id, addr, port, node_id, wt, monitor)
+                        )
+                    else:
+                        output.append(
+                            '    server id-%s %s:%s cookie id-%s'
+                            ' weight %d %s' %
+                            (node_id, addr, port, node_id, wt, monitor)
+                        )
 
-            # TCP specific options for the backend
+            # TCP or Galera specific options for the backend
+            #
+            # The Galera protocol is a convenience option that lets us set
+            # our TCP options specifically for load balancing between Galera
+            # database nodes in a manner that helps avoid deadlocks. A main
+            # node is chosen which will act as the 'write' node, sending all
+            # updates to this one node.
+
             else:
-                # Allow session stickiness for TCP connections. The 'size'
-                # value affects memory usage (about 50 bytes per entry).
-                output.append('    stick-table type ip size 200k expire 30m')
-                output.append('    stick store-request src')
-                output.append('    stick match src')
+
+                # No stick table for Galera protocol since we want to return to
+                # the main backend node once it is available after being down.
+                if proto == 'tcp':
+                    # Allow session stickiness for TCP connections. The 'size'
+                    # value affects memory usage (about 50 bytes per entry).
+                    output.append(
+                        '    stick-table type ip size 200k expire 30m'
+                    )
+                    output.append('    stick store-request src')
+                    output.append('    stick match src')
 
                 if 'monitor' in self._config[proto]:
                     mon = self._config[proto]['monitor']
@@ -152,9 +176,17 @@ class HAProxyDriver(LoadBalancerDriver):
                     monitor = "check inter %ds rise %d fall %d" % (
                               mon['delay'], mon['attempts'], mon['attempts'])
 
-                for (node_id, addr, port, weight) in protocfg['servers']:
-                    output.append('    server id-%s %s:%s weight %d %s' %
-                                  (node_id, addr, port, weight, monitor))
+                for (node_id, addr, port, wt, bkup) in protocfg['servers']:
+                    if bkup:
+                        output.append(
+                            '    server id-%s %s:%s backup weight %d %s' %
+                            (node_id, addr, port, wt, monitor)
+                        )
+                    else:
+                        output.append(
+                            '    server id-%s %s:%s weight %d %s' %
+                            (node_id, addr, port, wt, monitor)
+                        )
 
         return '\n'.join(output) + '\n'
 
@@ -251,7 +283,7 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def add_protocol(self, protocol, port=None):
         proto = protocol.lower()
-        if proto not in ('tcp', 'http', 'health'):
+        if proto not in ('tcp', 'http', 'galera'):
             raise Exception("Unsupported protocol: %s" % protocol)
         if proto in self._config:
             raise Exception("Protocol '%s' is already defined." % protocol)
@@ -259,14 +291,15 @@ class HAProxyDriver(LoadBalancerDriver):
             self._config[proto] = dict()
 
         if port is None:
-            if proto == 'tcp':
-                raise Exception('Port is required for TCP protocol.')
+            if proto in ('tcp', 'galera'):
+                raise Exception('Port is required for this protocol.')
             elif proto == 'http':
                 self._bind(proto, '0.0.0.0', 80)
         else:
             self._bind(proto, '0.0.0.0', port)
 
-    def add_server(self, protocol, node_id, host, port, weight=1):
+    def add_server(self, protocol, node_id, host, port,
+                   weight=1, backup=False):
         proto = protocol.lower()
         if weight is None:
             weight = 1
@@ -281,7 +314,15 @@ class HAProxyDriver(LoadBalancerDriver):
 
         if 'servers' not in self._config[proto]:
             self._config[proto]['servers'] = []
-        self._config[proto]['servers'].append((node_id, host, port, weight))
+
+        if proto == 'galera':
+            for (n, h, p, w, b) in self._config[proto]['servers']:
+                if b is False and backup is False:
+                    raise Exception("Galera protocol does not accept more"
+                                    " than one non-backup node")
+
+        self._config[proto]['servers'].append((node_id, host, port,
+                                               weight, backup))
 
     def set_algorithm(self, protocol, algo):
         proto = protocol.lower()

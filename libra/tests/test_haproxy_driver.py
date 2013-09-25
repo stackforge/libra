@@ -27,22 +27,50 @@ class TestHAProxyDriver(testtools.TestCase):
         self.assertEqual(self.driver._config[proto]['bind_address'], '0.0.0.0')
         self.assertEqual(self.driver._config[proto]['bind_port'], 443)
 
+        proto = 'galera'
+        self.driver.add_protocol(proto, 3306)
+        self.assertIn(proto, self.driver._config)
+        self.assertEqual(self.driver._config[proto]['bind_address'], '0.0.0.0')
+        self.assertEqual(self.driver._config[proto]['bind_port'], 3306)
+
+        proto = 'tnetennba'
+        e = self.assertRaises(Exception, self.driver.add_protocol, proto, 99)
+        self.assertEqual("Unsupported protocol: %s" % proto, e.message)
+
+    def testAddGaleraRequiresPort(self):
+        e = self.assertRaises(Exception, self.driver.add_protocol, 'galera', None)
+        self.assertEqual("Port is required for this protocol.", e.message)
+
     def testAddTCPRequiresPort(self):
         e = self.assertRaises(Exception, self.driver.add_protocol, 'tcp', None)
-        self.assertEqual("Port is required for TCP protocol.", e.message)
+        self.assertEqual("Port is required for this protocol.", e.message)
 
     def testAddServer(self):
         """ Test the HAProxy add_server() method """
         proto = 'http'
         self.driver.add_protocol(proto, None)
         self.driver.add_server(proto, 100, '1.2.3.4', 7777)
-        self.driver.add_server(proto, 101, '5.6.7.8', 8888)
+        self.driver.add_server(proto, 101, '5.6.7.8', 8888, 1, True)
+        self.driver.add_server(proto, 102, '2.3.4.5', 9999,
+                               weight=2, backup=True)
         self.assertIn(proto, self.driver._config)
         self.assertIn('servers', self.driver._config[proto])
         servers = self.driver._config[proto]['servers']
-        self.assertEqual(len(servers), 2)
-        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 1))
-        self.assertEqual(servers[1], (101, '5.6.7.8', 8888, 1))
+        self.assertEqual(len(servers), 3)
+        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 1, False))
+        self.assertEqual(servers[1], (101, '5.6.7.8', 8888, 1, True))
+        self.assertEqual(servers[2], (102, '2.3.4.5', 9999, 2, True))
+
+    def testAddServerMultipleGaleraPrimaries(self):
+        proto = 'galera'
+        self.driver.add_protocol(proto, 33306)
+        self.driver.add_server(proto, 100, '1.2.3.4', 3306, backup=False)
+        self.driver.add_server(proto, 101, '1.2.3.5', 3306, backup=True)
+        e = self.assertRaises(Exception, self.driver.add_server,
+                              proto, 101, '1.2.3.6', 3306, backup=False)
+        self.assertEqual(
+            "Galera protocol does not accept more than one non-backup node",
+            e.message)
 
     def testSetAlgorithm(self):
         """ Test the HAProxy set_algorithm() method """
@@ -64,7 +92,7 @@ class TestHAProxyDriver(testtools.TestCase):
         self.driver.add_server(proto, 100, '1.2.3.4', 7777, 10)
         servers = self.driver._config[proto]['servers']
         self.assertEqual(len(servers), 1)
-        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 10))
+        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 10, False))
 
     def testServerWeightStr(self):
         """ Test setting string server weights """
@@ -73,7 +101,7 @@ class TestHAProxyDriver(testtools.TestCase):
         self.driver.add_server(proto, 100, '1.2.3.4', 7777, "20")
         servers = self.driver._config[proto]['servers']
         self.assertEqual(len(servers), 1)
-        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 20))
+        self.assertEqual(servers[0], (100, '1.2.3.4', 7777, 20, False))
 
     def testServerWeightInvalid(self):
         """ Test setting string server weights """
