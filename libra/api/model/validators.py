@@ -22,6 +22,7 @@ class LBNode(Base):
     port = wsattr(int, mandatory=True)
     address = wsattr(wtypes.text, mandatory=True)
     condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
+    backup = Enum(wtypes.text, 'TRUE', 'FALSE')
 
 
 class LBRespNode(Base):
