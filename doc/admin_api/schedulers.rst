@@ -1,3 +1,4 @@
+================
 Admin Schedulers
 ================
 
@@ -34,18 +35,20 @@ Libra LBaaS supports auto-failover or auto-rebuild of a broken :term:`device`.
 
 This basically means typically re-allocating / re-building the :term:`device` to a new :term:`device`.
 
-# A ping is sent to each :term:`device` (ping_lbs > _exec_ping)
-# Send failures to drivers (_exec_ping > _send_fails)
-# Driver does
-    # Marks the :term:`device` as being in ERROR state.
-    # Triggers a rebuild
-    # Looks for a free :term:`device` that is in OFFLINE state in the db.
-    # Assigns the failed :term:`device` to the OFFLINE :term:`device`
-    # Assigns the :term:`vip` to the new :term:`device`
-    # Marks :term:`device` as DELETED
-    # Puts the new :term:`device` into ACTIVE in the db.
-# A scheduled function remove the :term:`device` from DB and unconfigures it.
-# A scheduled function ensures that there are standby :term:`device`s in the pool.
+1. A ping is sent to each :term:`device` (ping_lbs > _exec_ping)
+2. Send failures to drivers (_exec_ping > _send_fails)
+3. Driver does
+
+    #. Marks the :term:`device` as being in ERROR state.
+    #. Triggers a rebuild
+    #. Looks for a free :term:`device` that is in OFFLINE state in the db.
+    #. Assigns the failed :term:`device` to the OFFLINE :term:`device`
+    #. Assigns the :term:`vip` to the new :term:`device`
+    #. Marks :term:`device` as DELETED
+    #. Puts the new :term:`device` into ACTIVE in the db.
+
+4. A scheduled function remove the :term:`device` from DB and unconfigures it.
+5. A scheduled function ensures that there are standby :term:`device` in the pool.
 
 
 Delete Scheduler
