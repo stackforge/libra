@@ -228,7 +228,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'lbaas', u'Libra LBaaS Toolset',
-     [u'Hewlett-Packard Development Company, L.P.'], 1)
-]
+#man_pages = [
+#    ('index', 'lbaas', u'Libra LBaaS Toolset',
+#     [u'Hewlett-Packard Development Company, L.P.'], 1)
+#]
