@@ -46,6 +46,10 @@ class Responses(object):
             {
                 'name': 'TCP',
                 'port': '443'
+            },
+            {
+                'name': 'GALERA',
+                'port': '3306'
             }
         ]
     }

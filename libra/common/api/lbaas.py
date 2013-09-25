@@ -117,7 +117,7 @@ class Node(DeclarativeBase):
     __tablename__ = 'nodes'
     #column definitions
     address = Column(u'address', VARCHAR(length=128), nullable=False)
-    enabled = Column(u'enabled', Integer(), nullable=False)
+    enabled = Column(u'enabled', INTEGER(), nullable=False)
     id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
     lbid = Column(
         u'lbid', BIGINT(), ForeignKey('loadbalancers.id'), nullable=False
@@ -125,6 +125,7 @@ class Node(DeclarativeBase):
     port = Column(u'port', INTEGER(), nullable=False)
     status = Column(u'status', VARCHAR(length=128), nullable=False)
     weight = Column(u'weight', INTEGER(), nullable=False)
+    backup = Column(u'backup', INTEGER(), nullable=False, default=0)
 
 
 class HealthMonitor(DeclarativeBase):
