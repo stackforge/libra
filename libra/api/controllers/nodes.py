@@ -57,7 +57,8 @@ class NodesController(RestController):
         with db_session() as session:
             if not self.nodeid:
                 nodes = session.query(
-                    Node.id, Node.address, Node.port, Node.status, Node.enabled
+                    Node.id, Node.address, Node.port, Node.status,
+                    Node.enabled, Node.weight
                 ).join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == self.lbid).\
@@ -72,11 +73,14 @@ class NodesController(RestController):
                     else:
                         node['condition'] = 'DISABLED'
                     del node['enabled']
+                    if node['weight'] == 1:
+                        del node['weight']
                     node_response['nodes'].append(node)
 
             else:
                 node = session.query(
-                    Node.id, Node.address, Node.port, Node.status, Node.enabled
+                    Node.id, Node.address, Node.port, Node.status,
+                    Node.enabled, Node.weight
                 ).join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == self.lbid).\
@@ -93,7 +97,8 @@ class NodesController(RestController):
                 else:
                     node_response['condition'] = 'DISABLED'
                 del node_response['enabled']
-
+                if node_response['weight'] == 1:
+                    del node_response['weight']
             session.commit()
             response.status = 200
             return node_response
@@ -147,6 +152,17 @@ class NodesController(RestController):
                     'IP Address {0} not valid'.format(node.address)
                 )
 
+            if node.weight != Unset:
+                try:
+                    weight = int(node.weight)
+                except ValueError:
+                    raise ClientSideError(
+                        'Node weight must be an integer'
+                    )
+                if weight < 1 or weight > 256:
+                    raise ClientSideError(
+                        'Node weight must be between 1 and 256'
+                    )
         with db_session() as session:
             load_balancer = session.query(LoadBalancer).\
                 filter(LoadBalancer.tenantid == tenant_id).\
@@ -194,10 +210,13 @@ class NodesController(RestController):
                 else:
                     enabled = 1
                     node_status = 'ONLINE'
+                weight = 1
+                if node.weight != Unset:
+                    weight = node.weight
                 new_node = Node(
                     lbid=self.lbid, port=node.port, address=node.address,
                     enabled=enabled, status=node_status,
-                    weight=1, backup=int(is_backup)
+                    weight=weight, backup=int(is_backup)
                 )
                 session.add(new_node)
                 session.flush()
@@ -205,13 +224,22 @@ class NodesController(RestController):
                     condition = 'ENABLED'
                 else:
                     condition = 'DISABLED'
-                return_data.nodes.append(
-                    NodeResp(
-                        id=new_node.id, port=new_node.port,
-                        address=new_node.address, condition=condition,
-                        status=new_node.status
+                if weight == 1:
+                    return_data.nodes.append(
+                        NodeResp(
+                            id=new_node.id, port=new_node.port,
+                            address=new_node.address, condition=condition,
+                            status=new_node.status
+                        )
                     )
-                )
+                else:
+                    return_data.nodes.append(
+                        NodeResp(
+                            id=new_node.id, port=new_node.port,
+                            address=new_node.address, condition=condition,
+                            status=new_node.status, weight=weight
+                        )
+                    )
 
             device = session.query(
                 Device.id, Device.name, Device.status
@@ -238,6 +266,8 @@ class NodesController(RestController):
             raise ClientSideError('Load Balancer ID has not been supplied')
         if not self.nodeid:
             raise ClientSideError('Node ID has not been supplied')
+        if body.condition == Unset and body.weight == Unset:
+            raise ClientSideError('Node condition or weight is required')
 
         tenant_id = get_limited_to_project(request.headers)
         with db_session() as session:
@@ -275,6 +305,17 @@ class NodesController(RestController):
                     node.enabled = 1
                     node.status = 'ONLINE'
 
+            if body.weight != Unset:
+                try:
+                    node.weight = int(body.weight)
+                except ValueError:
+                    raise ClientSideError(
+                        'Node weight must be an integer'
+                    )
+                if node.weight < 1 or node.weight > 256:
+                    raise ClientSideError(
+                        'Node weight must be between 1 and 256'
+                    )
             lb.status = 'PENDING_UPDATE'
             device = session.query(
                 Device.id, Device.name, Device.status

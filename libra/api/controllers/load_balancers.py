@@ -126,7 +126,8 @@ class LoadBalancersController(RestController):
                 del(load_balancers['vipid'])
 
                 nodes = session.query(
-                    Node.id, Node.address, Node.port, Node.status, Node.enabled
+                    Node.id, Node.address, Node.port, Node.status,
+                    Node.enabled, Node.weight
                 ).join(LoadBalancer.nodes).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == self.lbid).\
@@ -150,6 +151,8 @@ class LoadBalancersController(RestController):
                     del node['enabled']
                     node['port'] = str(node['port'])
                     node['id'] = str(node['id'])
+                    if node['weight'] == 1:
+                        del node['weight']
                     load_balancers['nodes'].append(node)
 
             session.rollback()
@@ -216,6 +219,18 @@ class LoadBalancersController(RestController):
                 raise ClientSideError(
                     'IP Address {0} not valid'.format(node.address)
                 )
+
+            if node.weight != Unset:
+                try:
+                    weight = int(node.weight)
+                except ValueError:
+                    raise ClientSideError(
+                        'Node weight must be an integer'
+                    )
+                if weight < 1 or weight > 256:
+                    raise ClientSideError(
+                        'Node weight must be between 1 and 256'
+                    )
 
             is_backup = False
             if node.backup != Unset and node.backup == 'TRUE':
@@ -388,10 +403,13 @@ class LoadBalancersController(RestController):
                 else:
                     backup = 0
 
+                weight = 1
+                if node.weight != Unset:
+                    weight = node.weight
                 out_node = Node(
                     lbid=lb.id, port=node.port, address=node.address,
-                    enabled=enabled, status=node_status, weight=1,
-                    backup=backup
+                    enabled=enabled, status=node_status,
+                    weight=weight, backup=backup
                 )
                 session.add(out_node)
 
@@ -416,10 +434,17 @@ class LoadBalancersController(RestController):
             return_data.virtualIps = [vip_resp]
             return_data.nodes = []
             for node in body.nodes:
-                out_node = LBRespNode(
-                    port=str(node.port), address=node.address,
-                    condition=node.condition
-                )
+                if node.weight != Unset and node.weight != 1:
+                    out_node = LBRespNode(
+                        port=str(node.port), address=node.address,
+                        condition=node.condition, weight=weight
+                    )
+                else:
+                    out_node = LBRespNode(
+                        port=str(node.port), address=node.address,
+                        condition=node.condition
+                    )
+
                 return_data.nodes.append(out_node)
             session.commit()
             # trigger gearman client to create new lb

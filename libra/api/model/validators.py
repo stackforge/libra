@@ -23,16 +23,19 @@ class LBNode(Base):
     address = wsattr(wtypes.text, mandatory=True)
     condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
     backup = Enum(wtypes.text, 'TRUE', 'FALSE')
+    weight = int
 
 
 class LBRespNode(Base):
     port = wtypes.text
     address = wtypes.text
     condition = wtypes.text
+    weight = int
 
 
 class LBNodePut(Base):
-    condition = Enum(wtypes.text, 'ENABLED', 'DISABLED', mandatory=True)
+    condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
+    weight = int
 
 
 class NodeResp(Base):
@@ -41,6 +44,7 @@ class NodeResp(Base):
     port = int
     condition = wtypes.text
     status = wtypes.text
+    weight = int
 
 
 class LBNodePost(Base):
