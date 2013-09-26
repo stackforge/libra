@@ -31,7 +31,7 @@ class LBRespNode(Base):
 
 
 class LBNodePut(Base):
-    condition = Enum(wtypes.text, 'ENABLED', 'DISABLED')
+    condition = Enum(wtypes.text, 'ENABLED', 'DISABLED', mandatory=True)
 
 
 class NodeResp(Base):
