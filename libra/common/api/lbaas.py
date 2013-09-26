@@ -171,6 +171,11 @@ class RoutingSession(Session):
     def _build_engines(self):
         config = ConfigParser.SafeConfigParser()
         config.read([conf.conffile])
+        if 'debug' in conf.app and conf.app.debug:
+            echo=True
+        else:
+            echo=False
+
         for section in conf.database:
             db_conf = config._sections[section]
 
@@ -191,12 +196,14 @@ class RoutingSession(Session):
 
                 engine = create_engine(
                     conn_string, isolation_level="READ COMMITTED",
-                    pool_size=20, connect_args=ssl_args, pool_recycle=3600
+                    pool_size=20, connect_args=ssl_args, pool_recycle=3600,
+                    echo=echo
                 )
             else:
                 engine = create_engine(
                     conn_string, isolation_level="READ COMMITTED",
-                    pool_size=20, pool_recycle=3600
+                    pool_size=20, pool_recycle=3600,
+                    echo=echo
                 )
             RoutingSession.engines[RoutingSession.engines_count] = engine
             RoutingSession.engines_count += 1
