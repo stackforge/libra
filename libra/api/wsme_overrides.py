@@ -32,7 +32,7 @@ from sqlalchemy.exc import OperationalError, ResourceClosedError
 
 def format_exception(excinfo, debug=False):
     """Extract informations that can be sent to the client."""
-    error = excinfo[1]
+    error = excinfo[0]
     log = logging.getLogger(__name__)
     if isinstance(error, wsme.exc.ClientSideError):
         r = dict(message="Bad Request",
