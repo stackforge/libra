@@ -510,6 +510,11 @@ class LoadBalancersController(RestController):
 
         Raises: 404
         """
+        try:
+            lbid = int(lbid)
+        except ValueError:
+            raise abort(404)
+
         if len(remainder):
             if remainder[0] == 'nodes':
                 return NodesController(lbid), remainder[1:]
