@@ -272,11 +272,15 @@ class GearmanClientThread(object):
                     if not node.enabled:
                         continue
                     condition = 'ENABLED'
+                    backup = 'FALSE'
+                    if node.backup != 0:
+                        backup = 'TRUE'
                     node_data = {
                         'id': node.id, 'port': node.port,
                         'address': node.address, 'weight': node.weight,
-                        'condition': condition
+                        'condition': condition, 'backup': backup
                     }
+
                     lb_data['nodes'].append(node_data)
                     # Track if we have a DEGRADED LB
                     if node.status == 'ERROR':
