@@ -1,4 +1,4 @@
-.._api-node:
+.. _api-node:
 
 =====
 Nodes
