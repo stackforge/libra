@@ -9,4 +9,5 @@ Installing Libra LBaas
    development
    production
    ppa
+   diskimage-builder
    verify
