@@ -230,6 +230,14 @@ such as changing the condition, or removing the node from the load
 balancer. When a node is added to a load balancer it is enabled by
 default.
 
+Relevant weights can be assigned to nodes using the weight attribute of the
+node element. The weight of a node determines the portion of requests or
+connections it services compared to the other nodes of the load balancer. For
+example, if node A has a weight of 2 and node B has a weight of 1, then the
+loadbalancer will forward twice as many requests to node A than to node B. If
+the weight attribute is not specified, then the node's weight is implicitly
+set to "1". Weight values from 1 to 256 are allowed.
+
 Request Data
 ~~~~~~~~~~~~
 
@@ -296,11 +304,13 @@ Example
         "nodes": [
                     {
                         "address": "10.1.1.1",
-                        "port": "80"
+                        "port": "80",
+                        "weight": "2"
                     },
                     {
                         "address": "10.2.2.1",
-                        "port": "80"
+                        "port": "80",
+                        "weight": "4"
                     },
                     {
                         "address": "10.2.2.2",
@@ -327,14 +337,16 @@ Example
                         "address": "10.1.1.1",
                         "port": "80",
                         "condition": "ENABLED",
-                        "status": "ONLINE"
+                        "status": "ONLINE",
+                        "weight": "2"
                     },
                     {
                         "id": "293",
                         "address": "10.2.2.1",
                         "port": "80",
                         "condition": "ENABLED",
-                        "status": "OFFLINE"
+                        "status": "OFFLINE",
+                        "weight": "4"
                     },
                     {
                         "id": "183",
@@ -372,6 +384,14 @@ accept any new connections. Existing connections to the node are
 forcibly terminated. The nodes status changes to OFFLINE once the
 configuration has been successfully applied.
 
+Relevant weights can be assigned to nodes using the weight attribute of the
+node element. The weight of a node determines the portion of requests or
+connections it services compared to the other nodes of the load balancer. For
+example, if node A has a weight of 2 and node B has a weight of 1, then the
+loadbalancer will forward twice as many requests to node A than to node B. If
+the weight attribute is not specified, then the node's weight is implicitly
+set to "1". Weight values from 1 to 256 are allowed.
+
 The node IP and port are immutable attributes and cannot be modified
 with a PUT request. Supplying an unsupported attribute will result in a
 fault. A load balancer supports a maximum number of nodes. The
@@ -381,7 +401,8 @@ limits of the load balancer service.
 Request Data
 ~~~~~~~~~~~~
 
-Request data includes the desired condition of the node.
+Request data includes the desired condition of the node as well as the
+optional weight of the node.
 
 Query Parameters Supported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -438,7 +459,14 @@ Example
 ::
 
     {
-        "condition": "DISABLED"
+        "condition": "DISABLED",
+    }
+
+    OR
+
+    {
+        "condition": "ENABLED",
+        "weight": "2"
     }
 
 **Curl Request**
@@ -496,7 +524,6 @@ None required.
 
 Normal Response Code
 ~~~~~~~~~~~~~~~~~~~~
-
 +--------------------+---------------+
 | HTTP Status Code   | Description   |
 +====================+===============+
