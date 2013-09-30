@@ -86,6 +86,23 @@ requests to it and its status will be listed as OFFLINE. Only nodes that
 are in an ONLINE status will receive and be able to service traffic from
 the load balancer.
 
+Nodes can be assigned a weight attribute that determines the portion of 
+requests or connections it services compared to the other nodes of the load 
+balancer. For example, if node A has a weight of 2 and node B has a weight of 1,
+then the loadbalancer will forward twice as many requests to node A than to 
+node B. If the weight attribute is not specified, then the node's weight is 
+implicitly set to "1". Weight values from 1 to 256 are allowed.
+
+Nodes that are assigned to a load balancer that is delivering data to a Galera
+database cluster may require a primary write node be specified to avoid
+database locking problems that can occur. For this case, a load balancer can be
+configured to use the special "GALERA" protocol type.  When a "GALERA" protocol
+is chosen, all of the specified nodes must use the node "backup" attribute to 
+specify whether it is a backup node or the primary node. There may only be a
+single primary node specified by setting the "backup" attribute to FALSE. All
+other nodes must have the "backup" attribute set to TRUE.
+
+
 2.2.4 Heath Monitors
 ~~~~~~~~~~~~~~~~~~~~
 

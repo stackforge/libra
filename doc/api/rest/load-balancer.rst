@@ -317,8 +317,10 @@ request again.
 
 By default, the system will create a load balancer with protocol set to
 HTTP, port set to 80 (or 443 if protocol is TCP), and assign a public
-IPV4 address to the load balancer. The default algorithm used is set to
-ROUND\_ROBIN.
+IPV4 address to the load balancer. There is also a third special-case
+protocol "GALERA" that can be used to choose a primary write node when
+the load balancer is being used to deliver data to a Galera database
+cluster. The default load balancing algorithm used is set to ROUND\_ROBIN.
 
 A load balancer name has a max length that can be determined by querying
 limits.
@@ -336,6 +338,23 @@ protocol using one IP address. For example, this method makes it
 possible to use the same load balancing configuration to support an HTTP
 and an TCP load balancer. Load balancers sharing a virtual IP must
 utilize a unique port.
+
+Relevant weights can be assigned to nodes using the weight attribute of the
+node element. The weight of a node determines the portion of requests or
+connections it services compared to the other nodes of the load balancer. For
+example, if node A has a weight of 2 and node B has a weight of 1, then the
+loadbalancer will forward twice as many requests to node A than to node B. If
+the weight attribute is not specified, then the node's weight is implicitly
+set to "1".  Weight values from 1 to 256 are allowed.
+
+Note that nodes that are assigned to a load balancer that is delivering data to
+a Galera database cluster may require a primary write node be specified to avoid
+database locking problems that can occur. For this case, a load balancer can be
+configured to use the special "GALERA" protocol type.  When a "GALERA" protocol
+is chosen, all of the specified nodes must use the node "backup" attribute to 
+specify whether it is a backup node or the primary node. There may only be a
+single primary node specified by setting the "backup" attribute to FALSE. All
+other nodes must have the "backup" attribute set to TRUE.
 
 Request Data
 ~~~~~~~~~~~~
@@ -361,7 +380,9 @@ Request Body
 The request body must follow the correct format for new load balancer
 creation, examples....
 
-**Request body example to create a load balancer with two nodes**
+**Request body example to create a load balancer with two nodes and an
+optional "weight" assigned. Note that a default weight of 1 does not
+have to be explicitly assigned **
 
 ::
 
@@ -371,6 +392,7 @@ creation, examples....
                         {
                             "address": "10.1.1.1",
                             "port": "80"
+                            "weight": "2"
                         },
                         {
                             "address": "10.1.1.2",
@@ -400,6 +422,34 @@ balancer virtual IP**
                       "condition":"ENABLED"
                    }
                  ]
+    }
+
+**Request body example to create a load balancer that specifies a 
+single primary write node for a Galera cluster **
+
+::
+
+    {
+        "name":"a-new-loadbalancer",
+        "port":"83",
+        "protocol":"GALERA",
+        "virtualIps": [
+                   {
+                      "id":"39"
+                   }
+                 ],
+        "nodes":  [
+                    {
+                        "address": "10.1.1.1",
+                        "port": "3306",
+                        "backup": "TRUE"
+                    },
+                    {
+                        "address": "10.1.1.2",
+                        "port": "3306",
+                        "backup": "FALSE"
+                    }
+                ]	
     }
 
 Normal Response Code
