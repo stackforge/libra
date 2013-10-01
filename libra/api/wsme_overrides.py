@@ -20,6 +20,7 @@ import sys
 import json
 
 import wsme
+from wsme.exc import ClientSideError
 import wsme.rest.args
 import wsme.rest.json
 import wsme.rest.xml
@@ -46,10 +47,11 @@ def format_exception(excinfo, debug=False):
         log.error('Server-side error: "%s". Detail: \n%s' % (
             faultstring, debuginfo))
 
+        details = excinfo[1].message
         if isinstance(error, ValueError):
-            r = dict(message="Bad Request", details=faultstring)
+            r = dict(message="Bad Request", details=details)
         else:
-            r = dict(message="Load Balancer Fault", details=faultstring)
+            r = dict(message="Load Balancer Fault", details=details)
         if debug:
             r['debuginfo'] = debuginfo
         return r
@@ -125,7 +127,8 @@ def wsexpose(*args, **kwargs):
                         pecan.response.status = 413
                     elif isinstance(e, NotFound):
                         pecan.response.status = 404
-                    elif data['message'] == 'Bad Request':
+                    elif data['message'] == 'Bad Request' or \
+                            isinstance(e, ClientSideError):
                         pecan.response.status = 400
                     else:
                         pecan.response.status = 500
