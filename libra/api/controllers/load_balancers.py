@@ -29,6 +29,7 @@ from logs import LogsController
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
 from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip
 from libra.common.api.lbaas import HealthMonitor
+from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
 from libra.common.api.gearman_client import submit_job, submit_vip_job
@@ -280,10 +281,10 @@ class LoadBalancersController(RestController):
                 vip.device = device.id
                 if device is None:
                     session.rollback()
-                    raise RuntimeError('No devices available')
+                    raise ExhaustedError('No devices available')
                 if vip is None:
                     session.rollback()
-                    raise RuntimeError('No virtual IPs available')
+                    raise ExhaustedError('No virtual IPs available')
                 vip.device = device.id
                 submit_vip_job(
                     'ASSIGN', device.name, str(ipaddress.IPv4Address(vip.ip))

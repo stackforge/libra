@@ -26,13 +26,14 @@ import wsme.rest.xml
 import wsmeext.pecan
 import pecan
 from libra.api.library.exp import OverLimit, NotFound
+from libra.common.exc import DetailError
 from wsme.rest.json import tojson
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 
 
 def format_exception(excinfo, debug=False):
     """Extract informations that can be sent to the client."""
-    error = excinfo[0]
+    error = excinfo[1]
     log = logging.getLogger(__name__)
     if isinstance(error, wsme.exc.ClientSideError):
         r = dict(message="Bad Request",
@@ -46,10 +47,12 @@ def format_exception(excinfo, debug=False):
         log.error('Server-side error: "%s". Detail: \n%s' % (
             faultstring, debuginfo))
 
+        if isinstance(error, DetailError):
+            r = dict(message="Server error", details=faultstring)
         if isinstance(error, ValueError):
             r = dict(message="Bad Request", details=faultstring)
         else:
-            r = dict(message="Load Balancer Fault", details=faultstring)
+            r = dict(message="Load Balancer Fault", details=None)
         if debug:
             r['debuginfo'] = debuginfo
         return r
