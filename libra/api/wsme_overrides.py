@@ -20,6 +20,7 @@ import sys
 import json
 
 import wsme
+from wsme.exc import ClientSideError
 import wsme.rest.args
 import wsme.rest.json
 import wsme.rest.xml
@@ -125,7 +126,8 @@ def wsexpose(*args, **kwargs):
                         pecan.response.status = 413
                     elif isinstance(e, NotFound):
                         pecan.response.status = 404
-                    elif data['message'] == 'Bad Request':
+                    elif data['message'] == 'Bad Request' or \
+                            isinstance(e, ClientSideError):
                         pecan.response.status = 400
                     else:
                         pecan.response.status = 500
