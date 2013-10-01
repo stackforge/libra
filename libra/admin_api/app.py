@@ -22,6 +22,7 @@ import pecan
 import sys
 import signal
 import os
+from libra.common.api import server
 from libra.admin_api.stats.scheduler import Stats
 from libra.admin_api.device_pool.manage_pool import Pool
 from libra.admin_api.expunge.expunge import ExpungeScheduler
@@ -290,13 +291,8 @@ def main():
         ))
     MaintThreads(logger, args, drivers)
     sys.stderr = LogStdout(logger)
-    # TODO: set ca_certs and cert_reqs=CERT_REQUIRED
-    ssl_sock = eventlet.wrap_ssl(
-        eventlet.listen((args.host, args.port)),
-        certfile=args.ssl_certfile,
-        keyfile=args.ssl_keyfile,
-        server_side=True
-    )
-    wsgi.server(ssl_sock, api, keepalive=False)
+
+    sock = server.make_socket(args)
+    wsgi.server(sock, api, keepalive=False)
 
     return 0

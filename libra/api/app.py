@@ -25,6 +25,7 @@ import wsme_overrides
 from libra.api import config as api_config
 from libra.api import model
 from libra.api import acl
+from libra.common.api import server
 from libra.common.options import Options, setup_logging
 from eventlet import wsgi
 
@@ -177,7 +178,7 @@ def main():
 
     required_args = [
         'db_sections', 'swift_basepath',
-        'swift_endpoint', 'ssl_certfile', 'ssl_keyfile'
+        'swift_endpoint'
     ]
 
     missing_args = 0
@@ -212,12 +213,9 @@ def main():
 
     pc = get_pecan_config()
 
-    ssl_sock = eventlet.wrap_ssl(
-        eventlet.listen((args.host, args.port)),
-        certfile=args.ssl_certfile,
-        keyfile=args.ssl_keyfile,
-        server_side=True
-    )
+    # NOTE: Let's not force anyone to actually have to use SSL, it shouldn't be
+    # up to us to decide.
+    sock = server.make_socket(args)
 
     if not args.nodaemon:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
@@ -227,7 +225,7 @@ def main():
             working_directory='/',
             umask=0o022,
             pidfile=pidfile,
-            files_preserve=[ssl_sock.fileno()]
+            files_preserve=[sock.fileno()]
         )
         if args.user:
             context.uid = pwd.getpwnam(args.user).pw_uid
@@ -239,6 +237,7 @@ def main():
     logger.info('Starting on {0}:{1}'.format(args.host, args.port))
     api = setup_app(pc, args)
     sys.stderr = LogStdout(logger)
-    wsgi.server(ssl_sock, api, keepalive=False, debug=args.debug)
+
+    wsgi.server(sock, api, keepalive=False, debug=args.debug)
 
     return 0
