@@ -228,10 +228,9 @@ class db_session(object):
                     )
                 )
                 RoutingSession.last_engine_time = time.time()
+                RoutingSession.use_engine += 1
                 if RoutingSession.use_engine == RoutingSession.engines_count:
                     RoutingSession.use_engine = 0
-                else:
-                    RoutingSession.use_engine += 1
         self.logger.error('Could not connect to any DB server')
         return None
 
