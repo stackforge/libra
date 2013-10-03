@@ -39,3 +39,13 @@ class OverLimit(ClientSideError):
     @property
     def faultstring(self):
         return _(six.u("OverLimit: %s")) % (self.msg)
+
+
+class NotAuthorized(ClientSideError):
+    def __init__(self, msg=''):
+        self.msg = msg
+        super(NotAuthorized, self).__init__()
+
+    @property
+    def faultstring(self):
+        return _(six.u("NotAuthorized: %s")) % (self.msg)
