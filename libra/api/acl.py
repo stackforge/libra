@@ -16,6 +16,7 @@ import ConfigParser
 import importlib
 import logging
 from pecan import request
+from libra.api.library.exp import NotAuthorized
 
 
 def get_limited_to_project(headers):
@@ -31,6 +32,8 @@ def get_limited_to_project(headers):
             tenant_id
         )
     )
+    if not tenant_id:
+        raise NotAuthorized('No tenant ID provided by authentication system')
 
     return tenant_id
 
