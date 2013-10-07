@@ -336,8 +336,7 @@ class HAProxyDriver(LoadBalancerDriver):
 
     def create(self):
         self.ossvc.write_config(self._config_to_string())
-        self.ossvc.service_stop()
-        self.ossvc.service_start()
+        self.ossvc.service_reload()
 
     def suspend(self):
         self.ossvc.service_stop()

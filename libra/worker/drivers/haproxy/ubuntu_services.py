@@ -58,6 +58,22 @@ class UbuntuServices(ServicesBase):
             raise Exception("%s does not exist. Start failed." %
                             self._haproxy_pid)
 
+    def service_reload(self):
+        """
+        Reload the HAProxy config file in a non-intrusive manner.
+
+        This assumes that /etc/init.d/haproxy is using the -sf option
+        to the haproxy process.
+        """
+        cmd = '/usr/bin/sudo -n /usr/sbin/service haproxy reload'
+        try:
+            subprocess.check_output(cmd.split())
+        except subprocess.CalledProcessError as e:
+            raise Exception("Failed to reload HAProxy config: %s" % e)
+        if not os.path.exists(self._haproxy_pid):
+            raise Exception("%s does not exist. Reload failed." %
+                            self._haproxy_pid)
+
     def sudo_copy(self, from_file, to_file):
         cmd = "/usr/bin/sudo -n /bin/cp %s %s" % (from_file, to_file)
         try:
