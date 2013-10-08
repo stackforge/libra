@@ -12,15 +12,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import eventlet
-eventlet.monkey_patch()
-
 import daemon
 import daemon.pidfile
 import daemon.runner
+import getpass
 import grp
 import pwd
-import getpass
+import time
+import threading
 
 from libra.openstack.common import importutils
 from libra.common.options import Options, setup_logging
@@ -53,10 +52,17 @@ class EventServer(object):
 
         for task, task_args in tasks:
             task_args = (logger,) + task_args  # Make the logger the first arg
-            thread_list.append(eventlet.spawn(task, *task_args))
+            thd = threading.Thread(target=task, args=task_args)
+            thd.daemon = True
+            thread_list.append(thd)
+            thd.start()
 
-        for thd in thread_list:
-            thd.wait()
+        while True:
+            try:
+                time.sleep(600)
+            except KeyboardInterrupt:
+                logger.info("Non-daemon session terminated")
+                break
 
         logger.info("Shutting down")
 
