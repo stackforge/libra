@@ -19,9 +19,6 @@ class FakeOSServices(ServicesBase):
     def service_start(self):
         pass
 
-    def service_reload(self):
-        pass
-
     def write_config(self, config_str):
         pass
 
@@ -40,9 +37,6 @@ class FakeFaultingOSServices(ServicesBase):
         raise Exception("fault")
 
     def service_start(self):
-        raise Exception("fault")
-
-    def service_reload(self):
         raise Exception("fault")
 
     def service_restart(self):

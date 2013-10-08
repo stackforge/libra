@@ -38,10 +38,6 @@ class ServicesBase:
         """ Start the HAProxy service. """
         raise NotImplementedError()
 
-    def service_reload(self):
-        """ Reload the HAProxy config file. """
-        raise NotImplementedError()
-
     def write_config(self, config_str):
         """ Write the HAProxy configuration file. """
         raise NotImplementedError()
