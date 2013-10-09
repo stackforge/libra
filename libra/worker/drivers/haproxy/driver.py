@@ -26,8 +26,8 @@ from libra.worker.drivers.haproxy.services_base import ServicesBase
 
 class HAProxyDriver(LoadBalancerDriver):
 
-    def __init__(self, ossvc, user, group):
-        self.haproxy_log = '/mnt/log/haproxy.log'
+    def __init__(self, ossvc, user, group, haproxy_logfile=None):
+        self.haproxy_log = haproxy_logfile
         self.user = user
         self.group = group
         ossvc_driver = importutils.import_class(ossvc)
