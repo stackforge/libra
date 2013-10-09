@@ -351,7 +351,7 @@ Note that nodes that are assigned to a load balancer that is delivering data to
 a Galera database cluster may require a primary write node be specified to avoid
 database locking problems that can occur. For this case, a load balancer can be
 configured to use the special "GALERA" protocol type.  When a "GALERA" protocol
-is chosen, all of the specified nodes must use the node "backup" attribute to 
+is chosen, all of the specified nodes must use the node "backup" attribute to
 specify whether it is a backup node or the primary node. There may only be a
 single primary node specified by setting the "backup" attribute to FALSE. All
 other nodes must have the "backup" attribute set to TRUE.
@@ -382,7 +382,7 @@ creation, examples....
 
 **Request body example to create a load balancer with two nodes and an
 optional "weight" assigned. Note that a default weight of 1 does not
-have to be explicitly assigned **
+have to be explicitly assigned**
 
 ::
 
@@ -424,8 +424,8 @@ balancer virtual IP**
                  ]
     }
 
-**Request body example to create a load balancer that specifies a 
-single primary write node for a Galera cluster **
+**Request body example to create a load balancer that specifies a
+single primary write node for a Galera cluster**
 
 ::
 
@@ -449,7 +449,7 @@ single primary write node for a Galera cluster **
                         "port": "3306",
                         "backup": "FALSE"
                     }
-                ]	
+                ]
     }
 
 Normal Response Code
