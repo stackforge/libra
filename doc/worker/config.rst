@@ -67,6 +67,8 @@ Command Line Options
 
       Configure the path for where to put haproxy log.
 
+      See :ref:`libra-worker-driver-haproxy` for notes on archiving
+
    .. option:: -s <SECONDS>, --reconnect_sleep <SECONDS>
 
       The number of seconds to sleep between job server reconnect attempts
