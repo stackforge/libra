@@ -5,7 +5,7 @@ Building Libra Images using Diskimage Builder.
 
 
 Setup the builder - Manual way
------------------
+------------------------------
 
 1. Set DIB path
 

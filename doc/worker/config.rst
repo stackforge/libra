@@ -63,10 +63,6 @@ Command Line Options
       Full path to the file with the SSL private key to use when
       connecting to an SSL-enabled Gearman job server.
 
-   .. option:: --haproxy_logfile <FILE>
-
-      Configure the path for where to put haproxy log.
-
    .. option:: -s <SECONDS>, --reconnect_sleep <SECONDS>
 
       The number of seconds to sleep between job server reconnect attempts
