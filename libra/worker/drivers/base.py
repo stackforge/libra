@@ -40,7 +40,7 @@ class LoadBalancerDriver(object):
     ROUNDROBIN = 1
     LEASTCONN = 2
 
-    def init(self):
+    def init(self, args):
         """ Allows the driver to do any initialization for a new config. """
         raise NotImplementedError()
 

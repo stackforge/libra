@@ -110,6 +110,11 @@ def main():
         help='os services to use with HAProxy driver (when used)'
     )
     options.parser.add_argument(
+        '--haproxy_logfile', type=str,
+        default='/var/log/haproxy.log',
+        help="Where to store the HAProxy logfile"
+    )
+    options.parser.add_argument(
         '-s', '--reconnect_sleep', type=int, metavar='TIME',
         default=60, help='seconds to sleep between job server reconnects'
     )
@@ -126,6 +131,7 @@ def main():
         '--gearman_poll', type=int, metavar='TIME',
         default=1, help='Gearman worker polling timeout'
     )
+
     args = options.run()
 
     if not args.server:
@@ -156,10 +162,10 @@ def main():
         else:
             group = None
 
-        driver = driver_class(haproxy_services[args.haproxy_service],
+        driver = driver_class(args, haproxy_services[args.haproxy_service],
                               user, group)
     else:
-        driver = driver_class()
+        driver = driver_class(args)
 
     server = EventServer()
 
