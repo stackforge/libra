@@ -21,8 +21,9 @@ import pwd
 import time
 import threading
 
+from libra import __version__
 from libra.openstack.common import importutils
-from libra.common.options import Options, setup_logging
+from libra.common.options import libra_logging, add_common_opts, CONF
 from libra.worker.drivers.base import known_drivers
 from libra.worker.drivers.haproxy.services_base import haproxy_services
 from libra.worker.worker import config_thread
@@ -34,7 +35,7 @@ class EventServer(object):
     non-daemon mode.
     """
 
-    def main(self, args, tasks):
+    def main(self, tasks):
         """
         Main method of the server.
 
@@ -43,12 +44,14 @@ class EventServer(object):
             that function's arguments.
         """
         thread_list = []
-        logger = setup_logging('libra_worker', args)
+        logger = libra_logging('libra_worker', 'worker')
 
-        logger.info("Selected driver: %s" % args.driver)
-        if args.driver == 'haproxy':
-            logger.info("Selected HAProxy service: %s" % args.haproxy_service)
-        logger.info("Job server list: %s" % args.server)
+        driver = CONF['worker']['driver']
+        logger.info("Selected driver: %s" % driver)
+        if driver == 'haproxy':
+            logger.info("Selected HAProxy service: %s" %
+                        CONF['worker:haproxy']['service'])
+        logger.info("Job server list: %s" % CONF['gearman']['servers'])
 
         for task, task_args in tasks:
             task_args = (logger,) + task_args  # Make the logger the first arg
@@ -70,101 +73,32 @@ class EventServer(object):
 def main():
     """ Main Python entry point for the worker utility. """
 
-    options = Options('worker', 'Worker Daemon')
-    options.parser.add_argument(
-        '--driver', dest='driver',
-        choices=known_drivers.keys(), default='haproxy',
-        help='type of device to use'
-    )
-    options.parser.add_argument(
-        '--gearman_keepalive', action="store_true",
-        help='use KEEPALIVE to Gearman server'
-    )
-    options.parser.add_argument(
-        '--gearman_keepcnt', type=int, metavar='COUNT',
-        help='max keepalive probes to send before killing connection'
-    )
-    options.parser.add_argument(
-        '--gearman_keepidle', type=int, metavar='SECONDS',
-        help='seconds of idle time before sending keepalive probes'
-    )
-    options.parser.add_argument(
-        '--gearman_keepintvl', type=int, metavar='SECONDS',
-        help='seconds between TCP keepalive probes'
-    )
-    options.parser.add_argument(
-        '--gearman_ssl_ca', dest='gearman_ssl_ca', metavar='FILE',
-        help='Gearman SSL certificate authority'
-    )
-    options.parser.add_argument(
-        '--gearman_ssl_cert', dest='gearman_ssl_cert', metavar='FILE',
-        help='Gearman SSL certificate'
-    )
-    options.parser.add_argument(
-        '--gearman_ssl_key', dest='gearman_ssl_key', metavar='FILE',
-        help='Gearman SSL key'
-    )
-    options.parser.add_argument(
-        '--haproxy_service',
-        choices=haproxy_services.keys(), default='ubuntu',
-        help='os services to use with HAProxy driver (when used)'
-    )
-    options.parser.add_argument(
-        '--haproxy_logfile', type=str,
-        default='/var/log/haproxy.log',
-        help="Where to store the HAProxy logfile"
-    )
-    options.parser.add_argument(
-        '-s', '--reconnect_sleep', type=int, metavar='TIME',
-        default=60, help='seconds to sleep between job server reconnects'
-    )
-    options.parser.add_argument(
-        '--server', dest='server', action='append', metavar='HOST:PORT',
-        default=[],
-        help='add a Gearman job server to the connection list'
-    )
-    options.parser.add_argument(
-        '--stats_poll', type=int, metavar='TIME',
-        default=300, help='statistics polling interval in seconds'
-    )
-    options.parser.add_argument(
-        '--gearman_poll', type=int, metavar='TIME',
-        default=1, help='Gearman worker polling timeout'
-    )
-
-    args = options.run()
-
-    if not args.server:
-        # NOTE(shrews): Can't set a default in argparse method because the
-        # value is appended to the specified default.
-        args.server.append('localhost:4730')
-    elif not isinstance(args.server, list):
-        # NOTE(shrews): The Options object cannot intelligently handle
-        # creating a list from an option that may have multiple values.
-        # We convert it to the expected type here.
-        svr_list = args.server.split()
-        args.server = svr_list
+    add_common_opts()
+    CONF(project='libra', version=__version__)
 
     # Import the device driver we are going to use. This will be sent
     # along to the Gearman task that will use it to communicate with
     # the device.
 
-    driver_class = importutils.import_class(known_drivers[args.driver])
+    selected_driver = CONF['worker']['driver']
+    driver_class = importutils.import_class(known_drivers[selected_driver])
 
-    if args.driver == 'haproxy':
-        if args.user:
-            user = args.user
+    if selected_driver == 'haproxy':
+        if CONF['user']:
+            user = CONF['user']
         else:
             user = getpass.getuser()
 
-        if args.group:
-            group = args.group
+        if CONF['group']:
+            group = CONF['group']
         else:
             group = None
 
-        driver = driver_class(haproxy_services[args.haproxy_service],
+        haproxy_service = CONF['worker:haproxy']['service']
+        haproxy_logfile = CONF['worker:haproxy']['logfile']
+        driver = driver_class(haproxy_services[haproxy_service],
                               user, group,
-                              haproxy_logfile=args.haproxy_logfile)
+                              haproxy_logfile=haproxy_logfile)
     else:
         driver = driver_class()
 
@@ -172,13 +106,13 @@ def main():
 
     # Tasks to execute in parallel
     task_list = [
-        (config_thread, (driver, args))
+        (config_thread, (driver,))
     ]
 
-    if args.nodaemon:
-        server.main(args, task_list)
+    if not CONF['daemon']:
+        server.main(task_list)
     else:
-        pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
+        pidfile = daemon.pidfile.TimeoutPIDLockFile(CONF['worker']['pid'], 10)
         if daemon.runner.is_pidfile_stale(pidfile):
             pidfile.break_lock()
         context = daemon.DaemonContext(
@@ -186,12 +120,12 @@ def main():
             umask=0o022,
             pidfile=pidfile
         )
-        if args.user:
-            context.uid = pwd.getpwnam(args.user).pw_uid
-        if args.group:
-            context.gid = grp.getgrnam(args.group).gr_gid
+        if CONF['user']:
+            context.uid = pwd.getpwnam(CONF['user']).pw_uid
+        if CONF['group']:
+            context.gid = grp.getgrnam(CONF['group']).gr_gid
 
         context.open()
-        server.main(args, task_list)
+        server.main(task_list)
 
     return 0

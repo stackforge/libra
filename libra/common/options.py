@@ -20,9 +20,86 @@ import os.path
 import sys
 import ConfigParser
 
+from oslo.config import cfg
+
 from libra import __version__, __release__
 from logging_handler import CompressedTimedRotatingFileHandler
 from logging_handler import NewlineFormatter
+
+
+CONF = cfg.CONF
+
+common_opts = [
+    cfg.BoolOpt('syslog',
+                default=False,
+                help='Use syslog for logging output'),
+    cfg.StrOpt('syslog_socket',
+               default='/dev/log',
+               help='Socket to use for syslog connection'),
+    cfg.StrOpt('syslog_facility',
+               default='local7',
+               help='Syslog logging facility'),
+    cfg.StrOpt('logstash',
+               metavar="HOST:PORT",
+               help='Send logs to logstash at "host:port"'),
+    cfg.StrOpt('group',
+               help='Group to use for daemon mode'),
+    cfg.StrOpt('user',
+               help='User to use for daemon mode'),
+]
+
+common_cli_opts = [
+    cfg.BoolOpt('daemon',
+                default=True,
+                help='Run as a daemon'),
+    cfg.BoolOpt('debug',
+                short='d',
+                default=False,
+                help='Turn on debug output'),
+    cfg.BoolOpt('verbose',
+                short='v',
+                default=False,
+                help='Turn on verbose output'),
+]
+
+gearman_opts = [
+    cfg.BoolOpt('keepalive',
+                default=False,
+                help='Enable TCP KEEPALIVE pings'),
+    cfg.IntOpt('keepcnt',
+               metavar='COUNT',
+               help='Max KEEPALIVE probes to send before killing connection'),
+    cfg.IntOpt('keepidle',
+               metavar='SECONDS',
+               help='Seconds of idle time before sending KEEPALIVE probes'),
+    cfg.IntOpt('keepintvl',
+               metavar='SECONDS',
+               help='Seconds between TCP KEEPALIVE probes'),
+    cfg.IntOpt('poll',
+               default=1,
+               metavar='SECONDS',
+               help='Gearman worker polling timeout'),
+    cfg.ListOpt('servers',
+                default=['localhost:4730'],
+                metavar='HOST:PORT,...',
+                help='List of Gearman job servers'),
+    cfg.StrOpt('ssl_ca',
+               metavar='FILE',
+               help='Gearman SSL certificate authority'),
+    cfg.StrOpt('ssl_cert',
+               metavar='FILE',
+               help='Gearman SSL certificate'),
+    cfg.StrOpt('ssl_key',
+               metavar='FILE',
+               help='Gearman SSL key'),
+]
+
+
+def add_common_opts():
+    CONF.register_opts(common_opts)
+    CONF.register_opts(gearman_opts, group='gearman')
+    CONF.register_cli_opts(common_cli_opts)
+
 
 """
 Common options parser.
@@ -188,6 +265,22 @@ class Options(object):
             print("Libra toolset release %s" % __release__)
             sys.exit(0)
         return args
+
+
+def libra_logging(name, section):
+    """
+    Temporary conversion function for utilities using oslo.config.
+    """
+    class args(object):
+        debug = CONF['debug']
+        verbose = CONF['verbose']
+        logfile = CONF[section]['logfile']
+        nodaemon = not CONF['daemon']
+        syslog = CONF['syslog']
+        syslog_socket = CONF['syslog_socket']
+        syslog_facility = CONF['syslog_facility']
+        logstash = CONF['logstash']
+    return setup_logging(name, args)
 
 
 def setup_logging(name, args):

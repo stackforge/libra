@@ -11,3 +11,31 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+from oslo.config import cfg
+from libra.worker.drivers.base import known_drivers
+
+
+worker_group = cfg.OptGroup('worker', 'Libra Worker options')
+
+cfg.CONF.register_group(worker_group)
+
+cfg.CONF.register_opts(
+    [
+        cfg.StrOpt('driver',
+                   default='haproxy',
+                   choices=known_drivers.keys(),
+                   help='Type of device to use'),
+        cfg.StrOpt('logfile',
+                   default='/var/log/libra/libra_worker.log',
+                   help='Log file'),
+        cfg.StrOpt('pid',
+                   default='/var/run/libra/libra_worker.pid',
+                   help='PID file'),
+        cfg.IntOpt('reconnect-sleep',
+                   default=60,
+                   metavar='SECONDS',
+                   help='Seconds to sleep between job server reconnects'),
+    ],
+    group=worker_group
+)
