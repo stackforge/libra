@@ -11,3 +11,21 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+from oslo.config import cfg
+from libra.worker.drivers.haproxy.services_base import haproxy_services
+
+haproxy_group = cfg.OptGroup('worker:haproxy', 'Worker HAProxy options')
+
+cfg.CONF.register_opts(
+    [
+        cfg.StrOpt('service',
+                   choices=haproxy_services.keys(),
+                   default='ubuntu',
+                   help='OS services to use with HAProxy driver'),
+        cfg.StrOpt('logfile',
+                   default='/var/log/haproxy.log',
+                   help='Location of HAProxy logfile'),
+    ],
+    group=haproxy_group
+)
