@@ -2,6 +2,7 @@ pbr>=0.5.21,<1.0
 
 eventlet
 gearman>=2.0.2
+oslo.config
 python-daemon>=1.6
 python-logstash
 python_novaclient>=2.14.1,<2.14.2

@@ -17,6 +17,8 @@ import json
 import socket
 import time
 
+from oslo.config import cfg
+
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.worker.controller import LBaaSController
 
@@ -57,24 +59,24 @@ def handler(worker, job):
     return copy
 
 
-def config_thread(logger, driver, args):
+def config_thread(logger, driver):
     """ Worker thread function. """
     # Hostname should be a unique value, like UUID
     hostname = socket.gethostname()
     logger.info("[worker] Registering task %s" % hostname)
 
     server_list = []
-    for host_port in args.server:
+    for host_port in cfg.CONF['gearman']['servers']:
         host, port = host_port.split(':')
         server_list.append({'host': host,
                             'port': int(port),
-                            'keyfile': args.gearman_ssl_key,
-                            'certfile': args.gearman_ssl_cert,
-                            'ca_certs': args.gearman_ssl_ca,
-                            'keepalive': args.gearman_keepalive,
-                            'keepcnt': args.gearman_keepcnt,
-                            'keepidle': args.gearman_keepidle,
-                            'keepintvl': args.gearman_keepintvl})
+                            'keyfile': cfg.CONF['gearman']['ssl_key'],
+                            'certfile': cfg.CONF['gearman']['ssl_cert'],
+                            'ca_certs': cfg.CONF['gearman']['ssl_ca'],
+                            'keepalive': cfg.CONF['gearman']['keepalive'],
+                            'keepcnt': cfg.CONF['gearman']['keepcnt'],
+                            'keepidle': cfg.CONF['gearman']['keepidle'],
+                            'keepintvl': cfg.CONF['gearman']['keepintvl']})
 
     worker = CustomJSONGearmanWorker(server_list)
     worker.set_client_id(hostname)
@@ -86,12 +88,12 @@ def config_thread(logger, driver, args):
 
     while (retry):
         try:
-            worker.work(args.gearman_poll)
+            worker.work(cfg.CONF['gearman']['poll'])
         except KeyboardInterrupt:
             retry = False
         except gearman.errors.ServerUnavailable:
             logger.error("[worker] Job server(s) went away. Reconnecting.")
-            time.sleep(args.reconnect_sleep)
+            time.sleep(cfg.CONF['worker']['reconnect_sleep'])
             retry = True
         except Exception as e:
             logger.critical("[worker] Exception: %s, %s" % (e.__class__, e))
