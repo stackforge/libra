@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import socket
+import time
 from novaclient import exceptions
 from libra.mgm.nova import Node
 
@@ -77,6 +79,8 @@ class AssignIpController(object):
         try:
             node_id = nova.get_node(self.msg['name'])
             nova.vip_assign(node_id, self.msg['ip'])
+            if self.args.tcp_check_port:
+                self.check_ip(self.msg['ip'], self.args.tcp_check_port)
         except:
             self.logger.exception(
                 'Error assigning Floating IP {0} to {1}'
@@ -87,6 +91,25 @@ class AssignIpController(object):
 
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
+
+    def check_ip(self, ip, port):
+        # TCP connect check to see if floating IP was assigned correctly
+        sock = socket.socket()
+        sock.settimeout(5)
+        loop_count = 0
+        while True:
+            try:
+                sock.connect((ip, port))
+                return True
+            except socket.error:
+                loop_count += 1
+                if loop_count >= 5:
+                    self.logger.error(
+                        "TCP connect error after floating IP assign {0}"
+                        .format(ip)
+                    )
+                    raise
+                time.sleep(2)
 
 
 class RemoveIpController(object):
