@@ -127,3 +127,9 @@ Command Line Options
 
       When removing a floating IP, ignore the HTTP 500 error and treat it as
       a successful response.
+
+   .. option:: --tcp_check_port <PORT>
+
+      After a floating IP has been assigned use this port to do a TCP connect
+      test to see if the assign was successful.  If not specified the check
+      will not take place.
