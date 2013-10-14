@@ -259,7 +259,14 @@ class Stats(object):
                 for node in nodes:
                     # Get the last known status from the nodes table
                     node_data = session.query(Node).\
-                        filter(Node.id == node['id']).first()
+                        filter(Node.id == int(node['id'])).first()
+
+                    if node_data is None:
+                        self.logger.error(
+                            'DB error getting node {0} to set status {1}'
+                            .format(node['id'], node['status'])
+                        )
+                        continue
 
                     # Note all degraded LBs
                     if (node['status'] == 'DOWN' and
@@ -298,7 +305,7 @@ class Stats(object):
 
                     # Change the node status in the node table
                     session.query(Node).\
-                        filter(Node.id == node['id']).\
+                        filter(Node.id == int(node['id'])).\
                         update({"status": new_status},
                                synchronize_session='fetch')
                     session.flush()
