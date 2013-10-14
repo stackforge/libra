@@ -286,9 +286,10 @@ class LoadBalancersController(RestController):
                     session.rollback()
                     raise ExhaustedError('No virtual IPs available')
                 vip.device = device.id
-                submit_vip_job(
-                    'ASSIGN', device.name, str(ipaddress.IPv4Address(vip.ip))
-                )
+
+                # For use after transaction
+                device_name = device.name
+                vip_ip = vip.ip
             else:
                 virtual_id = body.virtualIps[0].id
                 # This is an additional load balancer
@@ -389,6 +390,11 @@ class LoadBalancersController(RestController):
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
             )
+            if body.virtualIps == Unset:
+                submit_vip_job(
+                    'ASSIGN', device_name, str(ipaddress.IPv4Address(vip_ip))
+                )
+
             return return_data
 
     @wsme_pecan.wsexpose(None, body=LBPut, status_code=202)

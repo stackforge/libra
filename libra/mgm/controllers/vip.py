@@ -78,6 +78,10 @@ class AssignIpController(object):
         )
         try:
             node_id = nova.get_node(self.msg['name'])
+            self.logger.info(
+                'Node name {0} identified as ID {1}'
+                .format(self.msg['name'], node_id)
+            )
             nova.vip_assign(node_id, self.msg['ip'])
             if self.args.tcp_check_port:
                 self.check_ip(self.msg['ip'], self.args.tcp_check_port)
