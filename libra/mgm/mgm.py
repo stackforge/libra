@@ -160,6 +160,10 @@ def main():
         help='Number of worker threads to spawn'
     )
     options.parser.add_argument(
+        '--tcp_check_port',
+        help='Port number to ping to check floating IP assign worked'
+    )
+    options.parser.add_argument(
         '--rm_fip_ignore_500', action='store_true',
         help='Ignore HTTP 500 error when removing a floating IP'
     )
