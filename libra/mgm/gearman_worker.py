@@ -17,6 +17,8 @@ import json
 import socket
 import time
 
+from oslo.config import cfg
+
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.mgm.controllers.root import PoolMgmController
 
@@ -24,45 +26,44 @@ from libra.mgm.controllers.root import PoolMgmController
 def handler(worker, job):
     logger = worker.logger
     logger.debug("Received JSON message: {0}".format(json.dumps(job.data)))
-    controller = PoolMgmController(logger, worker.args, job.data)
+    controller = PoolMgmController(logger, job.data)
     response = controller.run()
     logger.debug("Return JSON message: {0}".format(json.dumps(response)))
     return response
 
 
-def worker_thread(logger, args):
+def worker_thread(logger):
     logger.info("Registering task libra_pool_mgm")
     hostname = socket.gethostname()
 
     server_list = []
-    for host_port in args.gearman:
+    for host_port in cfg.CONF['gearman']['servers']:
         host, port = host_port.split(':')
         server_list.append({'host': host,
                             'port': int(port),
-                            'keyfile': args.gearman_ssl_key,
-                            'certfile': args.gearman_ssl_cert,
-                            'ca_certs': args.gearman_ssl_ca,
-                            'keepalive': args.gearman_keepalive,
-                            'keepcnt': args.gearman_keepcnt,
-                            'keepidle': args.gearman_keepidle,
-                            'keepintvl': args.gearman_keepintvl})
+                            'keyfile': cfg.CONF['gearman']['ssl_key'],
+                            'certfile': cfg.CONF['gearman']['ssl_cert'],
+                            'ca_certs': cfg.CONF['gearman']['ssl_ca'],
+                            'keepalive': cfg.CONF['gearman']['keepalive'],
+                            'keepcnt': cfg.CONF['gearman']['keepcnt'],
+                            'keepidle': cfg.CONF['gearman']['keepidle'],
+                            'keepintvl': cfg.CONF['gearman']['keepintvl']})
     worker = JSONGearmanWorker(server_list)
 
     worker.set_client_id(hostname)
     worker.register_task('libra_pool_mgm', handler)
     worker.logger = logger
-    worker.args = args
 
     retry = True
 
     while (retry):
         try:
-            worker.work(args.gearman_poll)
+            worker.work(cfg.CONF['gearman']['poll'])
         except KeyboardInterrupt:
             retry = False
         except gearman.errors.ServerUnavailable:
             logger.error("Job server(s) went away. Reconnecting.")
-            time.sleep(args.reconnect_sleep)
+            time.sleep(cfg.CONF['gearman']['reconnect_sleep'])
             retry = True
         except Exception:
             logger.exception("Exception in worker")

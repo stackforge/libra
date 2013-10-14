@@ -16,6 +16,8 @@ import uuid
 import sys
 import urllib
 
+from oslo.config import cfg
+
 from novaclient import client
 from novaclient import exceptions
 
@@ -35,36 +37,37 @@ class BuildError(Exception):
 
 
 class Node(object):
-    def __init__(self, args):
+    def __init__(self):
         self.nova = client.HTTPClient(
-            args.nova_user,
-            args.nova_pass,
-            args.nova_tenant,
-            args.nova_auth_url,
-            region_name=args.nova_region,
+            cfg.CONF['mgm']['nova_user'],
+            cfg.CONF['mgm']['nova_pass'],
+            cfg.CONF['mgm']['nova_tenant'],
+            cfg.CONF['mgm']['nova_auth_url'],
+            region_name=cfg.CONF['mgm']['nova_region'],
             no_cache=True,
-            insecure=args.nova_insecure,
-            tenant_id=args.nova_tenant_id,
-            bypass_url=args.nova_bypass_url,
+            insecure=cfg.CONF['mgm']['nova_insecure'],
+            tenant_id=cfg.CONF['mgm']['nova_tenant_id'],
+            bypass_url=cfg.CONF['mgm']['nova_bypass_url'],
             service_type='compute'
         )
-        self.keyname = args.nova_keyname
-        self.secgroup = args.nova_secgroup
-        self.node_basename = args.node_basename
-        self.az = args.nova_az_name
-        self.net_id = args.nova_net_id
-        self.rm_fip_ignore_500 = args.rm_fip_ignore_500
+        self.keyname = cfg.CONF['mgm']['nova_keyname']
+        self.secgroup = cfg.CONF['mgm']['nova_secgroup']
+        self.node_basename = cfg.CONF['mgm']['node_basename']
+        self.az = cfg.CONF['mgm']['nova_az_name']
+        self.net_id = cfg.CONF['mgm']['nova_net_id']
+        self.rm_fip_ignore_500 = cfg.CONF['mgm']['rm_fip_ignore_500']
 
         # Replace '_' with '-' in basename
         if self.node_basename:
             self.node_basename = self.node_basename.replace('_', '-')
 
-        self.image = args.nova_image
+        self.image = cfg.CONF['mgm']['nova_image']
 
-        if args.nova_image_size.isdigit():
-            self.node_type = args.nova_image_size
+        image_size = cfg.CONF['mgm']['nova_image_size']
+        if image_size.isdigit():
+            self.node_type = image_size
         else:
-            self.node_type = self._get_flavor(args.nova_image_size)
+            self.node_type = self._get_flavor(image_size)
 
     def build(self):
         """ create a node, test it is running """
