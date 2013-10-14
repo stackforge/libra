@@ -109,6 +109,11 @@ class GearmanClientThread(object):
             self.logger.error(
                 "Failed to assign IP {0} to device {1}".format(self.lbid, data)
             )
+            with db_session() as session:
+                device = session.query(Device).\
+                    filter(Device.name == data).first()
+                errmsg = 'Floating IP assign failed'
+                self._set_error(device.id, errmsg, session)
 
     def send_remove(self, data):
         job_data = {
