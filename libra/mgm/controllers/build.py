@@ -14,6 +14,8 @@
 
 from time import sleep
 from novaclient import exceptions
+from oslo.config import cfg
+
 from libra.mgm.nova import Node, BuildError, NotFound
 
 
@@ -23,14 +25,13 @@ class BuildController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, args, msg):
+    def __init__(self, logger, msg):
         self.logger = logger
         self.msg = msg
-        self.args = args
 
     def run(self):
         try:
-            nova = Node(self.args)
+            nova = Node()
         except Exception:
             self.logger.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
@@ -102,9 +103,10 @@ class BuildController(object):
                         break
                 self.msg['addr'] = address['addr']
                 self.msg['type'] = "basename: {0}, image: {1}".format(
-                    self.args.node_basename, self.args.nova_image
+                    cfg.CONF['mgm']['node_basename'],
+                    cfg.CONF['mgm']['nova_image']
                 )
-                self.msg['az'] = self.args.az
+                self.msg['az'] = cfg.CONF['mgm']['az']
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
                 self.logger.info('Node {0} returned'.format(status['name']))
                 return self.msg

@@ -25,10 +25,9 @@ class PoolMgmController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, args, json_msg):
+    def __init__(self, logger, json_msg):
         self.logger = logger
         self.msg = json_msg
-        self.args = args
 
     def run(self):
         if self.ACTION_FIELD not in self.msg:
@@ -40,21 +39,15 @@ class PoolMgmController(object):
 
         try:
             if action == 'BUILD_DEVICE':
-                controller = BuildController(self.logger, self.args, self.msg)
+                controller = BuildController(self.logger, self.msg)
             elif action == 'DELETE_DEVICE':
-                controller = DeleteController(self.logger, self.args, self.msg)
+                controller = DeleteController(self.logger, self.msg)
             elif action == 'BUILD_IP':
-                controller = BuildIpController(
-                    self.logger, self.args, self.msg
-                )
+                controller = BuildIpController(self.logger, self.msg)
             elif action == 'ASSIGN_IP':
-                controller = AssignIpController(
-                    self.logger, self.args, self.msg
-                )
+                controller = AssignIpController(self.logger, self.msg)
             elif action == 'REMOVE_IP':
-                controller = RemoveIpController(
-                    self.logger, self.args, self.msg
-                )
+                controller = RemoveIpController(self.logger, self.msg)
             else:
                 self.logger.error(
                     "Invalid `{0}` value: {1}".format(

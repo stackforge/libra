@@ -21,14 +21,13 @@ class DeleteController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, args, msg):
+    def __init__(self, logger, msg):
         self.logger = logger
         self.msg = msg
-        self.args = args
 
     def run(self):
         try:
-            nova = Node(self.args)
+            nova = Node()
         except Exception:
             self.logger.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
