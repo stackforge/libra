@@ -20,32 +20,32 @@ Operation
 +--------------------+------------------------------------------+-------+--------------------------------------------------------------+
 
 Description
-̃~~~~~~~~~~~
+~~~~~~~~~~~
 
 This operation retrieves the current configuration of a load balancer health monitor.
 
 Request Data
-̃~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 None required.
 
 Query Parameters Supported
-̃~~~~~~~~~~~̃~~~~~~~~~~~̃~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 None required.
 
 Required HTTP Header Values
-̃~~~~~~~~~~~̃~~~~~~~~~~~̃~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **X-Auth-Token**
 
 Request Body
-̃~~~~~~~~~~~̃~
+~~~~~~~~~~~~
 
 None required.
 
 Normal Response Code
-̃~~~~~~~~~~~̃~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 +------------------+---------------------+
 | HTTP Status Code | Description         |
@@ -54,12 +54,12 @@ Normal Response Code
 +------------------+---------------------+
 
 Response Body
-̃~~~~~~~~~~~̃~~
+~~~~~~~~~~~~~
 
 The response body contains the health monitor for the requested load balancer or 404, if not found.
 
 Error Response Codes
-̃~~~~~~~~~~~̃~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 +------------------+---------------------+
 | HTTP Status Code | Description         |
@@ -76,7 +76,7 @@ Error Response Codes
 +------------------+---------------------+
 
 Example
-̃~~~~~~~
+~~~~~~~
 
 **Curl Example**
 
