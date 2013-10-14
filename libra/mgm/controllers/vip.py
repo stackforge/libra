@@ -15,6 +15,8 @@
 import socket
 import time
 from novaclient import exceptions
+from oslo.config import cfg
+
 from libra.mgm.nova import Node
 
 
@@ -24,14 +26,13 @@ class BuildIpController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, args, msg):
+    def __init__(self, logger, msg):
         self.logger = logger
         self.msg = msg
-        self.args = args
 
     def run(self):
         try:
-            nova = Node(self.args)
+            nova = Node()
         except Exception:
             self.logger.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
@@ -59,14 +60,13 @@ class AssignIpController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, args, msg):
+    def __init__(self, logger, msg):
         self.logger = logger
         self.msg = msg
-        self.args = args
 
     def run(self):
         try:
-            nova = Node(self.args)
+            nova = Node()
         except Exception:
             self.logger.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
@@ -79,8 +79,9 @@ class AssignIpController(object):
         try:
             node_id = nova.get_node(self.msg['name'])
             nova.vip_assign(node_id, self.msg['ip'])
-            if self.args.tcp_check_port:
-                self.check_ip(self.msg['ip'], self.args.tcp_check_port)
+            if cfg.CONF['mgm']['tcp_check_port']:
+                self.check_ip(self.msg['ip'],
+                              cfg.CONF['mgm']['tcp_check_port'])
         except:
             self.logger.exception(
                 'Error assigning Floating IP {0} to {1}'
@@ -118,14 +119,13 @@ class RemoveIpController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, args, msg):
+    def __init__(self, logger, msg):
         self.logger = logger
         self.msg = msg
-        self.args = args
 
     def run(self):
         try:
-            nova = Node(self.args)
+            nova = Node()
         except Exception:
             self.logger.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
