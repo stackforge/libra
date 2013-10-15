@@ -23,7 +23,7 @@ from libra.common.api.lbaas import LoadBalancer, Device, db_session
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBLogsPost
 from libra.common.api.gearman_client import submit_job
-from libra.api.library.exp import NotFound
+from libra.api.library.exp import NotFound, ImmutableEntity, ImmutableStates
 
 
 class LogsController(RestController):
@@ -46,18 +46,19 @@ class LogsController(RestController):
                 session.rollback()
                 raise NotFound('Load Balancer not found')
 
+            if load_balancer.status in ImmutableStates:
+                session.rollback()
+                raise ImmutableEntity(
+                    'Cannot get logs from a Load Balancer in a non-ACTIVE '
+                    'state, current state: {0}'.format(load_balancer.status)
+                )
+
             load_balancer.status = 'PENDING_UPDATE'
             device = session.query(
                 Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
-            if device.status == 'ERROR':
-                session.rollback()
-                raise ClientSideError(
-                    'Load Balancer is currently in an ERROR state'
-                )
 
             session.commit()
             data = {
