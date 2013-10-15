@@ -26,6 +26,7 @@ from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 from libra.api.model.validators import LBNodePut
 from libra.common.api.gearman_client import submit_job
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
+from libra.api.library.exp import ImmutableEntity, ImmutableStates
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
 
@@ -173,6 +174,14 @@ class NodesController(RestController):
                 session.rollback()
                 raise NotFound('Load Balancer not found')
 
+            if load_balancer.status in ImmutableStates:
+                session.rollback()
+                raise ImmutableEntity(
+                    'Cannot modify a Load Balancer in a non-ACTIVE state'
+                    ', current state: {0}'
+                    .format(load_balancer.status)
+                )
+
             load_balancer.status = 'PENDING_UPDATE'
 
             # check if we are over limit
@@ -247,12 +256,6 @@ class NodesController(RestController):
                 filter(LoadBalancer.id == self.lbid).\
                 first()
 
-            if device.status == 'ERROR':
-                session.rollback()
-                raise ClientSideError(
-                    'Cannot modify a Load Balancer in an ERROR state'
-                )
-
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid
@@ -316,18 +319,22 @@ class NodesController(RestController):
                     raise ClientSideError(
                         'Node weight must be between 1 and 256'
                     )
+
+            if lb.status in ImmutableStates:
+                session.rollback()
+                raise ImmutableEntity(
+                    'Cannot modify a Load Balancer in a non-ACTIVE state'
+                    ', current state: {0}'
+                    .format(lb.status)
+                )
+
             lb.status = 'PENDING_UPDATE'
+
             device = session.query(
                 Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
-            if device.status == 'ERROR':
-                session.rollback()
-                raise ClientSideError(
-                    'Cannot modify a Load Balancer in an ERROR state'
-                )
 
             session.commit()
             submit_job(
@@ -362,6 +369,13 @@ class NodesController(RestController):
             if load_balancer is None:
                 session.rollback()
                 raise NotFound("Load Balancer not found")
+            if load_balancer.status in ImmutableStates:
+                session.rollback()
+                raise ImmutableEntity(
+                    'Cannot modify a Load Balancer in a non-ACTIVE state'
+                    ', current state: {0}'
+                    .format(load_balancer.status)
+                )
 
             load_balancer.status = 'PENDING_UPDATE'
 
