@@ -35,6 +35,7 @@ from libra.api.model.validators import LBRespNode
 from libra.common.api.gearman_client import submit_job, submit_vip_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
+from libra.api.library.exp import ImmutableEntity
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
 from wsme import types as wtypes
@@ -299,13 +300,6 @@ class LoadBalancersController(RestController):
                     filter(Vip.id == virtual_id).\
                     first()
 
-                if device.status == 'ERROR':
-                    session.rollback()
-                    raise ClientSideError(
-                        'Cannot add a Load Balancer to a device'
-                        ' in an ERROR state'
-                    )
-
                 old_lb = session.query(
                     LoadBalancer
                 ).join(LoadBalancer.devices).\
@@ -313,6 +307,15 @@ class LoadBalancersController(RestController):
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(Vip.id == virtual_id).\
                     first()
+
+                if old_lb.status != 'ACTIVE':
+                    session.rollback()
+                    raise ImmutableEntity(
+                        'Existing Load Balancer on VIP in a non-ACTIVE state'
+                        ', current state: {0}'
+                        .format(old_lb.status)
+                    )
+
                 vip = session.query(Vip).\
                     filter(Vip.device == device.id).\
                     first()
@@ -414,6 +417,14 @@ class LoadBalancersController(RestController):
                 session.rollback()
                 raise NotFound('Load Balancer ID is not valid')
 
+            if lb.status != 'ACTIVE':
+                session.rollback()
+                raise ImmutableEntity(
+                    'Cannot modify a Load Balancer in a non-ACTIVE state'
+                    ', current state: {0}'
+                    .format(lb.status)
+                )
+
             if body.name != Unset:
                 namelimit = session.query(Limits.value).\
                     filter(Limits.name == 'maxLoadBalancerNameLength').scalar()
@@ -433,12 +444,6 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
-            if device.status == 'ERROR':
-                session.rollback()
-                raise ClientSideError(
-                    'Cannot update a Load Balancer in an ERROR state'
-                )
 
             session.commit()
             submit_job(

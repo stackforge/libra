@@ -23,7 +23,7 @@ from libra.common.api.lbaas import Device, HealthMonitor
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBMonitorPut, LBMonitorResp
 from libra.common.api.gearman_client import submit_job
-from libra.api.library.exp import NotFound
+from libra.api.library.exp import NotFound, ImmutableEntity
 
 
 class HealthMonitorController(RestController):
@@ -180,18 +180,20 @@ class HealthMonitorController(RestController):
                 monitor.attempts = data["attempts"]
                 monitor.path = data["path"]
 
+            if lb.status != 'ACTIVE':
+                session.rollback()
+                raise ImmutableEntity(
+                    'Cannot modify a Load Balancer in a non-ACTIVE state'
+                    ', current state: {0}'
+                    .format(lb.status)
+                )
+
             lb.status = 'PENDING_UPDATE'
             device = session.query(
                 Device.id, Device.name, Device.status
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
-            if device.status == 'ERROR':
-                session.rollback()
-                raise ClientSideError(
-                    'Cannot modify a Load Balancer in an ERROR state'
-                )
 
             return_data = LBMonitorResp()
             return_data.type = data["type"]
