@@ -26,6 +26,7 @@ import wsme.rest.xml
 import wsmeext.pecan
 import pecan
 from libra.api.library.exp import OverLimit, NotFound, NotAuthorized
+from libra.api.library.exp import ImmutableEntity
 from libra.common.exc import DetailError
 from wsme.rest.json import tojson
 from sqlalchemy.exc import OperationalError, ResourceClosedError
@@ -126,6 +127,8 @@ def wsexpose(*args, **kwargs):
                     e = sys.exc_info()[1]
                     if isinstance(e, OverLimit):
                         pecan.response.status = 413
+                    elif isinstance(e, ImmutableEntity):
+                        pecan.response.status = 422
                     elif isinstance(e, NotFound):
                         pecan.response.status = 404
                     elif isinstance(e, NotAuthorized):
