@@ -49,3 +49,13 @@ class NotAuthorized(ClientSideError):
     @property
     def faultstring(self):
         return _(six.u("NotAuthorized: %s")) % (self.msg)
+
+
+class ImmutableEntity(ClientSideError):
+    def __init__(self, msg=''):
+        self.msg = msg
+        super(ImmutableEntity, self).__init__()
+
+    @property
+    def faultstring(self):
+        return _(six.u("ImmutableEntity: %s")) % (self.msg)
