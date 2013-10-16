@@ -264,6 +264,15 @@ class GearmanClientThread(object):
             }
 
             degraded = []
+            if lbs is None:
+                self.logger.error(
+                    'Attempting to send empty LB data for device {0} ({1}), '
+                    'something went wrong'.format(data, self.host)
+                )
+                self._set_error(data, "LB config error", session)
+                session.commit()
+                return
+
             for lb in lbs:
                 lb_data = {
                     'name': lb.name,
@@ -324,6 +333,11 @@ class GearmanClientThread(object):
                     else:
                         lb.status = 'ACTIVE'
                         lb.errmsg = None
+                    device = session.query(Device).\
+                        filter(Device.id == data).\
+                        first()
+                    if device.status == 'BUILD':
+                        device.status = 'ONLINE'
 
             session.commit()
 
