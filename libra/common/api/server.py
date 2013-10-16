@@ -14,11 +14,11 @@
 import eventlet
 
 
-def make_socket(args):
-    sock = eventlet.listen((args.host, args.port))
+def make_socket(host, port, ssl_keyfile=None, ssl_certfile=None):
+    sock = eventlet.listen((host, port))
     # TODO: set ca_certs and cert_reqs=CERT_REQUIRED
-    if args.ssl_keyfile and args.ssl_certfile:
-        sock = eventlet.wrap_ssl(sock, certfile=args.ssl_certfile,
-                                 keyfile=args.ssl_keyfile,
+    if ssl_keyfile and ssl_certfile:
+        sock = eventlet.wrap_ssl(sock, certfile=ssl_certfile,
+                                 keyfile=ssl_keyfile,
                                  server_side=True)
     return sock
