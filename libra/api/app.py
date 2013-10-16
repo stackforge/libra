@@ -13,6 +13,7 @@
 # under the License.
 import eventlet
 eventlet.monkey_patch()
+
 import daemon
 import daemon.pidfile
 import daemon.runner
@@ -20,14 +21,16 @@ import grp
 import pwd
 import pecan
 import sys
-import os
 import wsme_overrides
+
+from eventlet import wsgi
+
+from libra import __version__
 from libra.api import config as api_config
 from libra.api import model
 from libra.api import acl
 from libra.common.api import server
-from libra.common.options import Options, setup_logging
-from eventlet import wsgi
+from libra.common.options import add_common_opts, libra_logging, CONF
 
 
 # Gets rid of pep8 error
@@ -40,31 +43,32 @@ def get_pecan_config():
     return pecan.configuration.conf_from_file(filename)
 
 
-def setup_app(pecan_config, args):
+def setup_app(pecan_config):
 
     model.init_model()
 
     if not pecan_config:
         pecan_config = get_pecan_config()
     config = dict(pecan_config)
-    config['database'] = args.db_sections
-    config['conffile'] = args.config
+    config['database'] = CONF['api']['db_sections']
+    # NOTE: We support only 1 config file
+    config['conffile'] = CONF['config-file'][0]
     config['swift'] = {
-        'swift_basepath': args.swift_basepath,
-        'swift_endpoint': args.swift_endpoint
+        'swift_basepath': CONF['api']['swift_basepath'],
+        'swift_endpoint': CONF['api']['swift_endpoint']
     }
     config['gearman'] = {
-        'server': args.gearman,
-        'ssl_key': args.gearman_ssl_key,
-        'ssl_cert': args.gearman_ssl_cert,
-        'ssl_ca': args.gearman_ssl_ca,
-        'keepalive': args.gearman_keepalive,
-        'keepcnt': args.gearman_keepcnt,
-        'keepidle': args.gearman_keepidle,
-        'keepintvl': args.gearman_keepintvl
+        'server': CONF['gearman']['servers'],
+        'ssl_key': CONF['gearman']['ssl_key'],
+        'ssl_cert': CONF['gearman']['ssl_cert'],
+        'ssl_ca': CONF['gearman']['ssl_ca'],
+        'keepalive': CONF['gearman']['keepalive'],
+        'keepcnt': CONF['gearman']['keepcnt'],
+        'keepidle': CONF['gearman']['keepidle'],
+        'keepintvl': CONF['gearman']['keepintvl']
     }
-    config['ip_filters'] = args.ip_filters
-    if args.debug:
+    config['ip_filters'] = CONF['api']['ip_filters']
+    if CONF['debug']:
         config['wsme'] = {'debug': True}
         config['app']['debug'] = True
 
@@ -82,7 +86,7 @@ def setup_app(pecan_config, args):
             True)
     )
 
-    final_app = acl.AuthDirector(app, args)
+    final_app = acl.AuthDirector(app)
     return final_app
 
 
@@ -100,125 +104,20 @@ class LogStdout(object):
 
 
 def main():
-    options = Options('api', 'API Server')
-    options.parser.add_argument(
-        '--host', help='IP address to bind to, 0.0.0.0 for all IPs',
-        default='0.0.0.0'
-    )
-    options.parser.add_argument(
-        '--port', help='Port number for API server', type=int, default=443
-    )
-    options.parser.add_argument(
-        '--disable_keystone', help='Unauthenticated server, for testing only',
-        action='store_true'
-    )
-    options.parser.add_argument(
-        '--db_sections', action='append', default=[],
-        help='MySQL config sections in the config file'
-    )
-    options.parser.add_argument(
-        '--gearman', action='append', metavar='HOST:PORT', default=[],
-        help='Gearman job servers'
-    )
-    options.parser.add_argument(
-        '--gearman_keepalive', action="store_true",
-        help='use KEEPALIVE to Gearman server'
-    )
-    options.parser.add_argument(
-        '--gearman_keepcnt', type=int, metavar='COUNT',
-        help='max keepalive probes to send before killing connection'
-    )
-    options.parser.add_argument(
-        '--gearman_keepidle', type=int, metavar='SECONDS',
-        help='seconds of idle time before sending keepalive probes'
-    )
-    options.parser.add_argument(
-        '--gearman_keepintvl', type=int, metavar='SECONDS',
-        help='seconds between TCP keepalive probes'
-    )
-    options.parser.add_argument(
-        '--gearman_ssl_ca', metavar='FILE',
-        help='Gearman SSL certificate authority'
-    )
-    options.parser.add_argument(
-        '--gearman_ssl_cert', metavar='FILE',
-        help='Gearman SSL certificate'
-    )
-    options.parser.add_argument(
-        '--gearman_ssl_key', metavar='FILE',
-        help='Gearman SSL key'
-    )
-    options.parser.add_argument(
-        '--keystone_module',
-        default='keystoneclient.middleware.auth_token:AuthProtocol',
-        help='A colon separated module and class for keystone middleware'
-    )
-    options.parser.add_argument(
-        '--swift_basepath',
-        help='Default swift container to use for pushing log files to'
-    )
-    options.parser.add_argument(
-        '--swift_endpoint',
-        help='Default endpoint URL (tenant ID will be appended to this)'
-    )
-    options.parser.add_argument(
-        '--ssl_certfile',
-        help='Path to an SSL certificate file'
-    )
-    options.parser.add_argument(
-        '--ssl_keyfile',
-        help='Path to an SSL key file'
-    )
-    options.parser.add_argument(
-        '--ip_filters', action='append', default=[],
-        help='IP filters for backend nodes in the form xxx.xxx.xxx.xxx/yy'
-    )
-
-    args = options.run()
-
-    required_args = [
-        'db_sections', 'swift_basepath',
-        'swift_endpoint'
-    ]
-
-    missing_args = 0
-    for req in required_args:
-        test_var = getattr(args, req)
-        if test_var is None:
-            missing_args += 1
-            sys.stderr.write(
-                '{app}: error: argument --{test_var} is required\n'
-                .format(app=os.path.basename(sys.argv[0]), test_var=req))
-    if missing_args:
-        return 2
-
-    if not args.gearman:
-        # NOTE(shrews): Can't set a default in argparse method because the
-        # value is appended to the specified default.
-        args.gearman.append('localhost:4730')
-    elif not isinstance(args.gearman, list):
-        # NOTE(shrews): The Options object cannot intelligently handle
-        # creating a list from an option that may have multiple values.
-        # We convert it to the expected type here.
-        svr_list = args.gearman.split()
-        args.gearman = svr_list
-
-    if not isinstance(args.db_sections, list):
-        db_list = args.db_sections.split()
-        args.db_sections = db_list
-
-    if not isinstance(args.ip_filters, list):
-        ip_list = args.ip_filters.split()
-        args.ip_filters = ip_list
+    add_common_opts()
+    CONF(project='libra', version=__version__)
 
     pc = get_pecan_config()
 
     # NOTE: Let's not force anyone to actually have to use SSL, it shouldn't be
     # up to us to decide.
-    sock = server.make_socket(args)
+    sock = server.make_socket(CONF['api']['host'],
+                              CONF['api']['port'],
+                              CONF['api']['ssl_keyfile'],
+                              CONF['api']['ssl_certfile'])
 
-    if not args.nodaemon:
-        pidfile = daemon.pidfile.TimeoutPIDLockFile(args.pid, 10)
+    if CONF['api']['daemon']:
+        pidfile = daemon.pidfile.TimeoutPIDLockFile(CONF['api']['pid'], 10)
         if daemon.runner.is_pidfile_stale(pidfile):
             pidfile.break_lock()
         context = daemon.DaemonContext(
@@ -227,17 +126,19 @@ def main():
             pidfile=pidfile,
             files_preserve=[sock.fileno()]
         )
-        if args.user:
-            context.uid = pwd.getpwnam(args.user).pw_uid
-        if args.group:
-            context.gid = grp.getgrnam(args.group).gr_gid
+        if CONF['user']:
+            context.uid = pwd.getpwnam(CONF['user']).pw_uid
+        if CONF['group']:
+            context.gid = grp.getgrnam(CONF['group']).gr_gid
         context.open()
+
     # Use the root logger due to lots of services using logger
-    logger = setup_logging('', args)
-    logger.info('Starting on {0}:{1}'.format(args.host, args.port))
-    api = setup_app(pc, args)
+    logger = libra_logging('', 'api')
+    logger.info('Starting on {0}:{1}'.format(CONF['api']['host'],
+                                             CONF['api']['port']))
+    api = setup_app(pc)
     sys.stderr = LogStdout(logger)
 
-    wsgi.server(sock, api, keepalive=False, debug=args.debug)
+    wsgi.server(sock, api, keepalive=False, debug=CONF['debug'])
 
     return 0

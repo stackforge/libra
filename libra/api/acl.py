@@ -15,7 +15,10 @@
 import ConfigParser
 import importlib
 import logging
+
+from oslo.config import cfg
 from pecan import request
+
 from libra.api.library.exp import NotAuthorized
 
 
@@ -43,10 +46,9 @@ class AuthDirector(object):
         will direct intentionally unauthenticated requests to the relevant
         controllers. """
 
-    def __init__(self, app, args):
-        self.args = args
+    def __init__(self, app):
         self.unauthed_app = app
-        if not args.disable_keystone:
+        if not cfg.CONF['api']['disable_keystone']:
             self.app = self._install()
         else:
             self.app = app
@@ -61,8 +63,8 @@ class AuthDirector(object):
     def _install(self):
         """Install ACL check on application."""
         config = ConfigParser.SafeConfigParser()
-        config.read([self.args.config])
-        module_details = self.args.keystone_module.split(':')
+        config.read(cfg.CONF['config-file'])
+        module_details = cfg.CONF['api']['keystone_module'].split(':')
         keystone = importlib.import_module(module_details[0])
         auth_class = getattr(keystone, module_details[1])
         return auth_class(self.unauthed_app, config._sections['keystone'])
