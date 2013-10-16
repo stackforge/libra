@@ -321,15 +321,15 @@ class LoadBalancersController(RestController):
                     filter(Device.pingCount == 0).\
                     with_lockmode('update').\
                     first()
+                if device is None:
+                    session.rollback()
+                    raise ExhaustedError('No devices available')
                 NULL = None  # For pep8
                 vip = session.query(Vip).\
                     filter(Vip.device == NULL).\
                     with_lockmode('update').\
                     first()
                 vip.device = device.id
-                if device is None:
-                    session.rollback()
-                    raise ExhaustedError('No devices available')
                 if vip is None:
                     session.rollback()
                     raise ExhaustedError('No virtual IPs available')
@@ -420,8 +420,10 @@ class LoadBalancersController(RestController):
                 session.add(out_node)
 
             # now save the loadbalancer_id to the device and switch its status
-            # to online
-            device.status = "ONLINE"
+            # to build so the monitoring does not trigger early.
+            # The gearman message code will switch to ONLINE once we know
+            # everything is good
+            device.status = "BUILD"
             session.flush()
 
             return_data = LBResp()
@@ -542,6 +544,13 @@ class LoadBalancersController(RestController):
             if lb is None:
                 session.rollback()
                 raise NotFound("Load Balancer ID is not valid")
+            if lb.status in ImmutableStates:
+                session.rollback()
+                raise ImmutableEntity(
+                    'Cannot delete a Load Balancer in a non-ACTIVE state'
+                    ', current state: {0}'
+                    .format(lb.status)
+                )
             lb.status = 'PENDING_DELETE'
             device = session.query(
                 Device.id, Device.name
