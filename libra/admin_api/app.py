@@ -292,7 +292,8 @@ def main():
     MaintThreads(logger, args, drivers)
     sys.stderr = LogStdout(logger)
 
-    sock = server.make_socket(args)
+    sock = server.make_socket(args.host, args.port,
+                              args.ssl_keyfile, args.ssl_certfile)
     wsgi.server(sock, api, keepalive=False)
 
     return 0
