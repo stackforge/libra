@@ -36,6 +36,7 @@ from libra.common.api.gearman_client import submit_job, submit_vip_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.exp import ImmutableEntity, ImmutableStates
+from libra.api.library.exp import ImmutableStatesNoError
 from libra.api.library.ip_filter import ipfilter
 from pecan import conf
 from wsme import types as wtypes
@@ -480,7 +481,8 @@ class LoadBalancersController(RestController):
             if lb is None:
                 session.rollback()
                 raise NotFound("Load Balancer ID is not valid")
-            if lb.status in ImmutableStates:
+            # So we can delete ERROR, but not other Immutable states
+            if lb.status in ImmutableStatesNoError:
                 session.rollback()
                 raise ImmutableEntity(
                     'Cannot delete a Load Balancer in a non-ACTIVE state'
