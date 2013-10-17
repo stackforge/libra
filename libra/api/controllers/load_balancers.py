@@ -273,6 +273,7 @@ class LoadBalancersController(RestController):
                         session.query(loadbalancers_devices.c.device)
                     )).\
                     filter(Device.status == "OFFLINE").\
+                    filter(Device.pingCount == 0).\
                     with_lockmode('update').\
                     first()
                 if device is None:
