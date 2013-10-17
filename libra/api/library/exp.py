@@ -63,3 +63,8 @@ class ImmutableEntity(ClientSideError):
 ImmutableStates = [
     'ERROR', 'PENDING_UPDATE', 'PENDING_DELETE', 'BUILD', 'ERROR(REBUILDING)'
 ]
+
+# So we can delete devices that are in a plain ERROR state
+ImmutableStatesNoError = [
+    'PENDING_UPDATE', 'PENDING_DELETE', 'BUILD', 'ERROR(REBUILDING)'
+]
