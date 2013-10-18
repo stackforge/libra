@@ -19,9 +19,8 @@ known_drivers = {
 
 
 class AlertDriver(object):
-    def __init__(self, logger, args):
+    def __init__(self, logger):
         self.logger = logger
-        self.args = args
 
     def send_alert(self, message, device_id):
         raise NotImplementedError()

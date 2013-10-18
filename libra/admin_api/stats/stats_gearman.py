@@ -13,29 +13,30 @@
 # under the License.
 
 from gearman.constants import JOB_UNKNOWN
+from oslo.config import cfg
 from libra.common.json_gearman import JSONGearmanClient
 
 
 class GearJobs(object):
-    def __init__(self, logger, args):
+    def __init__(self, logger):
         self.logger = logger
-        self.poll_timeout = args.stats_poll_timeout
-        self.poll_timeout_retry = args.stats_poll_timeout_retry
+        self.poll_timeout = cfg.CONF['admin_api']['stats_poll_timeout']
+        self.poll_retry = cfg.CONF['admin_api']['stats_poll_timeout_retry']
 
-        if all([args.gearman_ssl_ca, args.gearman_ssl_cert,
-                args.gearman_ssl_key]):
-            # Use SSL connections to each Gearman job server.
-            ssl_server_list = []
-            for server in args.gearman:
-                host, port = server.split(':')
-                ssl_server_list.append({'host': host,
-                                        'port': int(port),
-                                        'keyfile': args.gearman_ssl_key,
-                                        'certfile': args.gearman_ssl_cert,
-                                        'ca_certs': args.gearman_ssl_ca})
-            self.gm_client = JSONGearmanClient(ssl_server_list)
-        else:
-            self.gm_client = JSONGearmanClient(args.gearman)
+        server_list = []
+        for server in cfg.CONF['gearman']['servers']:
+            host, port = server.split(':')
+            server_list.append({'host': host,
+                                'port': int(port),
+                                'keyfile': cfg.CONF['gearman']['ssl_key'],
+                                'certfile': cfg.CONF['gearman']['ssl_cert'],
+                                'ca_certs': cfg.CONF['gearman']['ssl_ca'],
+                                'keepalive': cfg.CONF['gearman']['keepalive'],
+                                'keepcnt': cfg.CONF['gearman']['keepcnt'],
+                                'keepidle': cfg.CONF['gearman']['keepidle'],
+                                'keepintvl': cfg.CONF['gearman']['keepintvl']
+                                })
+        self.gm_client = JSONGearmanClient(server_list)
 
     def send_pings(self, node_list):
         # TODO: lots of duplicated code that needs cleanup
@@ -81,7 +82,7 @@ class GearJobs(object):
                 list_of_jobs.append(dict(task=str(node), data=job_data))
             submitted_pings = self.gm_client.submit_multiple_jobs(
                 list_of_jobs, background=False, wait_until_complete=True,
-                poll_timeout=self.poll_timeout_retry
+                poll_timeout=self.poll_retry
             )
             for ping in submitted_pings:
                 if ping.state == JOB_UNKNOWN:

@@ -13,7 +13,10 @@
 # under the License.
 
 import threading
+
 from datetime import datetime
+from oslo.config import cfg
+
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
 from libra.admin_api.stats.stats_gearman import GearJobs
 
@@ -27,16 +30,17 @@ class Stats(object):
     PING_SECONDS = 15
     OFFLINE_SECONDS = 45
 
-    def __init__(self, logger, args, drivers):
+    def __init__(self, logger, drivers):
         self.logger = logger
-        self.args = args
         self.drivers = drivers
         self.ping_timer = None
         self.offline_timer = None
-        self.ping_limit = args.stats_offline_ping_limit
-        self.error_limit = args.stats_device_error_limit
-
-        logger.info("Selected stats drivers: {0}".format(args.stats_driver))
+        self.ping_limit = cfg.CONF['admin_api']['stats_offline_ping_limit']
+        self.error_limit = cfg.CONF['admin_api']['stats_device_error_limit']
+        self.server_id = cfg.CONF['admin_api']['server_id']
+        self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
+        self.stats_driver = cfg.CONF['admin_api']['stats_driver']
+        logger.info("Selected stats drivers: {0}".format(self.stats_driver))
 
         self.start_ping_sched()
         self.start_offline_sched()
@@ -50,7 +54,7 @@ class Stats(object):
     def check_offline_lbs(self):
         # Work out if it is our turn to run
         minute = datetime.now().minute
-        if self.args.server_id != minute % self.args.number_of_servers:
+        if self.server_id != minute % self.number_of_servers:
             self.logger.info('Not our turn to run OFFLINE check, sleeping')
             self.start_offline_sched()
             return
@@ -70,7 +74,7 @@ class Stats(object):
     def ping_lbs(self):
         # Work out if it is our turn to run
         minute = datetime.now().minute
-        if self.args.server_id != minute % self.args.number_of_servers:
+        if self.server_id != minute % self.number_of_servers:
             self.logger.info('Not our turn to run ping check, sleeping')
             self.start_ping_sched()
             return
@@ -100,7 +104,7 @@ class Stats(object):
                 return (0, 0)
             for lb in devices:
                 node_list.append(lb.name)
-            gearman = GearJobs(self.logger, self.args)
+            gearman = GearJobs(self.logger)
             failed_lbs, node_status = gearman.send_pings(node_list)
             failed = len(failed_lbs)
             if failed > self.error_limit:
@@ -136,7 +140,7 @@ class Stats(object):
                 return (0, 0)
             for lb in devices:
                 node_list.append(lb.name)
-            gearman = GearJobs(self.logger, self.args)
+            gearman = GearJobs(self.logger)
             failed_lbs = gearman.offline_check(node_list)
             failed = len(failed_lbs)
             if failed > self.error_limit:

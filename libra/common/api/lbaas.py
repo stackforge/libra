@@ -12,15 +12,17 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+import logging
+import sqlalchemy.types as types
+import time
+
+from oslo.config import cfg
+from pecan import conf
 from sqlalchemy import Table, Column, Integer, ForeignKey, create_engine
 from sqlalchemy import INTEGER, VARCHAR, BIGINT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, Session
-import sqlalchemy.types as types
-import time
-import ConfigParser
-from pecan import conf
-import logging
 
 
 DeclarativeBase = declarative_base()
@@ -170,15 +172,13 @@ class RoutingSession(Session):
         return engine
 
     def _build_engines(self):
-        config = ConfigParser.SafeConfigParser()
-        config.read([conf.conffile])
         if 'debug' in conf.app and conf.app.debug:
             echo = True
         else:
             echo = False
 
         for section in conf.database:
-            db_conf = config._sections[section]
+            db_conf = cfg.CONF[section]
 
             conn_string = '''mysql+mysqlconnector://%s:%s@%s:%d/%s''' % (
                 db_conf['username'],

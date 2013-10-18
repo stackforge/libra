@@ -11,22 +11,27 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 
-from libra.admin_api.stats.drivers.base import AlertDriver
 from dogapi import dog_http_api as api
+from oslo.config import cfg
+
+from libra.admin_api.stats.drivers.base import AlertDriver
 
 
 class DatadogDriver(AlertDriver):
-    def __init__(self, logger, args):
-        api.api_key = args.datadog_api_key
-        api.application_key = args.datadog_app_key
-        super(DatadogDriver, self).__init__(logger, args)
+    def __init__(self, logger):
+        super(DatadogDriver, self).__init__(logger)
+        api.api_key = cfg.CONF['admin_api']['datadog_api_key']
+        api.application_key = cfg.CONF['admin_api']['datadog_app_key']
+        self.dd_env = cfg.CONF['admin_api']['datadog_env']
+        self.dd_tags = cfg.CONF['admin_api']['datadog_tags']
+        self.dd_message_tail = cfg.CONF['admin_api']['datadog_message_tail']
 
     def send_alert(self, message, device_id):
-        title = 'Load balancer failure in {0}'.format(self.args.datadog_env)
+        title = 'Load balancer failure in {0}'.format(self.dd_env)
         text = 'Load balancer failed with message {0} {1}'.format(
-            message, self.args.datadog_message_tail
+            message, self.dd_message_tail
         )
-        tags = self.args.datadog_tags.split()
+        tags = self.dd_tags.split()
         resp = api.event_with_response(
             title, text, tags=tags, alert_type='error'
         )
@@ -34,11 +39,11 @@ class DatadogDriver(AlertDriver):
 
     def send_delete(self, message, device_id):
         title = 'Load balancer unreachable in {0}'.\
-            format(self.args.datadog_env)
+            format(self.dd_env)
         text = 'Load balancer unreachable with message {0} {1}'.format(
-            message, self.args.datadog_message_tail
+            message, self.dd_message_tail
         )
-        tags = self.args.datadog_tags.split()
+        tags = self.dd_tags.split()
         resp = api.event_with_response(
             title, text, tags=tags, alert_type='success'
         )
