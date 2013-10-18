@@ -13,18 +13,23 @@
 # under the License.
 
 import threading
+
 from datetime import datetime, timedelta
+from oslo.config import cfg
+
 from libra.common.api.lbaas import LoadBalancer, db_session
 
 
 class ExpungeScheduler(object):
-    def __init__(self, logger, args):
+    def __init__(self, logger):
         self.expunge_timer = None
-        if not args.expire_days:
+        self.expire_days = cfg.CONF['admin_api']['expire_days']
+        if not self.expire_days:
             logger.info('Expunge not configured, disabled')
             return
         self.logger = logger
-        self.args = args
+        self.server_id = cfg.CONF['admin_api']['server_id']
+        self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
         self.run_expunge()
 
     def shutdown(self):
@@ -33,7 +38,7 @@ class ExpungeScheduler(object):
 
     def run_expunge(self):
         day = datetime.now().day
-        if self.args.server_id != day % self.args.number_of_servers:
+        if self.server_id != day % self.number_of_servers:
             self.logger.info('Not our turn to run expunge check, sleeping')
             self.expunge_timer = threading.Timer(
                 24 * 60 * 60, self.run_expunge, ()
@@ -41,7 +46,7 @@ class ExpungeScheduler(object):
         with db_session() as session:
             try:
                 exp = datetime.now() - timedelta(
-                    days=int(self.args.expire_days)
+                    days=int(self.expire_days)
                 )
                 exp_time = exp.strftime('%Y-%m-%d %H:%M:%S')
                 self.logger.info(

@@ -12,13 +12,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import threading
 import ipaddress
+import threading
+
 from datetime import datetime
-from libra.common.json_gearman import JSONGearmanClient
 from gearman.constants import JOB_UNKNOWN
+from oslo.config import cfg
 from sqlalchemy import func
+
 from libra.common.api.lbaas import Device, PoolBuilding, Vip, db_session
+from libra.common.json_gearman import JSONGearmanClient
 
 #TODO: Lots of duplication of code here, need to cleanup
 
@@ -29,12 +32,15 @@ class Pool(object):
     PROBE_SECONDS = 30
     VIPS_SECONDS = 50
 
-    def __init__(self, logger, args):
+    def __init__(self, logger):
         self.logger = logger
-        self.args = args
         self.probe_timer = None
         self.delete_timer = None
         self.vips_time = None
+        self.server_id = cfg.CONF['admin_api']['server_id']
+        self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
+        self.vip_pool_size = cfg.CONF['admin_api']['vip_pool_size']
+        self.node_pool_size = cfg.CONF['admin_api']['node_pool_size']
 
         self.start_delete_sched()
         self.start_probe_sched()
@@ -51,7 +57,7 @@ class Pool(object):
     def delete_devices(self):
         """ Searches for all devices in the DELETED state and removes them """
         minute = datetime.now().minute
-        if self.args.server_id != minute % self.args.number_of_servers:
+        if self.server_id != minute % self.number_of_servers:
             self.logger.info('Not our turn to run delete check, sleeping')
             self.start_delete_sched()
             return
@@ -72,7 +78,7 @@ class Pool(object):
             if not message:
                 self.logger.info("No devices to delete")
             else:
-                gear = GearmanWork(self.args, self.logger)
+                gear = GearmanWork(self.logger)
                 gear.send_delete_message(message)
         except:
             self.logger.exception("Exception when deleting devices")
@@ -81,7 +87,7 @@ class Pool(object):
 
     def probe_vips(self):
         minute = datetime.now().minute
-        if self.args.server_id != minute % self.args.number_of_servers:
+        if self.server_id != minute % self.number_of_servers:
             self.logger.info('Not our turn to run vips check, sleeping')
             self.start_vips_sched()
             return
@@ -91,13 +97,13 @@ class Pool(object):
                 NULL = None  # For pep8
                 vip_count = session.query(Vip).\
                     filter(Vip.device == NULL).count()
-                if vip_count >= self.args.vip_pool_size:
+                if vip_count >= self.vip_pool_size:
                     self.logger.info("Enough vips exist, no work to do")
                     session.commit()
                     self.start_vips_sched()
                     return
 
-                build_count = self.args.vip_pool_size - vip_count
+                build_count = self.vip_pool_size - vip_count
                 self._build_vips(build_count)
         except:
             self.logger.exception(
@@ -107,7 +113,7 @@ class Pool(object):
 
     def probe_devices(self):
         minute = datetime.now().minute
-        if self.args.server_id != minute % self.args.number_of_servers:
+        if self.server_id != minute % self.number_of_servers:
             self.logger.info('Not our turn to run probe check, sleeping')
             self.start_probe_sched()
             return
@@ -116,18 +122,18 @@ class Pool(object):
             with db_session() as session:
                 # Double check we have no outstanding builds assigned to us
                 session.query(PoolBuilding).\
-                    filter(PoolBuilding.server_id == self.args.server_id).\
+                    filter(PoolBuilding.server_id == self.server_id).\
                     delete()
                 session.flush()
                 dev_count = session.query(Device).\
                     filter(Device.status == 'OFFLINE').count()
-                if dev_count >= self.args.node_pool_size:
+                if dev_count >= self.node_pool_size:
                     self.logger.info("Enough devices exist, no work to do")
                     session.commit()
                     self.start_probe_sched()
                     return
 
-                build_count = self.args.node_pool_size - dev_count
+                build_count = self.node_pool_size - dev_count
                 built = session.query(func.sum(PoolBuilding.qty)).first()
                 if not built[0]:
                     built = 0
@@ -142,7 +148,7 @@ class Pool(object):
                     return
                 build_count -= built
                 building = PoolBuilding()
-                building.server_id = self.args.server_id
+                building.server_id = self.server_id
                 building.qty = build_count
                 session.add(building)
                 session.commit()
@@ -152,7 +158,7 @@ class Pool(object):
             self._build_nodes(build_count)
             with db_session() as session:
                 session.query(PoolBuilding).\
-                    filter(PoolBuilding.server_id == self.args.server_id).\
+                    filter(PoolBuilding.server_id == self.server_id).\
                     delete()
                 session.commit()
         except:
@@ -166,7 +172,7 @@ class Pool(object):
         while it < count:
             message.append(dict(task='libra_pool_mgm', data=job_data))
             it += 1
-        gear = GearmanWork(self.args, self.logger)
+        gear = GearmanWork(self.logger)
         gear.send_create_message(message)
 
     def _build_vips(self, count):
@@ -176,7 +182,7 @@ class Pool(object):
         while it < count:
             message.append(dict(task='libra_pool_mgm', data=job_data))
             it += 1
-        gear = GearmanWork(self.args, self.logger)
+        gear = GearmanWork(self.logger)
         gear.send_vips_message(message)
 
     def start_probe_sched(self):
@@ -218,22 +224,22 @@ class Pool(object):
 
 class GearmanWork(object):
 
-    def __init__(self, args, logger):
+    def __init__(self, logger):
         self.logger = logger
-        if all([args.gearman_ssl_key, args.gearman_ssl_cert,
-                args.gearman_ssl_ca]):
-            # Use SSL connections to each Gearman job server.
-            ssl_server_list = []
-            for server in args.gearman:
-                ghost, gport = server.split(':')
-                ssl_server_list.append({'host': ghost,
-                                        'port': int(gport),
-                                        'keyfile': args.gearman_ssl_key,
-                                        'certfile': args.gearman_ssl_cert,
-                                        'ca_certs': args.gearman_ssl_ca})
-            self.gearman_client = JSONGearmanClient(ssl_server_list)
-        else:
-            self.gearman_client = JSONGearmanClient(args.gearman)
+        server_list = []
+        for server in cfg.CONF['gearman']['servers']:
+            host, port = server.split(':')
+            server_list.append({'host': host,
+                                'port': int(port),
+                                'keyfile': cfg.CONF['gearman']['ssl_key'],
+                                'certfile': cfg.CONF['gearman']['ssl_cert'],
+                                'ca_certs': cfg.CONF['gearman']['ssl_ca'],
+                                'keepalive': cfg.CONF['gearman']['keepalive'],
+                                'keepcnt': cfg.CONF['gearman']['keepcnt'],
+                                'keepidle': cfg.CONF['gearman']['keepidle'],
+                                'keepintvl': cfg.CONF['gearman']['keepintvl']
+                                })
+        self.gearman_client = JSONGearmanClient(server_list)
 
     def send_delete_message(self, message):
         self.logger.info("Sending {0} gearman messages".format(len(message)))
