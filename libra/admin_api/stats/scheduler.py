@@ -112,7 +112,7 @@ class Stats(object):
                     'Too many simultaneous Load Balancer Failures.'
                     ' Aborting recovery attempt'
                 )
-                return (0, 0)
+                return pings, failed
 
             if failed > 0:
                 self._send_fails(failed_lbs)
@@ -148,7 +148,7 @@ class Stats(object):
                     'Too many simultaneous Load Balancer Failures.'
                     ' Aborting deletion attempt'
                 )
-                return (0, 0)
+                return tested, failed
 
             if failed > 0:
                 self._send_delete(failed_lbs)
