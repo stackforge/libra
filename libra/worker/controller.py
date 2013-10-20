@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import socket
 from libra import __version__ as libra_version
 from libra import __release__ as libra_release
 from libra.common.exc import DeletedStateError
@@ -34,10 +35,11 @@ class LBaaSController(object):
     OBJ_STORE_ENDPOINT_FIELD = 'hpcs_object_store_endpoint'
     OBJ_STORE_TOKEN_FIELD = 'hpcs_object_store_token'
 
-    def __init__(self, logger, driver, json_msg):
+    def __init__(self, logger, driver, json_msg, gearman):
         self.logger = logger
         self.driver = driver
         self.msg = json_msg
+        self.gearman = gearman
 
     def run(self):
         """
@@ -66,6 +68,8 @@ class LBaaSController(object):
                 return self._action_archive()
             elif action == 'STATS':
                 return self._action_stats()
+            elif action == 'DIAGNOSTIC':
+                return self._action_diagnostic()
             else:
                 self.logger.error("Invalid `%s` value: %s" %
                                   (self.ACTION_FIELD, action))
@@ -76,6 +80,53 @@ class LBaaSController(object):
                               (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
+
+    def _action_diagnostic(self):
+        """
+        Returns the results of a diagnostic run
+
+        This message is used to see if the worker that was built will actually
+        function as a load balancer
+        """
+        # Gearman test
+        self.msg['gearman'] = []
+        for host_port in self.gearman:
+            host, port = host_port.split(':')
+            try:
+                self._check_host(host, port)
+            except:
+                self.msg['gearman'].append(
+                    {'host': host, 'status': self.RESPONSE_FAILURE}
+                )
+            else:
+                self.msg['gearman'].append(
+                    {'host': host, 'status': self.RESPONSE_SUCCESS}
+                )
+        # Outgoing network test
+        try:
+            # TODO: make this configurable
+            self._check_host('google.com', 80)
+        except:
+            self.msg['network'] = self.RESPONSE_FAILURE
+        else:
+            self.msg['network'] = self.RESPONSE_SUCCESS
+
+        self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
+        return self.msg
+
+    def _check_host(self, ip, port):
+        # TCP connect check to see if floating IP was assigned correctly
+        sock = socket.socket()
+        sock.settimeout(5)
+        try:
+            sock.connect((ip, port))
+            return True
+        except socket.error:
+            self.logger.error(
+                "TCP connect error to gearman server {0}"
+                .format(ip)
+            )
+            raise
 
     def _action_discover(self):
         """

@@ -15,7 +15,8 @@
 from time import sleep
 from novaclient import exceptions
 from oslo.config import cfg
-
+from gearman.constants import JOB_UNKNOWN
+from libra.common.json_gearman import JSONGearmanClient
 from libra.mgm.nova import Node, BuildError, NotFound
 
 
@@ -63,7 +64,12 @@ class BuildController(object):
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
         if node_id > 0:
-            return self._wait_until_node_ready(nova, node_id)
+            self._wait_until_node_ready(nova, node_id)
+            if self.msg[self.RESPONSE_FIELD] == self.RESPONSE_SUCCESS:
+                status = self._test_node(self.msg['name'])
+                if not status:
+                    self.msg[self.RESPONSE_FIELD] == self.RESPONSE_FAILURE
+            return self.msg
         else:
             self.logger.error(
                 'Node build did not return an ID, cannot find it'
@@ -118,3 +124,56 @@ class BuildController(object):
         )
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         return self.msg
+
+    def _test_node(self, name):
+        """ Run diags on node, blow it away if bad """
+        server_list = []
+        for server in cfg.CONF['gearman']['servers']:
+            host, port = server.split(':')
+            server_list.append({'host': host,
+                                'port': int(port),
+                                'keyfile': cfg.CONF['gearman']['ssl_key'],
+                                'certfile': cfg.CONF['gearman']['ssl_cert'],
+                                'ca_certs': cfg.CONF['gearman']['ssl_ca'],
+                                'keepalive': cfg.CONF['gearman']['keepalive'],
+                                'keepcnt': cfg.CONF['gearman']['keepcnt'],
+                                'keepidle': cfg.CONF['gearman']['keepidle'],
+                                'keepintvl': cfg.CONF['gearman']['keepintvl']})
+        gm_client = JSONGearmanClient(server_list)
+
+        job_data = {'hpcs_action': 'DIAGNOSTICS'}
+        job_status = gm_client.submit_job(
+            name, job_data, background=False, wait_until_complete=True,
+            max_retries=10, poll_timeout=10
+        )
+        if job_status.state == JOB_UNKNOWN:
+            # Gearman server connect fail, count as bad node because we can't
+            # tell if it really is working
+            self.logger.error('Could not talk to gearman server')
+            return False
+        if job_status.timed_out:
+            self.logger.warning('Timeout getting diags from {0}'.format(name))
+            return False
+        self.logger.debug(job_status.result)
+        # Would only happen if DIAGNOSTICS call not supported
+        if job_status.result['hpcs_result'] == 'FAIL':
+            return True
+
+        if job_status.result['network'] == 'FAIL':
+            return False
+
+        gearman_count = 0
+        gearman_fail = 0
+        for gearman_test in job_status.result['gearman']:
+            gearman_count += 1
+            if gearman_test['status'] == 'FAIL':
+                self.logger.info(
+                    'Device {0} cannot talk to gearman {1}'
+                    .format(name, gearman_test['host'])
+                )
+                gearman_fail += 1
+        # Need 2/3rds gearman up
+        max_fail_count = gearman_count / 3
+        if gearman_fail > max_fail_count:
+            return False
+        return True
