@@ -13,6 +13,9 @@
 # under the License.
 
 import socket
+
+from oslo.config import cfg
+
 from libra import __version__ as libra_version
 from libra import __release__ as libra_release
 from libra.common.exc import DeletedStateError
@@ -35,11 +38,10 @@ class LBaaSController(object):
     OBJ_STORE_ENDPOINT_FIELD = 'hpcs_object_store_endpoint'
     OBJ_STORE_TOKEN_FIELD = 'hpcs_object_store_token'
 
-    def __init__(self, logger, driver, json_msg, gearman):
+    def __init__(self, logger, driver, json_msg):
         self.logger = logger
         self.driver = driver
         self.msg = json_msg
-        self.gearman = gearman
 
     def run(self):
         """
@@ -90,7 +92,7 @@ class LBaaSController(object):
         """
         # Gearman test
         self.msg['gearman'] = []
-        for host_port in self.gearman:
+        for host_port in cfg.CONF['gearman']['servers']:
             host, port = host_port.split(':')
             try:
                 self._check_host(host, port)
