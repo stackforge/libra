@@ -68,7 +68,7 @@ class LBaaSController(object):
                 return self._action_archive()
             elif action == 'STATS':
                 return self._action_stats()
-            elif action == 'DIAGNOSTIC':
+            elif action == 'DIAGNOSTICS':
                 return self._action_diagnostic()
             else:
                 self.logger.error("Invalid `%s` value: %s" %
