@@ -175,6 +175,43 @@ Example Response
   }
 
 
+DIAGNOSTICS Message
+-------------------
+
+The DIAGNOSTICS message will run some basic network connection tests to see if
+the device the worker lives on is healthy.  At the moment it runs a connect
+test to Google and a gearman connect test.
+
+Example Request
+^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+  {
+    "hpcs_action": "DIGNOSTICS"
+  }
+
+Example Response
+^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+  {
+    "hpcs_action": "DIAGNOSTICS",
+    "network": "PASS",
+    "gearman": [
+        {
+            "15.185.1.2": "PASS"
+        },
+        {
+            "15.185.1.3": "FAIL"
+        }
+    ],
+    "release": "1.0.alpha.3.gca84083",
+    "hpcs_response": "PASS"
+  }
+
+
 DISCOVER Message
 ----------------
 
