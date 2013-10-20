@@ -25,6 +25,7 @@ class CustomJSONGearmanWorker(JSONGearmanWorker):
     """ Custom class we will use to pass arguments to the Gearman task. """
     logger = None
     driver = None
+    args = None
 
 
 def handler(worker, job):
@@ -37,6 +38,7 @@ def handler(worker, job):
     """
     logger = worker.logger
     driver = worker.driver
+    args = worker.args
 
     # Hide information that should not be logged
     copy = job.data.copy()
@@ -45,7 +47,7 @@ def handler(worker, job):
 
     logger.debug("Received JSON message: %s" % json.dumps(copy))
 
-    controller = LBaaSController(logger, driver, job.data)
+    controller = LBaaSController(logger, driver, job.data, args.server)
     response = controller.run()
 
     # Hide information that should not be logged
@@ -81,6 +83,7 @@ def config_thread(logger, driver, args):
     worker.register_task(hostname, handler)
     worker.logger = logger
     worker.driver = driver
+    worker.args = args
 
     retry = True
 
