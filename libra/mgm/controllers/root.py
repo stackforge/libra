@@ -56,7 +56,19 @@ class PoolMgmController(object):
                 )
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
-            return controller.run()
+            self.msg = controller.run()
+            # Delete a built device if it has failed
+            if (
+                action == 'BUILD_DEVICE' and self.msg == self.RESPONSE_FAILURE
+                and 'name' in self.msg
+            ):
+                delete_msg = {'name': self.msg['name']}
+                controller = DeleteController(
+                    self.logger, self.args, delete_msg
+                )
+                controller.run()
+
+            return self.msg
         except Exception:
             self.logger.exception("Controller exception")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
