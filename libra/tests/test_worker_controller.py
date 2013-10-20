@@ -22,7 +22,7 @@ class TestWorkerController(testtools.TestCase):
         msg = {
             c.ACTION_FIELD: 'BOGUS'
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
@@ -32,7 +32,7 @@ class TestWorkerController(testtools.TestCase):
             c.ACTION_FIELD: 'UPDATE',
             'LoAdBaLaNcErS': [{'protocol': 'http'}]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
 
@@ -52,7 +52,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
@@ -61,7 +61,7 @@ class TestWorkerController(testtools.TestCase):
         msg = {
             c.ACTION_FIELD: 'SUSPEND'
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
@@ -70,7 +70,7 @@ class TestWorkerController(testtools.TestCase):
         msg = {
             c.ACTION_FIELD: 'ENABLE'
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
@@ -79,7 +79,7 @@ class TestWorkerController(testtools.TestCase):
         msg = {
             c.ACTION_FIELD: 'DELETE'
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
@@ -99,7 +99,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -121,7 +121,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -131,7 +131,7 @@ class TestWorkerController(testtools.TestCase):
         msg = {
             c.ACTION_FIELD: 'UPDATE'
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -142,7 +142,7 @@ class TestWorkerController(testtools.TestCase):
             c.ACTION_FIELD: 'UPDATE',
             c.LBLIST_FIELD: [{'protocol': 'http'}]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -163,7 +163,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -193,7 +193,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertNotIn('badRequest', response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
@@ -221,7 +221,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -250,7 +250,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -279,7 +279,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -308,7 +308,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -337,7 +337,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
@@ -359,7 +359,7 @@ class TestWorkerController(testtools.TestCase):
                 }
             ]
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
@@ -368,7 +368,7 @@ class TestWorkerController(testtools.TestCase):
         msg = {
             c.ACTION_FIELD: 'DISCOVER'
         }
-        controller = c(self.logger, self.driver, msg)
+        controller = c(self.logger, self.driver, msg, [])
         response = controller.run()
         self.assertIn('version', response)
         self.assertIn('release', response)
@@ -381,7 +381,7 @@ class TestWorkerController(testtools.TestCase):
             c.ACTION_FIELD: 'ARCHIVE'
         }
         null_driver = LoadBalancerDriver()
-        controller = c(self.logger, null_driver, msg)
+        controller = c(self.logger, null_driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -393,7 +393,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_TYPE_FIELD: 'bad'
         }
         null_driver = LoadBalancerDriver()
-        controller = c(self.logger, null_driver, msg)
+        controller = c(self.logger, null_driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
 
@@ -408,7 +408,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_TOKEN_FIELD: "XXXX",
             c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
-        controller = c(self.logger, null_driver, msg)
+        controller = c(self.logger, null_driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -423,7 +423,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_TOKEN_FIELD: "XXXX",
             c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
-        controller = c(self.logger, null_driver, msg)
+        controller = c(self.logger, null_driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -438,7 +438,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
             c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
-        controller = c(self.logger, null_driver, msg)
+        controller = c(self.logger, null_driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -453,7 +453,7 @@ class TestWorkerController(testtools.TestCase):
             c.OBJ_STORE_ENDPOINT_FIELD: "https://example.com",
             c.OBJ_STORE_TOKEN_FIELD: "XXXX"
         }
-        controller = c(self.logger, null_driver, msg)
+        controller = c(self.logger, null_driver, msg, [])
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
@@ -469,7 +469,7 @@ class TestWorkerController(testtools.TestCase):
             c.LBLIST_FIELD: [{'protocol': 'http', 'id': '123'}]
         }
         null_driver = LoadBalancerDriver()
-        controller = c(self.logger, null_driver, msg)
+        controller = c(self.logger, null_driver, msg, [])
         response = controller.run()
         self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
         self.assertIn(c.ERROR_FIELD, response)
