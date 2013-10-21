@@ -99,15 +99,54 @@ class GearmanClientThread(object):
         self.gearman_client = JSONGearmanClient(server_list)
 
     def send_assign(self, data):
-        job_data = {
-            'action': 'ASSIGN_IP',
-            'name': data,
-            'ip': self.lbid
-        }
-        status, response = self._send_message(job_data, 'response')
+        bad_vips = []
+        NULL = None  # For pep8
+        with db_session() as session:
+            for x in xrange(0, 5):
+                vip = session.query(Vip).\
+                    filter(Vip.device == NULL).\
+                    with_lockmode('update').\
+                    first()
+                if vip is None:
+                    device = session.query(Device).\
+                        filter(Device.name == data).first()
+                    errmsg = 'Floating IP assign failed (none available)'
+                    self.logger.error(
+                        "Failed to assign IP to device {0} (none available)"
+                        .format(data)
+                    )
+                    self._set_error(device.id, errmsg, session)
+                    status = False
+                    break
+
+                ip_str = str(ipaddress.IPv4Address(vip.ip))
+
+                job_data = {
+                    'action': 'ASSIGN_IP',
+                    'name': data,
+                    'ip': ip_str
+                }
+                status, response = self._send_message(job_data, 'response')
+                if not status:
+                    self.logger.error(
+                        "Failed to assign IP {0} to device {1} (attempt {2})"
+                        .format(ip_str, data, x)
+                    )
+                    # set to device 0 to make sure it won't be used again
+                    vip.device = 0
+                    bad_vips.append(ip_str)
+                else:
+                    device = session.query(Device).\
+                        filter(Device.name == data).first()
+                    vip.device = device.id
+                    # IP assigned, break out
+                    break
+            session.commit()
+        for ip in bad_vips:
+                submit_vip_job('REMOVE', None, ip)
         if not status:
             self.logger.error(
-                "Failed to assign IP {0} to device {1}".format(self.lbid, data)
+                "Giving up vip assign for device {1}".format(data)
             )
             with db_session() as session:
                 device = session.query(Device).\
@@ -115,18 +154,28 @@ class GearmanClientThread(object):
                 errmsg = 'Floating IP assign failed'
                 self._set_error(device.id, errmsg, session)
 
-    def send_remove(self, data):
+    def send_remove(self, data=None):
         job_data = {
-            'action': 'REMOVE_IP',
-            'name': data,
+            'action': 'DELETE_IP',
             'ip': self.lbid
         }
         status, response = self._send_message(job_data, 'response')
-        if not status:
-            self.logger.error(
-                "Failed to remove IP {0} from device {1}"
-                .format(self.lbid, data)
-            )
+        ip_int = int(ipaddress.IPv4Address(unicode(self.lbid)))
+        with db_session() as session:
+            if not status:
+                self.logger.error(
+                    "Failed to delete IP {0}"
+                    .format(self.lbid)
+                )
+                # Set to 0 to mark as something that needs cleaning up
+                # but cannot be used again
+                vip = session.query(Vip).\
+                    filter(Vip.ip == ip_int).first()
+                vip.device = 0
+            else:
+                session.query(Vip).\
+                    filter(Vip.ip == ip_int).delete()
+            session.commit()
 
     def send_delete(self, data):
         with db_session() as session:
@@ -174,10 +223,10 @@ class GearmanClientThread(object):
                     filter(Device.id == data).first()
                 vip = session.query(Vip).\
                     filter(Vip.device == data).first()
-                submit_vip_job(
-                    'REMOVE', dev.name, str(ipaddress.IPv4Address(vip.ip))
-                )
-                vip.device = None
+                if vip:
+                    submit_vip_job(
+                        'REMOVE', dev.name, str(ipaddress.IPv4Address(vip.ip))
+                    )
                 job_data = {"hpcs_action": "DELETE"}
 
             status, response = self._send_message(job_data, 'hpcs_response')
@@ -330,6 +379,10 @@ class GearmanClientThread(object):
                     if lb.id in degraded:
                         lb.status = 'DEGRADED'
                         lb.errmsg = "A node on the load balancer has failed"
+                    elif lb.status == 'ERROR':
+                        # Do nothing because something else failed in the mean
+                        # time such a floating IP assign
+                        pass
                     else:
                         lb.status = 'ACTIVE'
                         lb.errmsg = None

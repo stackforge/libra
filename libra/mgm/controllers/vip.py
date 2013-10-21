@@ -157,3 +157,40 @@ class RemoveIpController(object):
 
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
+
+
+class DeleteIpController(object):
+
+    RESPONSE_FIELD = 'response'
+    RESPONSE_SUCCESS = 'PASS'
+    RESPONSE_FAILURE = 'FAIL'
+
+    def __init__(self, logger, args, msg):
+        self.logger = logger
+        self.msg = msg
+        self.args = args
+
+    def run(self):
+        try:
+            nova = Node(self.args)
+        except Exception:
+            self.logger.exception("Error initialising Nova connection")
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            return self.msg
+
+        self.logger.info(
+            "Deleting Floating IP {0}"
+            .format(self.msg['ip'])
+        )
+        try:
+            nova.vip_delete(self.msg['ip'])
+        except:
+            self.logger.exception(
+                'Error deleting Floating IP {0}'
+                .format(self.msg['ip'])
+            )
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            return self.msg
+
+        self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
+        return self.msg
