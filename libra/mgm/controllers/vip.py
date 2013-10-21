@@ -105,6 +105,7 @@ class AssignIpController(object):
         while True:
             try:
                 sock.connect((ip, port))
+                sock.close()
                 return True
             except socket.error:
                 loop_count += 1
@@ -113,6 +114,7 @@ class AssignIpController(object):
                         "TCP connect error after floating IP assign {0}"
                         .format(ip)
                     )
+                    sock.close()
                     raise
                 time.sleep(2)
 
