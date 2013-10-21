@@ -144,7 +144,7 @@ class BuildController(object):
 
         job_data = {'hpcs_action': 'DIAGNOSTICS'}
         job_status = gm_client.submit_job(
-            name, job_data, background=False, wait_until_complete=True,
+            str(name), job_data, background=False, wait_until_complete=True,
             max_retries=10, poll_timeout=10
         )
         if job_status.state == JOB_UNKNOWN:
@@ -157,7 +157,7 @@ class BuildController(object):
             return False
         self.logger.debug(job_status.result)
         # Would only happen if DIAGNOSTICS call not supported
-        if job_status.result['hpcs_result'] == 'FAIL':
+        if job_status.result['hpcs_response'] == 'FAIL':
             return True
 
         if job_status.result['network'] == 'FAIL':
