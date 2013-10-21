@@ -122,6 +122,20 @@ class Node(object):
                 .format(resp.status_code, body)
             )
 
+    def vip_delete(self, vip):
+        """ delete a virtual IP """
+        vip_id = self._find_vip_id(vip)
+        url = '/os-floating-ips/{0}'.format(vip_id)
+        resp, body = self.nova.delete(url)
+
+    def _find_vip_id(self, vip):
+        url = '/os-floating-ips'
+        resp, body = self.nova.get(url)
+        for fip in body['floatip_ips']:
+            if fip['ip'] == vip:
+                return fip['id']
+        raise NotFound('floating IP not found')
+
     def delete(self, node_id):
         """ delete a node """
         try:

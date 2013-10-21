@@ -117,14 +117,18 @@ class GearmanClientThread(object):
 
     def send_remove(self, data):
         job_data = {
-            'action': 'REMOVE_IP',
-            'name': data,
+            'action': 'DELETE_IP',
             'ip': self.lbid
         }
         status, response = self._send_message(job_data, 'response')
+        with db_session() as session:
+            session.query(Vip).\
+                filter(Vip.device == data).delete()
+            session.commit()
+
         if not status:
             self.logger.error(
-                "Failed to remove IP {0} from device {1}"
+                "Failed to delete IP {0}"
                 .format(self.lbid, data)
             )
 
@@ -177,7 +181,6 @@ class GearmanClientThread(object):
                 submit_vip_job(
                     'REMOVE', dev.name, str(ipaddress.IPv4Address(vip.ip))
                 )
-                vip.device = None
                 job_data = {"hpcs_action": "DELETE"}
 
             status, response = self._send_message(job_data, 'hpcs_response')
