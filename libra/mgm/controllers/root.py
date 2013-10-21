@@ -66,7 +66,8 @@ class PoolMgmController(object):
             self.msg = controller.run()
             # Delete a built device if it has failed
             if (
-                action == 'BUILD_DEVICE' and self.msg == self.RESPONSE_FAILURE
+                action == 'BUILD_DEVICE'
+                and self.msg[self.RESPONSE_FIELD] == self.RESPONSE_FAILURE
                 and 'name' in self.msg
             ):
                 delete_msg = {'name': self.msg['name']}

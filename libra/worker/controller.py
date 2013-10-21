@@ -93,7 +93,7 @@ class LBaaSController(object):
         for host_port in self.gearman:
             host, port = host_port.split(':')
             try:
-                self._check_host(host, port)
+                self._check_host(host, int(port))
             except:
                 self.msg['gearman'].append(
                     {'host': host, 'status': self.RESPONSE_FAILURE}
@@ -120,6 +120,7 @@ class LBaaSController(object):
         sock.settimeout(5)
         try:
             sock.connect((ip, port))
+            sock.close()
             return True
         except socket.error:
             self.logger.error(
