@@ -104,7 +104,7 @@ class LoadBalancersController(RestController):
                     LoadBalancer.updated, LoadBalancer.errmsg,
                     Vip.id.label('vipid'), Vip.ip
                 ).join(LoadBalancer.devices).\
-                    join(Device.vip).\
+                    outerjoin(Device.vip).\
                     filter(LoadBalancer.tenantid == tenant_id).\
                     filter(LoadBalancer.id == self.lbid).\
                     first()
@@ -117,16 +117,17 @@ class LoadBalancersController(RestController):
                 load_balancers['nodeCount'] = session.query(Node).\
                     filter(Node.lbid == load_balancers['id']).count()
 
-                load_balancers['virtualIps'] = [{
-                    "id": load_balancers['vipid'],
-                    "type": "PUBLIC",
-                    "ipVersion": "IPV4",
-                    "address": str(ipaddress.IPv4Address(
-                        load_balancers['ip']
-                    )),
-                }]
-                del(load_balancers['ip'])
-                del(load_balancers['vipid'])
+                if load_balancers['vipid']:
+                    load_balancers['virtualIps'] = [{
+                        "id": load_balancers['vipid'],
+                        "type": "PUBLIC",
+                        "ipVersion": "IPV4",
+                        "address": str(ipaddress.IPv4Address(
+                            load_balancers['ip']
+                        )),
+                    }]
+                    del(load_balancers['ip'])
+                    del(load_balancers['vipid'])
 
                 nodes = session.query(
                     Node.id, Node.address, Node.port, Node.status,
@@ -325,20 +326,10 @@ class LoadBalancersController(RestController):
                 if device is None:
                     session.rollback()
                     raise ExhaustedError('No devices available')
-                NULL = None  # For pep8
-                vip = session.query(Vip).\
-                    filter(Vip.device == NULL).\
-                    with_lockmode('update').\
-                    first()
-                vip.device = device.id
-                if vip is None:
-                    session.rollback()
-                    raise ExhaustedError('No virtual IPs available')
-                vip.device = device.id
 
                 # For use after transaction
                 device_name = device.name
-                vip_ip = vip.ip
+                vip = None
             else:
                 virtual_id = body.virtualIps[0].id
                 # This is an additional load balancer
@@ -436,10 +427,15 @@ class LoadBalancersController(RestController):
             return_data.status = lb.status
             return_data.created = lb.created
             return_data.updated = lb.updated
-            vip_resp = LBVipResp(
-                address=str(ipaddress.IPv4Address(vip.ip)),
-                id=str(vip.id), type='PUBLIC', ipVersion='IPV4'
-            )
+            if vip:
+                vip_resp = LBVipResp(
+                    address=str(ipaddress.IPv4Address(vip.ip)),
+                    id=str(vip.id), type='PUBLIC', ipVersion='IPV4'
+                )
+            else:
+                vip_resp = LBVipResp(
+                    address=None, id=None, type='ASSIGNING', ipVersion='IPV4'
+                )
             return_data.virtualIps = [vip_resp]
             return_data.nodes = []
             for node in body.nodes:
@@ -462,7 +458,7 @@ class LoadBalancersController(RestController):
             )
             if body.virtualIps == Unset:
                 submit_vip_job(
-                    'ASSIGN', device_name, str(ipaddress.IPv4Address(vip_ip))
+                    'ASSIGN', device_name, None
                 )
 
             return return_data
