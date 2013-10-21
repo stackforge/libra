@@ -144,7 +144,7 @@ class BuildController(object):
 
         job_data = {'hpcs_action': 'DIAGNOSTICS'}
         job_status = gm_client.submit_job(
-            name, job_data, background=False, wait_until_complete=True,
+            str(name), job_data, background=False, wait_until_complete=True,
             max_retries=10, poll_timeout=10
         )
         if job_status.state == JOB_UNKNOWN:
