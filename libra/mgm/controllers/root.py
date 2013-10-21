@@ -15,7 +15,7 @@
 from libra.mgm.controllers.build import BuildController
 from libra.mgm.controllers.delete import DeleteController
 from libra.mgm.controllers.vip import BuildIpController, AssignIpController
-from libra.mgm.controllers.vip import RemoveIpController
+from libra.mgm.controllers.vip import RemoveIpController, DeleteIpController
 
 
 class PoolMgmController(object):
@@ -48,6 +48,8 @@ class PoolMgmController(object):
                 controller = AssignIpController(self.logger, self.msg)
             elif action == 'REMOVE_IP':
                 controller = RemoveIpController(self.logger, self.msg)
+            elif action == 'DELETE_IP':
+                controller = DeleteIpController(self.logger, self.msg)
             else:
                 self.logger.error(
                     "Invalid `{0}` value: {1}".format(
