@@ -98,22 +98,25 @@ class AssignIpController(object):
 
     def check_ip(self, ip, port):
         # TCP connect check to see if floating IP was assigned correctly
-        sock = socket.socket()
-        sock.settimeout(5)
         loop_count = 0
         while True:
             try:
+                sock = socket.socket()
+                sock.settimeout(5)
                 sock.connect((ip, port))
                 sock.close()
                 return True
             except socket.error:
+                try:
+                    sock.close()
+                except:
+                    pass
                 loop_count += 1
                 if loop_count >= 5:
                     self.logger.error(
                         "TCP connect error after floating IP assign {0}"
                         .format(ip)
                     )
-                    sock.close()
                     raise
                 time.sleep(2)
 
