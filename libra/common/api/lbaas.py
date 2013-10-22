@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import ConfigParser
 import logging
 import sqlalchemy.types as types
 import time
@@ -172,19 +173,24 @@ class RoutingSession(Session):
         return engine
 
     def _build_engines(self):
+        # We have to use ConfigParser here because with oslo.config, we need
+        # to know the section names before parsing.
+        config = ConfigParser.SafeConfigParser()
+        config.read(cfg.CONF['config_file'])
+
         if 'debug' in conf.app and conf.app.debug:
             echo = True
         else:
             echo = False
 
         for section in conf.database:
-            db_conf = cfg.CONF[section]
+            db_conf = config._sections[section]
 
-            conn_string = '''mysql+mysqlconnector://%s:%s@%s:%d/%s''' % (
+            conn_string = '''mysql+mysqlconnector://%s:%s@%s:%s/%s''' % (
                 db_conf['username'],
                 db_conf['password'],
                 db_conf['host'],
-                db_conf.get('port', 3306),
+                db_conf['port'],
                 db_conf['schema']
             )
 
