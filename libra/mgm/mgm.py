@@ -20,7 +20,7 @@ import pwd
 import threading
 
 from libra import __version__
-from libra.common.options import add_common_options, libra_logging, CONF
+from libra.common.options import add_common_opts, libra_logging, CONF
 from libra.mgm.gearman_worker import worker_thread
 
 
@@ -48,7 +48,7 @@ class Server(object):
 
 
 def main():
-    add_common_options()
+    add_common_opts()
     CONF(project='libra', version=__version__)
 
     server = Server()
