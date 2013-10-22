@@ -65,7 +65,7 @@ class PoolMgmController(object):
             ):
                 delete_msg = {'name': self.msg['name']}
                 controller = DeleteController(
-                    self.logger, self.args, delete_msg
+                    self.logger, delete_msg
                 )
                 controller.run()
 
