@@ -114,7 +114,7 @@ def main():
                               CONF['api']['ssl_keyfile'],
                               CONF['api']['ssl_certfile'])
 
-    if CONF['api']['daemon']:
+    if CONF['daemon']:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(CONF['api']['pid'], 10)
         if daemon.runner.is_pidfile_stale(pidfile):
             pidfile.break_lock()
