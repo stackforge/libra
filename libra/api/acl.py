@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import ConfigParser
 import importlib
 import logging
 
@@ -61,7 +62,9 @@ class AuthDirector(object):
 
     def _install(self):
         """Install ACL check on application."""
+        config = ConfigParser.SafeConfigParser()
+        config.read(cfg.CONF['config_file'])
         module_details = cfg.CONF['api']['keystone_module'].split(':')
         keystone = importlib.import_module(module_details[0])
         auth_class = getattr(keystone, module_details[1])
-        return auth_class(self.unauthed_app, cfg.CONF['keystone'])
+        return auth_class(self.unauthed_app, config._sections['keystone'])
