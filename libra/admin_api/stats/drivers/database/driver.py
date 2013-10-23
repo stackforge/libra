@@ -58,10 +58,10 @@ class DbDriver(AlertDriver):
 
             if lb.status == 'ERROR':
                 lb.errmsg = "Load balancer has failed"
-            elif degraded:
+            elif lb.status == 'ACTIVE' and degraded:
                 lb.errmsg = "A node on the load balancer has failed"
                 lb.status = 'DEGRADED'
-            else:
+            elif lb.status == 'DEGRADED':
                 lb.errmsg = "A node on the load balancer has recovered"
                 lb.status = 'ACTIVE'
 
