@@ -171,7 +171,7 @@ class Stats(object):
                 if not data:
                     self.logger.error(
                         'Device {0} has no Loadbalancer attached'.
-                        format(data.id)
+                        format(lb)
                     )
                     continue
                 message = (
