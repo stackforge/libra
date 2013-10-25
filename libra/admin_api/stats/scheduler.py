@@ -184,7 +184,7 @@ class Stats(object):
                     )
                 )
                 for driver in self.drivers:
-                    instance = driver(self.logger, self.args)
+                    instance = driver(self.logger)
                     self.logger.info(
                         'Sending failure of {0} to {1}'.format(
                             lb, instance.__class__.__name__
@@ -225,7 +225,7 @@ class Stats(object):
                     format(lb)
                 )
                 for driver in self.drivers:
-                    instance = driver(self.logger, self.args)
+                    instance = driver(self.logger)
                     self.logger.info(
                         'Sending delete request for {0} to {1}'.format(
                             lb, instance.__class__.__name__
@@ -333,7 +333,7 @@ class Stats(object):
             else:
                 is_degraded = False
             for driver in self.drivers:
-                instance = driver(self.logger, self.args)
+                instance = driver(self.logger)
                 self.logger.info(
                     'Sending change of node status on LB {0} to {1}'.format(
                         lbid, instance.__class__.__name__)
