@@ -286,6 +286,12 @@ class LoadBalancersController(RestController):
                 vip = None
             else:
                 virtual_id = body.virtualIps[0].id
+                # Make sure virtual ID is actually an int
+                try:
+                    virtual_id = int(virtual_id)
+                except:
+                    session.rollback()
+                    raise NotFound('Invalid virtual IP provided')
                 # This is an additional load balancer
                 device = session.query(
                     Device
