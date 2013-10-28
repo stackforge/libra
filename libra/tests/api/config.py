@@ -32,14 +32,14 @@ app = {
 }
 
 database = {
-    'username':'root',
-    'password':'',
-    'host':'127.0.0.1',
-    'schema':'lbaas'
+    'username': 'root',
+    'password': '',
+    'host': '127.0.0.1',
+    'schema': 'lbaas'
 }
 
 gearman = {
-    'server':['localhost:4730'],
+    'server': ['localhost:4730'],
 }
 
 # Custom Configurations must be in Python dictionary format::

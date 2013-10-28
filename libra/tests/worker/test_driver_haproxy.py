@@ -1,8 +1,8 @@
-import testtools
+from libra.tests.base import TestCase
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 
-class TestHAProxyDriver(testtools.TestCase):
+class TestHAProxyDriver(TestCase):
     def setUp(self):
         super(TestHAProxyDriver, self).setUp()
         self.driver = HAProxyDriver('libra.tests.mock_objects.FakeOSServices',
@@ -38,7 +38,8 @@ class TestHAProxyDriver(testtools.TestCase):
         self.assertEqual("Unsupported protocol: %s" % proto, e.message)
 
     def testAddGaleraRequiresPort(self):
-        e = self.assertRaises(Exception, self.driver.add_protocol, 'galera', None)
+        e = self.assertRaises(
+            Exception, self.driver.add_protocol, 'galera', None)
         self.assertEqual("Port is required for this protocol.", e.message)
 
     def testAddTCPRequiresPort(self):

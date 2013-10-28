@@ -1,9 +1,9 @@
 import datetime
-import testtools
+from libra.tests.base import TestCase
 from libra.common.lbstats import LBStatistics
 
 
-class TestLBStatistics(testtools.TestCase):
+class TestLBStatistics(TestCase):
     def setUp(self):
         super(TestLBStatistics, self).setUp()
         self.stats = LBStatistics()
