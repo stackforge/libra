@@ -1,5 +1,5 @@
 import logging
-import testtools
+from libra.tests.base import TestCase
 import libra.tests.mock_objects
 from libra import __version__ as libra_version
 from libra import __release__ as libra_release
@@ -8,7 +8,7 @@ from libra.worker.drivers.base import LoadBalancerDriver
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 
-class TestWorkerController(testtools.TestCase):
+class TestWorkerController(TestCase):
     def setUp(self):
         super(TestWorkerController, self).setUp()
         self.logger = logging.getLogger('test_worker_controller')
@@ -182,14 +182,13 @@ class TestWorkerController(testtools.TestCase):
                             'port': 80
                         }
                     ],
-                    'monitor':
-                        {
-                            'type': 'CONNECT',
-                            'delay': 60,
-                            'timeout': 30,
-                            'attempts': 1,
-                            'path': '/healthcheck'
-                        }
+                    'monitor': {
+                        'type': 'CONNECT',
+                        'delay': 60,
+                        'timeout': 30,
+                        'attempts': 1,
+                        'path': '/healthcheck'
+                    }
                 }
             ]
         }
@@ -211,13 +210,12 @@ class TestWorkerController(testtools.TestCase):
                             'port': 80
                         }
                     ],
-                    'monitor':
-                        {
-                            'delay': 60,
-                            'timeout': 30,
-                            'attempts': 1,
-                            'path': '/healthcheck'
-                        }
+                    'monitor': {
+                        'delay': 60,
+                        'timeout': 30,
+                        'attempts': 1,
+                        'path': '/healthcheck'
+                    }
                 }
             ]
         }
@@ -240,13 +238,12 @@ class TestWorkerController(testtools.TestCase):
                             'port': 80
                         }
                     ],
-                    'monitor':
-                        {
-                            'type': 'CONNECT',
-                            'timeout': 30,
-                            'attempts': 1,
-                            'path': '/healthcheck'
-                        }
+                    'monitor': {
+                        'type': 'CONNECT',
+                        'timeout': 30,
+                        'attempts': 1,
+                        'path': '/healthcheck'
+                    }
                 }
             ]
         }
@@ -269,13 +266,12 @@ class TestWorkerController(testtools.TestCase):
                             'port': 80
                         }
                     ],
-                    'monitor':
-                        {
-                            'type': 'CONNECT',
-                            'delay': 60,
-                            'attempts': 1,
-                            'path': '/healthcheck'
-                        }
+                    'monitor': {
+                        'type': 'CONNECT',
+                        'delay': 60,
+                        'attempts': 1,
+                        'path': '/healthcheck'
+                    }
                 }
             ]
         }
@@ -298,13 +294,12 @@ class TestWorkerController(testtools.TestCase):
                             'port': 80
                         }
                     ],
-                    'monitor':
-                        {
-                            'type': 'CONNECT',
-                            'delay': 60,
-                            'timeout': 30,
-                            'path': '/healthcheck'
-                        }
+                    'monitor': {
+                        'type': 'CONNECT',
+                        'delay': 60,
+                        'timeout': 30,
+                        'path': '/healthcheck'
+                    }
                 }
             ]
         }
@@ -327,13 +322,12 @@ class TestWorkerController(testtools.TestCase):
                             'port': 80
                         }
                     ],
-                    'monitor':
-                        {
-                            'type': 'CONNECT',
-                            'delay': 60,
-                            'timeout': 30,
-                            'attempts': 1
-                        }
+                    'monitor': {
+                        'type': 'CONNECT',
+                        'delay': 60,
+                        'timeout': 30,
+                        'attempts': 1
+                    }
                 }
             ]
         }
