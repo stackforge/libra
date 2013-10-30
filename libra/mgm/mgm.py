@@ -22,6 +22,10 @@ import threading
 from libra import __version__
 from libra.common.options import add_common_opts, libra_logging, CONF
 from libra.mgm.gearman_worker import worker_thread
+from libra.openstack.common import log
+from libra.openstack.common import service
+from libra.service import prepare_service
+from libra.service import WorkerService
 
 
 class Server(object):
@@ -46,6 +50,14 @@ class Server(object):
         for thd in thread_list:
             thd.join()
 
+LOG = log.getLogger(__name__)
+
+
+
+class Service(WorkerService):
+    def start(self):
+        super(Service, self).start()
+
 
 def main():
     add_common_opts()
@@ -61,7 +73,7 @@ def main():
             pidfile.break_lock()
         context = daemon.DaemonContext(
             working_directory='/',
-            umask=0o022,
+            umask=0022,
             pidfile=pidfile
         )
         if CONF['user']:
@@ -73,3 +85,10 @@ def main():
         server.main()
 
     return 0
+
+def main():
+    add_common_opts()
+    prepare_service()
+
+    service.launch(Service(CONF.host, name='libra_pool_mgm'),
+                   workers=CONF.mgm.threads).wait()
