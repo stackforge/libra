@@ -16,7 +16,7 @@ from time import sleep
 from novaclient import exceptions
 from oslo.config import cfg
 from gearman.constants import JOB_UNKNOWN
-from libra.common.json_gearman import JSONGearmanClient
+from libra.common.gearman_ import GearmanClient
 from libra.mgm.nova import Node, BuildError, NotFound
 
 
