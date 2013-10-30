@@ -21,7 +21,7 @@ from oslo.config import cfg
 from sqlalchemy import func
 
 from libra.common.api.lbaas import Device, PoolBuilding, Vip, db_session
-from libra.common.json_gearman import JSONGearmanClient
+from libra.common.gearman_ import GearmanClient
 
 #TODO: Lots of duplication of code here, need to cleanup
 
@@ -239,7 +239,7 @@ class GearmanWork(object):
                                 'keepidle': cfg.CONF['gearman']['keepidle'],
                                 'keepintvl': cfg.CONF['gearman']['keepintvl']
                                 })
-        self.gearman_client = JSONGearmanClient(server_list)
+        self.gearman_client = GearmanClient(server_list)
 
     def send_delete_message(self, message):
         self.logger.info("Sending {0} gearman messages".format(len(message)))

@@ -14,7 +14,7 @@
 
 from gearman.constants import JOB_UNKNOWN
 from oslo.config import cfg
-from libra.common.json_gearman import JSONGearmanClient
+from libra.common.gearman_ import GearmanClient
 
 
 class GearJobs(object):
@@ -36,7 +36,7 @@ class GearJobs(object):
                                 'keepidle': cfg.CONF['gearman']['keepidle'],
                                 'keepintvl': cfg.CONF['gearman']['keepintvl']
                                 })
-        self.gm_client = JSONGearmanClient(server_list)
+        self.gm_client = GearmanClient(server_list)
 
     def send_pings(self, node_list):
         # TODO: lots of duplicated code that needs cleanup
