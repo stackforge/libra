@@ -13,6 +13,7 @@
 # under the License.
 
 import json
+from libra.common.options import CONF
 from gearman import GearmanClient, GearmanWorker, DataEncoder
 
 
@@ -30,11 +31,27 @@ class JSONDataEncoder(DataEncoder):
         return json.loads(decodable_string)
 
 
-class JSONGearmanWorker(GearmanWorker):
+class GearmanWorker(GearmanWorker):
     """ Overload the Gearman worker class so we can set the data encoder. """
     data_encoder = JSONDataEncoder
 
 
-class JSONGearmanClient(GearmanClient):
+class GearmanClient(GearmanClient):
     """ Overload the Gearman client class so we can set the data encoder. """
     data_encoder = JSONDataEncoder
+
+
+def get_server_list():
+    server_list = []
+    for host_port in CONF['gearman']['servers']:
+        host, port = host_port.split(':')
+        server_list.append({'host': host,
+                            'port': int(port),
+                            'keyfile': CONF['gearman']['ssl_key'],
+                            'certfile': CONF['gearman']['ssl_cert'],
+                            'ca_certs': CONF['gearman']['ssl_ca'],
+                            'keepalive': CONF['gearman']['keepalive'],
+                            'keepcnt': CONF['gearman']['keepcnt'],
+                            'keepidle': CONF['gearman']['keepidle'],
+                            'keepintvl': CONF['gearman']['keepintvl']})
+    return server_list

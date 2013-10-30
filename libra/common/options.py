@@ -47,14 +47,6 @@ common_cli_opts = [
     cfg.BoolOpt('daemon',
                 default=True,
                 help='Run as a daemon'),
-    cfg.BoolOpt('debug',
-                short='d',
-                default=False,
-                help='Turn on debug output'),
-    cfg.BoolOpt('verbose',
-                short='v',
-                default=False,
-                help='Turn on verbose output'),
 ]
 
 gearman_opts = [
