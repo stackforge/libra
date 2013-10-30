@@ -16,7 +16,7 @@ import eventlet
 eventlet.monkey_patch()
 import logging
 import ipaddress
-from libra.common.json_gearman import JSONGearmanClient
+from libra.common.gearman_ import GearmanClient
 from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.api.lbaas import loadbalancers_devices
@@ -96,7 +96,7 @@ class GearmanClientThread(object):
                                 'keepcnt': conf.gearman.keepcnt,
                                 'keepidle': conf.gearman.keepidle,
                                 'keepintvl': conf.gearman.keepintvl})
-        self.gearman_client = JSONGearmanClient(server_list)
+        self.gearman_client = GearmanClient(server_list)
 
     def send_assign(self, data):
         bad_vips = []

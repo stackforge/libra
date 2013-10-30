@@ -16,7 +16,7 @@ from time import sleep
 from novaclient import exceptions
 from oslo.config import cfg
 from gearman.constants import JOB_UNKNOWN
-from libra.common.json_gearman import JSONGearmanClient
+from libra.common.gearman_ import GearmanClient
 from libra.mgm.nova import Node, BuildError, NotFound
 
 
@@ -139,7 +139,7 @@ class BuildController(object):
                                 'keepcnt': cfg.CONF['gearman']['keepcnt'],
                                 'keepidle': cfg.CONF['gearman']['keepidle'],
                                 'keepintvl': cfg.CONF['gearman']['keepintvl']})
-        gm_client = JSONGearmanClient(server_list)
+        gm_client = GearmanClient(server_list)
 
         job_data = {'hpcs_action': 'DIAGNOSTICS'}
         job_status = gm_client.submit_job(

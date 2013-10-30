@@ -19,11 +19,11 @@ import time
 
 from oslo.config import cfg
 
-from libra.common.json_gearman import JSONGearmanWorker
+from libra.common.gearman_ import GearmanWorker
 from libra.worker.controller import LBaaSController
 
 
-class CustomJSONGearmanWorker(JSONGearmanWorker):
+class CustomGearmanWorker(GearmanWorker):
     """ Custom class we will use to pass arguments to the Gearman task. """
     logger = None
     driver = None
@@ -78,7 +78,7 @@ def config_thread(logger, driver):
                             'keepidle': cfg.CONF['gearman']['keepidle'],
                             'keepintvl': cfg.CONF['gearman']['keepintvl']})
 
-    worker = CustomJSONGearmanWorker(server_list)
+    worker = CustomGearmanWorker(server_list)
     worker.set_client_id(hostname)
     worker.register_task(hostname, handler)
     worker.logger = logger
