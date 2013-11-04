@@ -1,8 +1,22 @@
-import testtools
+# Copyright 2013 Hewlett-Packard Development Company, L.P.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+from libra.tests.base import TestCase
 from libra.worker.drivers.haproxy.driver import HAProxyDriver
 
 
-class TestHAProxyDriver(testtools.TestCase):
+class TestHAProxyDriver(TestCase):
     def setUp(self):
         super(TestHAProxyDriver, self).setUp()
         self.driver = HAProxyDriver('libra.tests.mock_objects.FakeOSServices',
@@ -38,7 +52,8 @@ class TestHAProxyDriver(testtools.TestCase):
         self.assertEqual("Unsupported protocol: %s" % proto, e.message)
 
     def testAddGaleraRequiresPort(self):
-        e = self.assertRaises(Exception, self.driver.add_protocol, 'galera', None)
+        e = self.assertRaises(
+            Exception, self.driver.add_protocol, 'galera', None)
         self.assertEqual("Port is required for this protocol.", e.message)
 
     def testAddTCPRequiresPort(self):
