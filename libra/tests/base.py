@@ -117,7 +117,7 @@ class TestCase(test.BaseTestCase):
 class ServiceTestCase(test.BaseTestCase):
     """Base test case for Libra tests."""
     def setUp(self):
-        super(TestBase, self).setUp()
+        super(ServiceTestCase, self).setUp()
         options.add_common_opts()
         self.CONF = self.useFixture(config.Config(options.CONF)).conf
 
@@ -137,7 +137,4 @@ class ServiceTestCase(test.BaseTestCase):
         self.CONF.set_override('swift_endpoint', 'test', group='api')
         self.CONF.set_override('swift_basepath', 'test', group='api')
 
-        self.CONF.set_override('driver', 'gearman_fake', group='gearman')
-
         self.CONF([], project='libra')
-

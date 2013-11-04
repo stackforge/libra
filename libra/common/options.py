@@ -97,7 +97,10 @@ gearman_opts = [
 def add_common_opts():
     CONF.register_opts(common_opts)
     CONF.register_opts(gearman_opts, group='gearman')
-    CONF.register_cli_opts(common_cli_opts)
+    try:
+        CONF.register_cli_opts(common_cli_opts)
+    except:
+        pass
 
 
 def libra_logging(name, section):
