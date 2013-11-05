@@ -111,7 +111,7 @@ class GearJobs(object):
     def offline_check(self, node_list):
         list_of_jobs = []
         failed_list = []
-        job_data = {"hpcs_action": "STATS"}
+        job_data = {"hpcs_action": "DIAGNOSTICS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(
@@ -126,5 +126,17 @@ class GearJobs(object):
                 )
             elif ping.timed_out:
                 failed_list.append(ping.job.task)
-
+            elif ping.result['network'] == 'FAIL':
+                failed_list.append(ping.job.task)
+            else:
+                gearman_count = 0
+                gearman_fail = 0
+                for gearman_test in ping.result['gearman']:
+                    gearman_count += 1
+                    if gearman_test['status'] == 'FAIL':
+                        gearman_fail += 1
+                # Need 2/3rds gearman up
+                max_fail_count = gearman_count / 3
+                if gearman_fail > max_fail_count:
+                    failed_list.append(ping.job.task)
         return failed_list
