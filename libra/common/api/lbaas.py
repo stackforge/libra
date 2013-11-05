@@ -68,6 +68,16 @@ class Vip(DeclarativeBase):
     device = Column(u'device', Integer, ForeignKey('devices.id'))
 
 
+class Billing(DeclarativeBase):
+    __tablename__ = 'billing'
+    exists_updated = Column(u'exists_updated', FormatedDateTime(),
+                            primary_key=True, nullable=False)
+    usage_updated = Column(u'usage_updated', FormatedDateTime(),
+                           primary_key=True, nullable=False)
+    stats_updated = Column(u'stats_updated', FormatedDateTime(),
+                           primary_key=True, nullable=False)
+
+
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'
@@ -146,6 +156,20 @@ class HealthMonitor(DeclarativeBase):
         u'attemptsBeforeDeactivation', INTEGER(), nullable=False
     )
     path = Column(u'path', VARCHAR(length=2000))
+
+
+class Stats(DeclarativeBase):
+    """stats model"""
+    __tablename__ = 'stats'
+    #column definitions
+    id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
+    lbid = Column(
+        u'lbid', BIGINT(), ForeignKey('loadbalancers.id'), primary_key=True,
+        nullable=False
+    )
+    period_start = Column(u'period_start', FormatedDateTime(), nullable=False)
+    period_end = Column(u'period_end', FormatedDateTime(), nullable=False)
+    bytes_out = Column(u'bytes_out', BIGINT(), nullable=False)
 
 
 class RoutingSession(Session):

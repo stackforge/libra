@@ -44,7 +44,7 @@ class GearJobs(object):
         failed_list = []
         node_status = dict()
         retry_list = []
-        job_data = {"hpcs_action": "STATS"}
+        job_data = {"hpcs_action": "PING"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(
@@ -140,3 +140,62 @@ class GearJobs(object):
                 if gearman_fail > max_fail_count:
                     failed_list.append(ping.job.task)
         return failed_list
+
+    def get_stats(self, node_list):
+        # TODO: lots of duplicated code that needs cleanup
+        list_of_jobs = []
+        failed_list = []
+        retry_list = []
+        results = {}
+        job_data = {"hpcs_action": "STATS"}
+        for node in node_list:
+            list_of_jobs.append(dict(task=str(node), data=job_data))
+        submitted_stats = self.gm_client.submit_multiple_jobs(
+            list_of_jobs, background=False, wait_until_complete=True,
+            poll_timeout=self.poll_timeout
+        )
+        for stats in submitted_stats:
+            if stats.state == JOB_UNKNOWN:
+                # TODO: Gearman server failed, ignoring for now
+                retry_list.append(stats.job.task)
+            if stats.timed_out:
+                # Timeout
+                retry_list.append(stats.job.task)
+            if stats.result['hpcs_response'] == 'FAIL':
+                # Error returned by Gearman
+                failed_list.append(stats.job.task)
+            else:
+                #Success
+                results[stats.job.task] = stats.result
+
+        list_of_jobs = []
+        if len(retry_list) > 0:
+            self.logger.info(
+                "{0} stats timed out, retrying".format(len(retry_list))
+            )
+            for node in retry_list:
+                list_of_jobs.append(dict(task=str(node), data=job_data))
+            submitted_stats = self.gm_client.submit_multiple_jobs(
+                list_of_jobs, background=False, wait_until_complete=True,
+                poll_timeout=self.poll_retry
+            )
+            for stats in submitted_stats:
+                if stats.state == JOB_UNKNOWN:
+                    # TODO: Gearman server failed, ignoring for now
+                    self.logger.error(
+                        "Gearman Job server failed during STATS check of {0}".
+                        format(stats.job.task)
+                    )
+                    failed_list.append(stats.job.task)
+                if stats.timed_out:
+                    # Timeout
+                    failed_list.append(stats.job.task)
+                if stats.result['hpcs_response'] == 'FAIL':
+                    # Error returned by Gearman
+                    failed_list.append(stats.job.task)
+                    continue
+                else:
+                    #Success
+                    results[stats.job.task] = stats.result
+
+        return failed_list, results

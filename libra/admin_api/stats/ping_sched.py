@@ -16,26 +16,18 @@ import threading
 
 from datetime import datetime
 from oslo.config import cfg
-
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
 from libra.admin_api.stats.stats_gearman import GearJobs
 
 
-class NodeNotFound(Exception):
-    pass
-
-
-class Stats(object):
+class PingStats(object):
 
     PING_SECONDS = 15
-    OFFLINE_SECONDS = 45
 
     def __init__(self, logger, drivers):
         self.logger = logger
         self.drivers = drivers
         self.ping_timer = None
-        self.offline_timer = None
-        self.ping_limit = cfg.CONF['admin_api']['stats_offline_ping_limit']
         self.error_limit = cfg.CONF['admin_api']['stats_device_error_limit']
         self.server_id = cfg.CONF['admin_api']['server_id']
         self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
@@ -43,33 +35,10 @@ class Stats(object):
         logger.info("Selected stats drivers: {0}".format(self.stats_driver))
 
         self.start_ping_sched()
-        self.start_offline_sched()
 
     def shutdown(self):
         if self.ping_timer:
             self.ping_timer.cancel()
-        if self.offline_timer:
-            self.offline_timer.cancel()
-
-    def check_offline_lbs(self):
-        # Work out if it is our turn to run
-        minute = datetime.now().minute
-        if self.server_id != minute % self.number_of_servers:
-            self.logger.info('Not our turn to run OFFLINE check, sleeping')
-            self.start_offline_sched()
-            return
-        tested = 0
-        failed = 0
-        try:
-            tested, failed = self._exec_offline_check()
-        except Exception:
-            self.logger.exception('Uncaught exception during OFFLINE check')
-        # Need to restart timer after every ping cycle
-        self.logger.info(
-            '{tested} OFFLINE loadbalancers tested, {failed} failed'
-            .format(tested=tested, failed=failed)
-        )
-        self.start_offline_sched()
 
     def ping_lbs(self):
         # Work out if it is our turn to run
@@ -123,47 +92,6 @@ class Stats(object):
 
         return pings, failed
 
-    def _exec_offline_check(self):
-        tested = 0
-        failed = 0
-        node_list = []
-        self.logger.info('Running OFFLINE check')
-        with db_session() as session:
-            # Join to ensure device is in-use
-            devices = session.query(
-                Device.id, Device.name
-            ).filter(Device.status == 'OFFLINE').all()
-
-            tested = len(devices)
-            if tested == 0:
-                self.logger.info('No OFFLINE Load Balancers to check')
-                return (0, 0)
-            for lb in devices:
-                node_list.append(lb.name)
-            gearman = GearJobs(self.logger)
-            failed_lbs = gearman.offline_check(node_list)
-            failed = len(failed_lbs)
-            if failed > self.error_limit:
-                self.logger.error(
-                    'Too many simultaneous Load Balancer Failures.'
-                    ' Aborting deletion attempt'
-                )
-                return tested, failed
-
-            if failed > 0:
-                self._send_delete(failed_lbs)
-
-            # Clear the ping counts for all devices not in
-            # the failed list
-            succeeded = list(set(node_list) - set(failed_lbs))
-            session.query(Device.name, Device.pingCount).\
-                filter(Device.name.in_(succeeded)).\
-                update({"pingCount": 0}, synchronize_session='fetch')
-
-            session.commit()
-
-        return tested, failed
-
     def _send_fails(self, failed_lbs):
         with db_session() as session:
             for lb in failed_lbs:
@@ -191,47 +119,6 @@ class Stats(object):
                         )
                     )
                     instance.send_alert(message, data.id)
-            session.commit()
-
-    def _send_delete(self, failed_nodes):
-        with db_session() as session:
-            for lb in failed_nodes:
-                # Get the current ping count
-                data = session.query(
-                    Device.id, Device.pingCount).\
-                    filter(Device.name == lb).first()
-
-                if not data:
-                    self.logger.error(
-                        'Device {0} no longer exists'.format(data.id)
-                    )
-                    continue
-
-                if data.pingCount < self.ping_limit:
-                    data.pingCount += 1
-                    self.logger.error(
-                        'Offline Device {0} has failed {1} ping attempts'.
-                        format(lb, data.pingCount)
-                    )
-                    session.query(Device).\
-                        filter(Device.name == lb).\
-                        update({"pingCount": data.pingCount},
-                               synchronize_session='fetch')
-                    session.flush()
-                    continue
-
-                message = (
-                    'Load balancer {0} unreachable and marked for deletion'.
-                    format(lb)
-                )
-                for driver in self.drivers:
-                    instance = driver(self.logger)
-                    self.logger.info(
-                        'Sending delete request for {0} to {1}'.format(
-                            lb, instance.__class__.__name__
-                        )
-                    )
-                    instance.send_delete(message, data.id)
             session.commit()
 
     def _get_lb(self, lb, session):
@@ -356,18 +243,3 @@ class Stats(object):
                          .format(secs=sleeptime))
         self.ping_timer = threading.Timer(sleeptime, self.ping_lbs, ())
         self.ping_timer.start()
-
-    def start_offline_sched(self):
-        # Always try to hit the expected second mark for offline checks
-        seconds = datetime.now().second
-        if seconds < self.OFFLINE_SECONDS:
-            sleeptime = self.OFFLINE_SECONDS - seconds
-        else:
-            sleeptime = 60 - (seconds - self.OFFLINE_SECONDS)
-
-        self.logger.info('LB offline check timer sleeping for {secs} seconds'
-                         .format(secs=sleeptime))
-        self.offline_timer = threading.Timer(
-            sleeptime, self.check_offline_lbs, ()
-        )
-        self.offline_timer.start()
