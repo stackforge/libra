@@ -89,6 +89,13 @@ cfg.CONF.register_opts(
         cfg.IntOpt('vip_pool_size',
                    default=10,
                    help='Number of hot spare vips to keep in the pool'),
+        cfg.BoolOpt('billing_enable',
+                    default=False,
+                    help='Enable / Disable billing notifications'),
+        cfg.IntOpt('exists_freq',
+                   metavar='MINUTES',
+                   default=60,
+                   help='Minutes between sending of billing exists messages'),
     ],
     group=adminapi_group
 )
