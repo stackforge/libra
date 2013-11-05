@@ -44,7 +44,7 @@ class GearJobs(object):
         failed_list = []
         node_status = dict()
         retry_list = []
-        job_data = {"hpcs_action": "STATS"}
+        job_data = {"hpcs_action": "PING"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(

@@ -100,3 +100,7 @@ CREATE TABLE `global_limits` (
 
 INSERT INTO `global_limits` VALUES (1,'maxLoadBalancerNameLength',128),(2,'maxVIPsPerLoadBalancer',1),(3,'maxNodesPerLoadBalancer',50),(4,'maxLoadBalancers',20);
 
+# mnbexists
+CREATE TABLE mnbexists (
+    updated   TIMESTAMP                NOT NULL DEFAULT CURRENT_TIMESTAMP              # timestamp of when billing was last updated with exists messages
+) ENGINE=InnoDB DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;

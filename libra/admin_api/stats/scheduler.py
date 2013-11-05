@@ -18,7 +18,11 @@ from datetime import datetime
 from oslo.config import cfg
 
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
+from libra.common.api.lbaas import Exists
 from libra.admin_api.stats.stats_gearman import GearJobs
+from libra.common.api.mnb import update_mnb
+from libra.openstack.common import timeutils
+from sqlalchemy.sql import func
 
 
 class NodeNotFound(Exception):
@@ -28,6 +32,7 @@ class NodeNotFound(Exception):
 class Stats(object):
 
     PING_SECONDS = 15
+    EXISTS_SECONDS = 30
     OFFLINE_SECONDS = 45
 
     def __init__(self, logger, drivers):
@@ -35,6 +40,7 @@ class Stats(object):
         self.drivers = drivers
         self.ping_timer = None
         self.offline_timer = None
+        self.exists_timer = None
         self.ping_limit = cfg.CONF['admin_api']['stats_offline_ping_limit']
         self.error_limit = cfg.CONF['admin_api']['stats_device_error_limit']
         self.server_id = cfg.CONF['admin_api']['server_id']
@@ -44,12 +50,16 @@ class Stats(object):
 
         self.start_ping_sched()
         self.start_offline_sched()
+        if cfg.CONF['admin_api'].billing_enable:
+            self.start_exists_sched()
 
     def shutdown(self):
         if self.ping_timer:
             self.ping_timer.cancel()
         if self.offline_timer:
             self.offline_timer.cancel()
+        if self.exists_timer:
+            self.exists_timer.cancel()
 
     def check_offline_lbs(self):
         # Work out if it is our turn to run
@@ -88,6 +98,23 @@ class Stats(object):
         self.logger.info('{pings} loadbalancers pinged, {failed} failed'
                          .format(pings=pings, failed=failed))
         self.start_ping_sched()
+
+    def send_exists(self):
+        # Work out if it is our turn to run
+        minute = datetime.now().minute
+        if self.server_id != minute % self.number_of_servers:
+            self.logger.info('Not our turn to send MnB exists, sleeping')
+            self.start_exists_sched()
+            return
+        try:
+            exists = self._exec_exists()
+        except Exception:
+            self.logger.exception('Uncaught exception during MnB exists')
+
+        # Need to restart timer after every ping cycle
+        self.logger.info('{exists} loadbalancer MnB exists notifications sent'
+                         .format(exists=exists))
+        self.start_exists_sched()
 
     def _exec_ping(self):
         pings = 0
@@ -163,6 +190,29 @@ class Stats(object):
             session.commit()
 
         return tested, failed
+
+    def _exec_exists(self):
+        with db_session() as session:
+            delta = datetime.timedelta(mins=cfg.CONF['admin_api'].exists_freq)
+            exp = timeutils.utcnow() - delta
+            exp_time = exp.strftime('%Y-%m-%d %H:%M:%S')
+
+            updated = session.query(
+                Exists.updated
+            ).filter(Exists.updated > exp_time).first()
+
+            if updated is not None:
+                session.commit()
+                return 0
+
+            #Reset the timestamp
+            session.query(Exists).update({"updated": func.now()},
+                                         synchronize_session='fetch')
+            session.commit()
+
+        self.logger.info('Sending MnB EXISTS notifications')
+        count = update_mnb('lbaas.instance.exists', None, None)
+        return count
 
     def _send_fails(self, failed_lbs):
         with db_session() as session:
@@ -371,3 +421,16 @@ class Stats(object):
             sleeptime, self.check_offline_lbs, ()
         )
         self.offline_timer.start()
+
+    def start_exists_sched(self):
+        # Always try to hit the expected second mark for pings
+        seconds = datetime.now().second
+        if seconds < self.EXISTS_SECONDS:
+            sleeptime = self.EXISTS_SECONDS - seconds
+        else:
+            sleeptime = 60 - (seconds - self.EXISTS_SECONDS)
+
+        self.logger.info('LB MnB exists timer sleeping for {secs} seconds'
+                         .format(secs=sleeptime))
+        self.exists_timer = threading.Timer(sleeptime, self.send_exists, ())
+        self.exists_timer.start()

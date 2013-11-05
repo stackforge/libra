@@ -33,6 +33,7 @@ from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
 from libra.common.api.gearman_client import submit_job, submit_vip_job
+from libra.common.api.mnb import update_mnb
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.exp import ImmutableEntity, ImmutableStates
@@ -470,6 +471,10 @@ class LoadBalancersController(RestController):
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
             )
+
+            #Notify billing of the LB creation
+            update_mnb('lbaas.instance.create', lb.id, tenant_id)
+
             if body.virtualIps == Unset:
                 submit_vip_job(
                     'ASSIGN', device_name, None
@@ -584,6 +589,10 @@ class LoadBalancersController(RestController):
                     'DELETE', device.name, device.id, lb.id
                 )
             session.commit()
+
+            #Notify billing of the LB deletion
+            update_mnb('lbaas.instance.delete', lb.id, tenant_id)
+
             return None
 
     def usage(self, load_balancer_id):
