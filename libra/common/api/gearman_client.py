@@ -265,6 +265,10 @@ class GearmanClientThread(object):
         device = session.query(Device).\
             filter(Device.id == device_id).\
             first()
+        if device is None:
+            # Device already deleted, probably a race between the OFFLINE check
+            # and auto-failover
+            return
         device.status = 'ERROR'
         for lb in lbs:
             lb.status = 'ERROR'
