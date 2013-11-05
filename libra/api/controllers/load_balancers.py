@@ -128,7 +128,15 @@ class LoadBalancersController(RestController):
                     }]
                     del(load_balancers['ip'])
                     del(load_balancers['vipid'])
-
+                else:
+                    # We are still assigning a VIP
+                    load_balancers['virtualIps'] = [{
+                        "id": None,
+                        "type": "ASSIGNING",
+                        "ipVersion": "IPV4",
+                        "address": None
+                    }]
+                    del(load_balancers['vipid'])
                 nodes = session.query(
                     Node.id, Node.address, Node.port, Node.status,
                     Node.enabled, Node.weight
