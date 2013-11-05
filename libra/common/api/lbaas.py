@@ -68,6 +68,11 @@ class Vip(DeclarativeBase):
     device = Column(u'device', Integer, ForeignKey('devices.id'))
 
 
+class Exists(DeclarativeBase):
+    __tablename__ = 'mnbexists'
+    updated = Column(u'updated', FormatedDateTime(), nullable=False)
+
+
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'
