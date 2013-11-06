@@ -32,7 +32,7 @@ from libra.common.api.lbaas import HealthMonitor
 from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
-from libra.common.api.gearman_client import submit_job, submit_vip_job
+from libra.common.api.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.exp import ImmutableEntity, ImmutableStates
@@ -335,8 +335,6 @@ class LoadBalancersController(RestController):
                     session.rollback()
                     raise ExhaustedError('No devices available')
 
-                # For use after transaction
-                device_name = device.name
                 vip = None
             else:
                 virtual_id = body.virtualIps[0].id
@@ -470,10 +468,6 @@ class LoadBalancersController(RestController):
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
             )
-            if body.virtualIps == Unset:
-                submit_vip_job(
-                    'ASSIGN', device_name, None
-                )
 
             return return_data
 
