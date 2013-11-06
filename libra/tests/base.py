@@ -43,6 +43,8 @@ from libra.openstack.common import log
 from libra.openstack.common import test
 from libra.openstack.common.fixture import config
 from libra.openstack.common.fixture import moxstubout
+from libra.openstack.common.notifier import test_notifier
+
 
 options.CONF.set_override('use_stderr', False)
 
@@ -53,6 +55,17 @@ options.CONF.import_group('mgm', 'libra.mgm')
 log.setup('libra')
 
 _DB_CACHE = None
+
+
+class NotififierFixture(fixtures.Fixture):
+    def tearDown(self):
+        self.clear()
+
+    def get(self):
+        return test_notifier.NOTIFICATIONS
+
+    def clear(self):
+        test_notifier.NOTIFICATIONS = []
 
 
 class Database(fixtures.Fixture):
@@ -137,7 +150,7 @@ class ServiceTestCase(test.BaseTestCase):
         self.CONF.set_override('swift_endpoint', 'test', group='api')
         self.CONF.set_override('swift_basepath', 'test', group='api')
 
-        self.CONF.set_override('driver', 'gearman_fake', group='gearman')
+        self.notifications = NotififierFixture()
+        self.useFixture(self.notifications)
 
         self.CONF([], project='libra')
-
