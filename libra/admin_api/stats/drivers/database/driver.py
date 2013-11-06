@@ -77,6 +77,7 @@ class DbDriver(AlertDriver):
                     session.query(loadbalancers_devices.c.device)
                 )).\
                 filter(Device.status == "OFFLINE").\
+                filter(Device.pingCount == 0).\
                 with_lockmode('update').\
                 first()
             if new_device is None:
