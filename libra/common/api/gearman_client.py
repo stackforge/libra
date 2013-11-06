@@ -146,7 +146,7 @@ class GearmanClientThread(object):
                 submit_vip_job('REMOVE', None, ip)
         if not status:
             self.logger.error(
-                "Giving up vip assign for device {1}".format(data)
+                "Giving up vip assign for device {0}".format(data)
             )
             with db_session() as session:
                 device = session.query(Device).\
