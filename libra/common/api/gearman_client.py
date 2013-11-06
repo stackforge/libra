@@ -20,7 +20,6 @@ from libra.common.json_gearman import JSONGearmanClient
 from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.api.lbaas import loadbalancers_devices
-from sqlalchemy.exc import OperationalError
 from pecan import conf
 
 
@@ -48,34 +47,59 @@ def submit_vip_job(job_type, device, vip):
 
 
 def client_job(logger, job_type, host, data, lbid):
-    for x in xrange(5):
-        try:
-            client = GearmanClientThread(logger, host, lbid)
-            logger.info(
-                "Sending Gearman job {0} to {1} for loadbalancer {2}".format(
-                    job_type, host, lbid
-                )
+    try:
+        client = GearmanClientThread(logger, host, lbid)
+        logger.info(
+            "Sending Gearman job {0} to {1} for loadbalancer {2}".format(
+                job_type, host, lbid
             )
-            if job_type == 'UPDATE':
-                client.send_update(data)
-            if job_type == 'DELETE':
-                client.send_delete(data)
-            if job_type == 'ARCHIVE':
-                client.send_archive(data)
-            if job_type == 'ASSIGN':
-                client.send_assign(data)
-            if job_type == 'REMOVE':
-                client.send_remove(data)
-            return
-        except OperationalError:
-            # Auto retry on galera locking error
-            logger.warning(
-                "Galera deadlock in gearman, retry {0}".format(x + 1)
-            )
-        except:
-            logger.exception("Gearman thread unhandled exception")
+        )
+        if job_type == 'UPDATE':
+            client.send_update(data)
+        if job_type == 'DELETE':
+            client.send_delete(data)
+        if job_type == 'ARCHIVE':
+            client.send_archive(data)
+        if job_type == 'ASSIGN':
+            # Try the assign 5 times
+            for x in xrange(0, 5):
+                status = client.send_assign(data)
+                if status:
+                    break
+            with db_session() as session:
+                device = session.query(Device).\
+                    filter(Device.name == data).first()
+                if device is None:
+                    logger.error(
+                        "Device {0} not found in ASSIGN, this shouldn't happen"
+                        .format(data)
+                    )
+                return
 
-    logger.error("Gearman thread could not talk to DB")
+                if not status:
+                    logger.error(
+                        "Giving up vip assign for device {0}".format(data)
+                    )
+                    errmsg = 'Floating IP assign failed'
+                    client._set_error(device.id, errmsg, session)
+                else:
+                    lbs = session.query(
+                        LoadBalancer
+                    ).join(LoadBalancer.nodes).\
+                        join(LoadBalancer.devices).\
+                        filter(Device.id == device.id).\
+                        filter(LoadBalancer.status != 'DELETED').\
+                        all()
+                    for lb in lbs:
+                        lb.status = 'ACTIVE'
+                    device.status = 'ONLINE'
+                session.commit()
+
+        if job_type == 'REMOVE':
+            client.send_remove(data)
+        return
+    except:
+        logger.exception("Gearman thread unhandled exception")
 
 
 class GearmanClientThread(object):
@@ -99,60 +123,57 @@ class GearmanClientThread(object):
         self.gearman_client = JSONGearmanClient(server_list)
 
     def send_assign(self, data):
-        bad_vips = []
         NULL = None  # For pep8
         with db_session() as session:
-            for x in xrange(0, 5):
-                vip = session.query(Vip).\
-                    filter(Vip.device == NULL).\
-                    with_lockmode('update').\
-                    first()
-                if vip is None:
-                    device = session.query(Device).\
-                        filter(Device.name == data).first()
-                    errmsg = 'Floating IP assign failed (none available)'
-                    self.logger.error(
-                        "Failed to assign IP to device {0} (none available)"
-                        .format(data)
-                    )
-                    self._set_error(device.id, errmsg, session)
-                    status = False
-                    break
-
-                ip_str = str(ipaddress.IPv4Address(vip.ip))
-
-                job_data = {
-                    'action': 'ASSIGN_IP',
-                    'name': data,
-                    'ip': ip_str
-                }
-                status, response = self._send_message(job_data, 'response')
-                if not status:
-                    self.logger.error(
-                        "Failed to assign IP {0} to device {1} (attempt {2})"
-                        .format(ip_str, data, x)
-                    )
-                    # set to device 0 to make sure it won't be used again
-                    vip.device = 0
-                    bad_vips.append(ip_str)
-                else:
-                    device = session.query(Device).\
-                        filter(Device.name == data).first()
-                    vip.device = device.id
-                    # IP assigned, break out
-                    break
-            session.commit()
-        for ip in bad_vips:
-                submit_vip_job('REMOVE', None, ip)
-        if not status:
-            self.logger.error(
-                "Giving up vip assign for device {0}".format(data)
-            )
-            with db_session() as session:
-                device = session.query(Device).\
-                    filter(Device.name == data).first()
-                errmsg = 'Floating IP assign failed'
+            device = session.query(Device).\
+                filter(Device.name == data).first()
+            if device is None:
+                self.logger.error(
+                    "VIP assign have been given non existent device {0}"
+                    .format(data)
+                )
+                session.rollback()
+                return False
+            vip = session.query(Vip).\
+                filter(Vip.device == NULL).\
+                with_lockmode('update').\
+                first()
+            if vip is None:
+                errmsg = 'Floating IP assign failed (none available)'
+                self.logger.error(
+                    "Failed to assign IP to device {0} (none available)"
+                    .format(data)
+                )
                 self._set_error(device.id, errmsg, session)
+                status = False
+                session.commit()
+                return False
+
+            vip.device = device.id
+            vip_id = vip.id
+            session.commit()
+        ip_str = str(ipaddress.IPv4Address(vip.ip))
+
+        job_data = {
+            'action': 'ASSIGN_IP',
+            'name': data,
+            'ip': ip_str
+        }
+        status, response = self._send_message(job_data, 'response')
+        if status:
+            return True
+        else:
+            self.logger.error(
+                "Failed to assign IP {0} to device {1}"
+                .format(ip_str, data)
+            )
+            # set to device 0 to make sure it won't be used again
+            with db_session() as session:
+                vip = session.query(Vip).filter(Vip.id == vip_id).first()
+                vip.device = 0
+                session.commit()
+            submit_vip_job('REMOVE', None, ip_str)
+        return False
 
     def send_remove(self, data=None):
         job_data = {
@@ -389,7 +410,11 @@ class GearmanClientThread(object):
                         lb.errmsg = "A node on the load balancer has failed"
                     elif lb.status == 'ERROR':
                         # Do nothing because something else failed in the mean
-                        # time such a floating IP assign
+                        # time
+                        pass
+                    elif lb.status == 'BUILD':
+                        # Do nothing, stay in BUILD state until floating IP
+                        # assign finishes
                         pass
                     else:
                         lb.status = 'ACTIVE'
@@ -397,10 +422,12 @@ class GearmanClientThread(object):
                 device = session.query(Device).\
                     filter(Device.id == data).\
                     first()
-                if device.status == 'BUILD':
-                    device.status = 'ONLINE'
-
+                device_name = device.name
             session.commit()
+            if device.status == 'BUILD':
+                submit_vip_job(
+                    'ASSIGN', device_name, None
+                )
 
     def _send_message(self, message, response_name):
         job_status = self.gearman_client.submit_job(
