@@ -117,7 +117,7 @@ class TestCase(test.BaseTestCase):
 class ServiceTestCase(test.BaseTestCase):
     """Base test case for Libra tests."""
     def setUp(self):
-        super(TestBase, self).setUp()
+        super(ServiceTestCase, self).setUp()
         options.add_common_opts()
         self.CONF = self.useFixture(config.Config(options.CONF)).conf
 
