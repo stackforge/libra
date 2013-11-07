@@ -69,7 +69,10 @@ class LBaaSController(object):
             elif action == 'ARCHIVE':
                 return self._action_archive()
             elif action == 'STATS':
-                return self._action_stats()
+                # TODO: Implement new STATS function
+                return self._action_ping()
+            elif action == 'PING':
+                return self._action_ping()
             elif action == 'DIAGNOSTICS':
                 return self._action_diagnostic()
             else:
@@ -438,29 +441,28 @@ class LBaaSController(object):
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
 
-    def _action_stats(self):
+    def _action_ping(self):
         """
-        Get load balancer statistics.
+        Get load balancer and node status.
 
         We push responsibility for knowing what state a load balancer
-        current is in to the driver. Trying to get statistics for a LB that
+        current is in to the driver. Trying to get status for a LB that
         has been deleted is an error.
         """
 
         try:
-            # TODO: Do something with the returned statistics
-            stats = self.driver.get_stats()
+            stats = self.driver.get_status()
         except NotImplementedError:
-            error = "Selected driver does not support STATS action."
+            error = "Selected driver does not support PING action."
             self.logger.error(error)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
         except DeletedStateError:
-            self.logger.info("Invalid operation STATS on a deleted LB")
+            self.logger.info("Invalid operation PING on a deleted LB")
             self.msg['status'] = 'DELETED'
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
-            self.logger.error("STATS failed: %s, %s" % (e.__class__, e))
+            self.logger.error("PING failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
         else:
