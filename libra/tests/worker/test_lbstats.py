@@ -14,7 +14,7 @@
 
 import datetime
 from libra.tests.base import TestCase
-from libra.common.lbstats import LBStatistics
+from libra.worker.drivers.haproxy.lbstats import LBStatistics
 
 
 class TestLBStatistics(TestCase):
