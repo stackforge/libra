@@ -146,9 +146,9 @@ class UbuntuServices(ServicesBase):
         self.sudo_rm(self._config_file)
         self.sudo_rm(self._backup_config)
 
-    def get_stats(self, protocol=None):
+    def get_status(self, protocol=None):
         """
-        Query HAProxy socket for stats on the given protocol.
+        Query HAProxy socket for node status on the given protocol.
 
         protocol
             One of the supported protocol names (http or tcp).

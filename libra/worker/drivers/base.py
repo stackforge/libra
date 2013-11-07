@@ -96,8 +96,8 @@ class LoadBalancerDriver(object):
         """ Delete a load balancer. """
         raise NotImplementedError()
 
-    def get_stats(self, protocol):
-        """ Get load balancer statistics for specified protocol. """
+    def get_status(self, protocol):
+        """ Get load balancer status for specified protocol. """
         raise NotImplementedError()
 
     def archive(self, method, params):
