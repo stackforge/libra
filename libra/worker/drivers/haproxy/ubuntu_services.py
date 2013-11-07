@@ -16,7 +16,7 @@ import os
 import subprocess
 
 from libra.common.exc import DeletedStateError
-from libra.common.lbstats import LBStatistics
+from libra.worker.drivers.haproxy.lbstats import LBStatistics
 from libra.worker.drivers.haproxy.services_base import ServicesBase
 from libra.worker.drivers.haproxy.query import HAProxyQuery
 
