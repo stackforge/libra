@@ -35,6 +35,7 @@ import logging
 import logging.config
 import logging.handlers
 import os
+import re
 import sys
 import traceback
 
@@ -50,6 +51,24 @@ from libra.openstack.common import local
 
 _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+_SANITIZE_KEYS = ['adminPass', 'admin_pass', 'password']
+
+# NOTE(ldbragst): Let's build a list of regex objects using the list of
+# _SANITIZE_KEYS we already have. This way, we only have to add the new key
+# to the list of _SANITIZE_KEYS and we can generate regular expressions
+# for XML and JSON automatically.
+_SANITIZE_PATTERNS = []
+_FORMAT_PATTERNS = [r'(%(key)s\s*[=]\s*[\"\']).*?([\"\'])',
+                    r'(<%(key)s>).*?(</%(key)s>)',
+                    r'([\"\']%(key)s[\"\']\s*:\s*[\"\']).*?([\"\'])',
+                    r'([\'"].*?%(key)s[\'"]\s*:\s*u?[\'"]).*?([\'"])']
+
+for key in _SANITIZE_KEYS:
+    for pattern in _FORMAT_PATTERNS:
+        reg_ex = re.compile(pattern % {'key': key}, re.DOTALL)
+        _SANITIZE_PATTERNS.append(reg_ex)
+
+
 common_cli_opts = [
     cfg.BoolOpt('debug',
                 short='d',
@@ -64,11 +83,13 @@ common_cli_opts = [
 ]
 
 logging_cli_opts = [
-    cfg.StrOpt('log-config',
+    cfg.StrOpt('log-config-append',
                metavar='PATH',
-               help='If this option is specified, the logging configuration '
-                    'file specified is used and overrides any other logging '
-                    'options specified. Please see the Python logging module '
+               deprecated_name='log-config',
+               help='The name of logging configuration file. It does not '
+                    'disable existing loggers, but just appends specified '
+                    'logging configuration to any other existing logging '
+                    'options. Please see the Python logging module '
                     'documentation for details on logging configuration '
                     'files.'),
     cfg.StrOpt('log-format',
@@ -210,6 +231,39 @@ def _get_log_file_path(binary=None):
         return '%s.log' % (os.path.join(logdir, binary),)
 
     return None
+
+
+def mask_password(message, secret="***"):
+    """Replace password with 'secret' in message.
+
+    :param message: The string which includes security information.
+    :param secret: value with which to replace passwords, defaults to "***".
+    :returns: The unicode value of message with the password fields masked.
+
+    For example:
+    >>> mask_password("'adminPass' : 'aaaaa'")
+    "'adminPass' : '***'"
+    >>> mask_password("'admin_pass' : 'aaaaa'")
+    "'admin_pass' : '***'"
+    >>> mask_password('"password" : "aaaaa"')
+    '"password" : "***"'
+    >>> mask_password("'original_password' : 'aaaaa'")
+    "'original_password' : '***'"
+    >>> mask_password("u'original_password' :   u'aaaaa'")
+    "u'original_password' :   u'***'"
+    """
+    message = six.text_type(message)
+
+    # NOTE(ldbragst): Check to see if anything in message contains any key
+    # specified in _SANITIZE_KEYS, if not then just return the message since
+    # we don't have to mask any passwords.
+    if not any(key in message for key in _SANITIZE_KEYS):
+        return message
+
+    secret = r'\g<1>' + secret + r'\g<2>'
+    for pattern in _SANITIZE_PATTERNS:
+        message = re.sub(pattern, secret, message)
+    return message
 
 
 class BaseLoggerAdapter(logging.LoggerAdapter):
@@ -355,17 +409,18 @@ class LogConfigError(Exception):
                                    err_msg=self.err_msg)
 
 
-def _load_log_config(log_config):
+def _load_log_config(log_config_append):
     try:
-        logging.config.fileConfig(log_config)
+        logging.config.fileConfig(log_config_append,
+                                  disable_existing_loggers=False)
     except moves.configparser.Error as exc:
-        raise LogConfigError(log_config, str(exc))
+        raise LogConfigError(log_config_append, str(exc))
 
 
 def setup(product_name):
     """Setup logging."""
-    if CONF.log_config:
-        _load_log_config(CONF.log_config)
+    if CONF.log_config_append:
+        _load_log_config(CONF.log_config_append)
     else:
         _setup_logging_from_conf()
     sys.excepthook = _create_logging_excepthook(product_name)
@@ -429,7 +484,7 @@ def _setup_logging_from_conf():
 
     if CONF.publish_errors:
         handler = importutils.import_object(
-            "libra.openstack.common.log_handler.PublishErrorsHandler",
+            "openstack.common.log_handler.PublishErrorsHandler",
             logging.ERROR)
         log_root.addHandler(handler)
 

@@ -20,7 +20,10 @@ from libra import __version__ as libra_version
 from libra import __release__ as libra_release
 from libra.common.exc import DeletedStateError
 from libra.common.faults import BadRequest
+from libra.openstack.common import log
 from libra.worker.drivers.base import LoadBalancerDriver
+
+LOG = log.getLogger(__name__)
 
 
 class LBaaSController(object):
@@ -38,8 +41,7 @@ class LBaaSController(object):
     OBJ_STORE_ENDPOINT_FIELD = 'hpcs_object_store_endpoint'
     OBJ_STORE_TOKEN_FIELD = 'hpcs_object_store_token'
 
-    def __init__(self, logger, driver, json_msg):
-        self.logger = logger
+    def __init__(self, driver, json_msg):
         self.driver = driver
         self.msg = json_msg
 
@@ -49,7 +51,7 @@ class LBaaSController(object):
         """
 
         if self.ACTION_FIELD not in self.msg:
-            self.logger.error("Missing `%s` value" % self.ACTION_FIELD)
+            LOG.error("Missing `%s` value" % self.ACTION_FIELD)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
@@ -76,13 +78,11 @@ class LBaaSController(object):
             elif action == 'DIAGNOSTICS':
                 return self._action_diagnostic()
             else:
-                self.logger.error("Invalid `%s` value: %s" %
-                                  (self.ACTION_FIELD, action))
+                LOG.error("Invalid `%s` value: %s", self.ACTION_FIELD, action)
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
         except Exception as e:
-            self.logger.error("Controller exception: %s, %s" %
-                              (e.__class__, e))
+            LOG.error("Controller exception: %s, %s", e.__class__, e)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
@@ -128,7 +128,7 @@ class LBaaSController(object):
             sock.close()
             return True
         except socket.error:
-            self.logger.error(
+            LOG.error(
                 "TCP connect error to gearman server {0}"
                 .format(ip)
             )
@@ -161,7 +161,7 @@ class LBaaSController(object):
         except NotImplementedError:
             pass
         except Exception as e:
-            self.logger.error("Selected driver failed initialization.")
+            LOG.error("Selected driver failed initialization.")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
@@ -187,13 +187,13 @@ class LBaaSController(object):
                 try:
                     self.driver.add_protocol(current_lb['protocol'], port)
                 except NotImplementedError:
-                    self.logger.error(
+                    LOG.error(
                         "Selected driver does not support setting protocol."
                     )
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
                 except Exception as e:
-                    self.logger.error(
+                    LOG.error(
                         "Failure trying to set protocol: %s, %s" %
                         (e.__class__, e)
                     )
@@ -207,7 +207,7 @@ class LBaaSController(object):
                 elif algo == 'LEAST_CONNECTIONS':
                     algo = LoadBalancerDriver.LEASTCONN
                 else:
-                    self.logger.error("Invalid algorithm: %s" % algo)
+                    LOG.error("Invalid algorithm: %s" % algo)
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
             else:
@@ -216,13 +216,13 @@ class LBaaSController(object):
             try:
                 self.driver.set_algorithm(current_lb['protocol'], algo)
             except NotImplementedError:
-                self.logger.error(
+                LOG.error(
                     "Selected driver does not support setting algorithm."
                 )
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
             except Exception as e:
-                self.logger.error(
+                LOG.error(
                     "Selected driver failed setting algorithm."
                 )
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
@@ -245,13 +245,13 @@ class LBaaSController(object):
                                             monitor['attempts'],
                                             monitor['path'])
                 except NotImplementedError:
-                    self.logger.error(
+                    LOG.error(
                         "Selected driver does not support adding healthchecks."
                     )
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
                 except Exception as e:
-                    self.logger.error(
+                    LOG.error(
                         "Selected driver failed adding healthchecks: %s, %s" %
                         (e.__class__, e)
                     )
@@ -296,25 +296,25 @@ class LBaaSController(object):
                 except NotImplementedError:
                     lb_node['condition'] = self.NODE_ERR
                     error = "Selected driver does not support adding a server"
-                    self.logger.error(error)
+                    LOG.error(error)
                     self.msg[self.ERROR_FIELD] = error
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
                 except Exception as e:
                     lb_node['condition'] = self.NODE_ERR
                     error = "Failure adding server %s: %s" % (node_id, e)
-                    self.logger.error(error)
+                    LOG.error(error)
                     self.msg[self.ERROR_FIELD] = error
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
                 else:
-                    self.logger.debug("Added server: %s:%s" % (address, port))
+                    LOG.debug("Added server: %s:%s" % (address, port))
                     lb_node['condition'] = self.NODE_OK
 
         try:
             self.driver.create()
         except NotImplementedError:
-            self.logger.error(
+            LOG.error(
                 "Selected driver does not support CREATE action."
             )
             for current_lb in lb_list:
@@ -322,12 +322,12 @@ class LBaaSController(object):
                     lb_node['condition'] = self.NODE_ERR
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
-            self.logger.error("CREATE failed: %s, %s" % (e.__class__, e))
+            LOG.error("CREATE failed: %s, %s" % (e.__class__, e))
             for lb_node in current_lb['nodes']:
                 lb_node['condition'] = self.NODE_ERR
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
-            self.logger.info("Activated load balancer changes")
+            LOG.info("Activated load balancer changes")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
 
         return self.msg
@@ -337,12 +337,12 @@ class LBaaSController(object):
         try:
             self.driver.suspend()
         except NotImplementedError:
-            self.logger.error(
+            LOG.error(
                 "Selected driver does not support SUSPEND action."
             )
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
-            self.logger.error("SUSPEND failed: %s, %s" % (e.__class__, e))
+            LOG.error("SUSPEND failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
@@ -353,12 +353,12 @@ class LBaaSController(object):
         try:
             self.driver.enable()
         except NotImplementedError:
-            self.logger.error(
+            LOG.error(
                 "Selected driver does not support ENABLE action."
             )
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
-            self.logger.error("ENABLE failed: %s, %s" % (e.__class__, e))
+            LOG.error("ENABLE failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
@@ -369,12 +369,12 @@ class LBaaSController(object):
         try:
             self.driver.delete()
         except NotImplementedError:
-            self.logger.error(
+            LOG.error(
                 "Selected driver does not support DELETE action."
             )
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
-            self.logger.error("DELETE failed: %s, %s" % (e.__class__, e))
+            LOG.error("DELETE failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         else:
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
@@ -430,11 +430,11 @@ class LBaaSController(object):
             self.driver.archive(method, params)
         except NotImplementedError:
             error = "Selected driver does not support ARCHIVE action."
-            self.logger.error(error)
+            LOG.error(error)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
         except Exception as e:
-            self.logger.error("ARCHIVE failed: %s, %s" % (e.__class__, e))
+            LOG.error("ARCHIVE failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
         else:
@@ -454,15 +454,15 @@ class LBaaSController(object):
             stats = self.driver.get_status()
         except NotImplementedError:
             error = "Selected driver does not support PING action."
-            self.logger.error(error)
+            LOG.error(error)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
         except DeletedStateError:
-            self.logger.info("Invalid operation PING on a deleted LB")
+            LOG.info("Invalid operation PING on a deleted LB")
             self.msg['status'] = 'DELETED'
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         except Exception as e:
-            self.logger.error("PING failed: %s, %s" % (e.__class__, e))
+            LOG.error("PING failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
         else:
