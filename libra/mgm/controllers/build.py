@@ -16,8 +16,12 @@ from time import sleep
 from novaclient import exceptions
 from oslo.config import cfg
 from gearman.constants import JOB_UNKNOWN
+from libra.openstack.common import log
 from libra.common.json_gearman import JSONGearmanClient
 from libra.mgm.nova import Node, BuildError, NotFound
+
+
+LOG = log.getLogger(__name__)
 
 
 class BuildController(object):
@@ -26,24 +30,23 @@ class BuildController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, msg):
-        self.logger = logger
+    def __init__(self, msg):
         self.msg = msg
 
     def run(self):
         try:
             nova = Node()
         except Exception:
-            self.logger.exception("Error initialising Nova connection")
+            LOG.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        self.logger.info("Building a requested Nova instance")
+        LOG.info("Building a requested Nova instance")
         try:
             node_id = nova.build()
-            self.logger.info("Build command sent to Nova")
+            LOG.info("Build command sent to Nova")
         except BuildError as exc:
-            self.logger.exception(
+            LOG.exception(
                 "{0}, node {1}".format(exc.msg, exc.node_name)
             )
             name = exc.node_name
@@ -51,13 +54,13 @@ class BuildController(object):
             try:
                 node_id = nova.get_node(name)
             except NotFound:
-                self.logger.error(
+                LOG.error(
                     "No node found for {0}, giving up on it".format(name)
                 )
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
             except exceptions.ClientException:
-                self.logger.exception(
+                LOG.exception(
                     'Error getting failed node info from Nova for {0}'
                     .format(name)
                 )
@@ -71,7 +74,7 @@ class BuildController(object):
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
         else:
-            self.logger.error(
+            LOG.error(
                 'Node build did not return an ID, cannot find it'
             )
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
@@ -82,19 +85,19 @@ class BuildController(object):
             try:
                 resp, status = nova.status(node_id)
             except NotFound:
-                self.logger.error(
+                LOG.error(
                     'Node {0} can no longer be found'.format(node_id)
                 )
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
             except exceptions.ClientException:
-                self.logger.exception(
+                LOG.exception(
                     'Error getting status from Nova'
                 )
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
             if resp.status_code not in(200, 203):
-                self.logger.error(
+                LOG.error(
                     'Error geting status from Nova, error {0}'
                     .format(resp.status_code)
                 )
@@ -114,12 +117,12 @@ class BuildController(object):
                 )
                 self.msg['az'] = cfg.CONF['mgm']['az']
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
-                self.logger.info('Node {0} returned'.format(status['name']))
+                LOG.info('Node {0} returned'.format(status['name']))
                 return self.msg
             sleep(60)
 
         nova.delete(node_id)
-        self.logger.error(
+        LOG.error(
             "Node {0} didn't come up after 10 minutes, deleted".format(node_id)
         )
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
@@ -149,12 +152,12 @@ class BuildController(object):
         if job_status.state == JOB_UNKNOWN:
             # Gearman server connect fail, count as bad node because we can't
             # tell if it really is working
-            self.logger.error('Could not talk to gearman server')
+            LOG.error('Could not talk to gearman server')
             return False
         if job_status.timed_out:
-            self.logger.warning('Timeout getting diags from {0}'.format(name))
+            LOG.warning('Timeout getting diags from {0}'.format(name))
             return False
-        self.logger.debug(job_status.result)
+        LOG.debug(job_status.result)
         # Would only happen if DIAGNOSTICS call not supported
         if job_status.result['hpcs_response'] == 'FAIL':
             return True
@@ -167,7 +170,7 @@ class BuildController(object):
         for gearman_test in job_status.result['gearman']:
             gearman_count += 1
             if gearman_test['status'] == 'FAIL':
-                self.logger.info(
+                LOG.info(
                     'Device {0} cannot talk to gearman {1}'
                     .format(name, gearman_test['host'])
                 )

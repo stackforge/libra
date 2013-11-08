@@ -18,6 +18,10 @@ from novaclient import exceptions
 from oslo.config import cfg
 
 from libra.mgm.nova import Node
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class BuildIpController(object):
@@ -26,28 +30,27 @@ class BuildIpController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, msg):
-        self.logger = logger
+    def __init__(self, msg):
         self.msg = msg
 
     def run(self):
         try:
             nova = Node()
         except Exception:
-            self.logger.exception("Error initialising Nova connection")
+            LOG.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        self.logger.info("Creating a requested floating IP")
+        LOG.info("Creating a requested floating IP")
         try:
             ip_info = nova.vip_create()
         except exceptions.ClientException:
-            self.logger.exception(
+            LOG.exception(
                 'Error getting a Floating IP'
             )
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
-        self.logger.info("Floating IP {0} created".format(ip_info['id']))
+        LOG.info("Floating IP {0} created".format(ip_info['id']))
         self.msg['id'] = ip_info['id']
         self.msg['ip'] = ip_info['ip']
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
@@ -60,25 +63,24 @@ class AssignIpController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, msg):
-        self.logger = logger
+    def __init__(self, msg):
         self.msg = msg
 
     def run(self):
         try:
             nova = Node()
         except Exception:
-            self.logger.exception("Error initialising Nova connection")
+            LOG.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        self.logger.info(
+        LOG.info(
             "Assigning Floating IP {0} to {1}"
             .format(self.msg['ip'], self.msg['name'])
         )
         try:
             node_id = nova.get_node(self.msg['name'])
-            self.logger.info(
+            LOG.info(
                 'Node name {0} identified as ID {1}'
                 .format(self.msg['name'], node_id)
             )
@@ -87,7 +89,7 @@ class AssignIpController(object):
                 self.check_ip(self.msg['ip'],
                               cfg.CONF['mgm']['tcp_check_port'])
         except:
-            self.logger.exception(
+            LOG.exception(
                 'Error assigning Floating IP {0} to {1}'
                 .format(self.msg['ip'], self.msg['name'])
             )
@@ -114,7 +116,7 @@ class AssignIpController(object):
                     pass
                 loop_count += 1
                 if loop_count >= 5:
-                    self.logger.error(
+                    LOG.error(
                         "TCP connect error after floating IP assign {0}"
                         .format(ip)
                     )
@@ -128,19 +130,18 @@ class RemoveIpController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, msg):
-        self.logger = logger
+    def __init__(self, msg):
         self.msg = msg
 
     def run(self):
         try:
             nova = Node()
         except Exception:
-            self.logger.exception("Error initialising Nova connection")
+            LOG.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        self.logger.info(
+        LOG.info(
             "Removing Floating IP {0} from {1}"
             .format(self.msg['ip'], self.msg['name'])
         )
@@ -148,7 +149,7 @@ class RemoveIpController(object):
             node_id = nova.get_node(self.msg['name'])
             nova.vip_remove(node_id, self.msg['ip'])
         except:
-            self.logger.exception(
+            LOG.exception(
                 'Error removing Floating IP {0} from {1}'
                 .format(self.msg['ip'], self.msg['name'])
             )
@@ -165,26 +166,25 @@ class DeleteIpController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, msg):
-        self.logger = logger
+    def __init__(self, msg):
         self.msg = msg
 
     def run(self):
         try:
             nova = Node()
         except Exception:
-            self.logger.exception("Error initialising Nova connection")
+            LOG.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        self.logger.info(
+        LOG.info(
             "Deleting Floating IP {0}"
             .format(self.msg['ip'])
         )
         try:
             nova.vip_delete(self.msg['ip'])
         except:
-            self.logger.exception(
+            LOG.exception(
                 'Error deleting Floating IP {0}'
                 .format(self.msg['ip'])
             )

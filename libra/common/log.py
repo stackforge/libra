@@ -19,6 +19,27 @@ import sys
 import time
 import glob
 import codecs
+from libra.openstack.common import log
+
+
+def get_descriptors():
+    """
+    Utility method to get all Oslo logging filedescrptiors.
+
+    Needs to be called after log.setup(...)
+    """
+    descriptors = []
+
+    def _add(fh):
+        if not fh in descriptors:
+            descriptors.append(fh)
+
+    for logger in log._loggers.values():
+         for handler in logger.handlers:
+            _add(handler.stream)
+    for i in logging.root.handlers:
+        _add(i.stream)
+    return descriptors
 
 
 class NewlineFormatter(logging.Formatter):
