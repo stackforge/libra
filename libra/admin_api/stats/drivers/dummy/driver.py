@@ -12,14 +12,18 @@
 # License for the specific language governing permissions and limitations
 
 from libra.admin_api.stats.drivers.base import AlertDriver
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class DummyDriver(AlertDriver):
     def send_alert(self, message, device_id):
-        self.logger.info('Dummy alert of: {0}'.format(message))
+        LOG.info('Dummy alert of: {0}'.format(message))
 
     def send_delete(self, message, device_id):
-        self.logger.info('Dummy delete of: {0}'.format(message))
+        LOG.info('Dummy delete of: {0}'.format(message))
 
     def send_node_change(self, message, lbid, degraded):
-        self.logger.info('Dummy node change of: {0}'.format(message))
+        LOG.info('Dummy node change of: {0}'.format(message))

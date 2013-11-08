@@ -22,8 +22,11 @@ from sqlalchemy import func
 
 from libra.common.api.lbaas import Device, PoolBuilding, Vip, db_session
 from libra.common.json_gearman import JSONGearmanClient
+from libra.openstack.common import log
 
 #TODO: Lots of duplication of code here, need to cleanup
+
+LOG = log.getLogger(__name__)
 
 
 class Pool(object):
@@ -32,8 +35,7 @@ class Pool(object):
     PROBE_SECONDS = 30
     VIPS_SECONDS = 50
 
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
         self.probe_timer = None
         self.delete_timer = None
         self.vips_time = None
@@ -58,10 +60,10 @@ class Pool(object):
         """ Searches for all devices in the DELETED state and removes them """
         minute = datetime.now().minute
         if self.server_id != minute % self.number_of_servers:
-            self.logger.info('Not our turn to run delete check, sleeping')
+            LOG.info('Not our turn to run delete check, sleeping')
             self.start_delete_sched()
             return
-        self.logger.info('Running device delete check')
+        LOG.info('Running device delete check')
         try:
             message = []
             with db_session() as session:
@@ -76,29 +78,29 @@ class Pool(object):
                     message.append(dict(task='libra_pool_mgm', data=job_data))
                 session.commit()
             if not message:
-                self.logger.info("No devices to delete")
+                LOG.info("No devices to delete")
             else:
-                gear = GearmanWork(self.logger)
+                gear = GearmanWork(LOG)
                 gear.send_delete_message(message)
         except:
-            self.logger.exception("Exception when deleting devices")
+            LOG.exception("Exception when deleting devices")
 
         self.start_delete_sched()
 
     def probe_vips(self):
         minute = datetime.now().minute
         if self.server_id != minute % self.number_of_servers:
-            self.logger.info('Not our turn to run vips check, sleeping')
+            LOG.info('Not our turn to run vips check, sleeping')
             self.start_vips_sched()
             return
-        self.logger.info('Running vips count probe check')
+        LOG.info('Running vips count probe check')
         try:
             with db_session() as session:
                 NULL = None  # For pep8
                 vip_count = session.query(Vip).\
                     filter(Vip.device == NULL).count()
                 if vip_count >= self.vip_pool_size:
-                    self.logger.info("Enough vips exist, no work to do")
+                    LOG.info("Enough vips exist, no work to do")
                     session.commit()
                     self.start_vips_sched()
                     return
@@ -106,7 +108,7 @@ class Pool(object):
                 build_count = self.vip_pool_size - vip_count
                 self._build_vips(build_count)
         except:
-            self.logger.exception(
+            LOG.exception(
                 "Uncaught exception during vip pool expansion"
             )
         self.start_vips_sched()
@@ -114,10 +116,10 @@ class Pool(object):
     def probe_devices(self):
         minute = datetime.now().minute
         if self.server_id != minute % self.number_of_servers:
-            self.logger.info('Not our turn to run probe check, sleeping')
+            LOG.info('Not our turn to run probe check, sleeping')
             self.start_probe_sched()
             return
-        self.logger.info('Running device count probe check')
+        LOG.info('Running device count probe check')
         try:
             with db_session() as session:
                 # Double check we have no outstanding builds assigned to us
@@ -128,7 +130,7 @@ class Pool(object):
                 dev_count = session.query(Device).\
                     filter(Device.status == 'OFFLINE').count()
                 if dev_count >= self.node_pool_size:
-                    self.logger.info("Enough devices exist, no work to do")
+                    LOG.info("Enough devices exist, no work to do")
                     session.commit()
                     self.start_probe_sched()
                     return
@@ -140,7 +142,7 @@ class Pool(object):
                 else:
                     built = built[0]
                 if build_count - built <= 0:
-                    self.logger.info(
+                    LOG.info(
                         "Other servers are building enough nodes"
                     )
                     session.commit()
@@ -162,7 +164,7 @@ class Pool(object):
                     delete()
                 session.commit()
         except:
-            self.logger.exception("Uncaught exception during pool expansion")
+            LOG.exception("Uncaught exception during pool expansion")
         self.start_probe_sched()
 
     def _build_nodes(self, count):
@@ -172,7 +174,7 @@ class Pool(object):
         while it < count:
             message.append(dict(task='libra_pool_mgm', data=job_data))
             it += 1
-        gear = GearmanWork(self.logger)
+        gear = GearmanWork(LOG)
         gear.send_create_message(message)
 
     def _build_vips(self, count):
@@ -182,7 +184,7 @@ class Pool(object):
         while it < count:
             message.append(dict(task='libra_pool_mgm', data=job_data))
             it += 1
-        gear = GearmanWork(self.logger)
+        gear = GearmanWork(LOG)
         gear.send_vips_message(message)
 
     def start_probe_sched(self):
@@ -192,8 +194,7 @@ class Pool(object):
         else:
             sleeptime = 60 - (seconds - self.PROBE_SECONDS)
 
-        self.logger.info('Pool probe check timer sleeping for {secs} seconds'
-                         .format(secs=sleeptime))
+        LOG.info('Pool probe check timer sleeping for %d seconds', sleeptime)
         self.probe_timer = threading.Timer(sleeptime, self.probe_devices, ())
         self.probe_timer.start()
 
@@ -204,8 +205,7 @@ class Pool(object):
         else:
             sleeptime = 60 - (seconds - self.VIPS_SECONDS)
 
-        self.logger.info('Pool vips check timer sleeping for {secs} seconds'
-                         .format(secs=sleeptime))
+        LOG.info('Pool vips check timer sleeping for %d seconds', sleeptime)
         self.vips_timer = threading.Timer(sleeptime, self.probe_vips, ())
         self.vips_timer.start()
 
@@ -216,16 +216,14 @@ class Pool(object):
         else:
             sleeptime = 60 - (seconds - self.DELETE_SECONDS)
 
-        self.logger.info('Pool delete check timer sleeping for {secs} seconds'
-                         .format(secs=sleeptime))
+        LOG.info('Pool delete check timer sleeping for %d seconds', sleeptime)
         self.delete_timer = threading.Timer(sleeptime, self.delete_devices, ())
         self.delete_timer.start()
 
 
 class GearmanWork(object):
 
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
         server_list = []
         for server in cfg.CONF['gearman']['servers']:
             host, port = server.split(':')
@@ -242,7 +240,7 @@ class GearmanWork(object):
         self.gearman_client = JSONGearmanClient(server_list)
 
     def send_delete_message(self, message):
-        self.logger.info("Sending {0} gearman messages".format(len(message)))
+        LOG.info("Sending %d gearman messages", len(message))
         job_status = self.gearman_client.submit_multiple_jobs(
             message, background=False, wait_until_complete=True,
             max_retries=10, poll_timeout=30.0
@@ -250,13 +248,13 @@ class GearmanWork(object):
         delete_count = 0
         for status in job_status:
             if status.state == JOB_UNKNOWN:
-                self.logger.error('Gearman Job server fail')
+                LOG.error('Gearman Job server fail')
                 continue
             if status.timed_out:
-                self.logger.error('Gearman timeout whilst deleting device')
+                LOG.error('Gearman timeout whilst deleting device')
                 continue
             if status.result['response'] == 'FAIL':
-                self.logger.error(
+                LOG.error(
                     'Pool manager failed to delete a device, removing from DB'
                 )
 
@@ -266,13 +264,11 @@ class GearmanWork(object):
                     filter(Device.name == status.result['name']).delete()
                 session.commit()
 
-        self.logger.info(
-            '{nodes} freed devices delete from pool'.format(nodes=delete_count)
-        )
+        LOG.info('%d freed devices delete from pool', delete_count)
 
     def send_vips_message(self, message):
         # TODO: make this gearman part more async, not wait for all builds
-        self.logger.info("Sending {0} gearman messages".format(len(message)))
+        LOG.info("Sending %d gearman messages", len(message))
         job_status = self.gearman_client.submit_multiple_jobs(
             message, background=False, wait_until_complete=True,
             max_retries=10, poll_timeout=3600.0
@@ -280,30 +276,30 @@ class GearmanWork(object):
         built_count = 0
         for status in job_status:
             if status.state == JOB_UNKNOWN:
-                self.logger.error('Gearman Job server fail')
+                LOG.error('Gearman Job server fail')
                 continue
             if status.timed_out:
-                self.logger.error('Gearman timeout whilst building vip')
+                LOG.error('Gearman timeout whilst building vip')
                 continue
             if status.result['response'] == 'FAIL':
-                self.logger.error('Pool manager failed to build a vip')
+                LOG.error('Pool manager failed to build a vip')
                 continue
 
             built_count += 1
             try:
                 self._add_vip(status.result)
             except:
-                self.logger.exception(
+                LOG.exception(
                     'Could not add vip to DB, node data: {0}'
                     .format(status.result)
                 )
-        self.logger.info(
+        LOG.info(
             '{vips} vips built and added to pool'.format(vips=built_count)
         )
 
     def send_create_message(self, message):
         # TODO: make this gearman part more async, not wait for all builds
-        self.logger.info("Sending {0} gearman messages".format(len(message)))
+        LOG.info("Sending {0} gearman messages".format(len(message)))
         job_status = self.gearman_client.submit_multiple_jobs(
             message, background=False, wait_until_complete=True,
             max_retries=10, poll_timeout=3600.0
@@ -311,29 +307,29 @@ class GearmanWork(object):
         built_count = 0
         for status in job_status:
             if status.state == JOB_UNKNOWN:
-                self.logger.error('Gearman Job server fail')
+                LOG.error('Gearman Job server fail')
                 continue
             if status.timed_out:
-                self.logger.error('Gearman timeout whilst building device')
+                LOG.error('Gearman timeout whilst building device')
                 continue
             if status.result['response'] == 'FAIL':
-                self.logger.error('Pool manager failed to build a device')
+                LOG.error('Pool manager failed to build a device')
                 continue
 
             built_count += 1
             try:
                 self._add_node(status.result)
             except:
-                self.logger.exception(
+                LOG.exception(
                     'Could not add node to DB, node data: {0}'
                     .format(status.result)
                 )
-        self.logger.info(
+        LOG.info(
             '{nodes} devices built and added to pool'.format(nodes=built_count)
         )
 
     def _add_vip(self, data):
-        self.logger.info('Adding vip {0} to DB'.format(data['ip']))
+        LOG.info('Adding vip {0} to DB'.format(data['ip']))
         vip = Vip()
         vip.ip = int(ipaddress.IPv4Address(unicode(data['ip'])))
         with db_session() as session:
@@ -341,7 +337,7 @@ class GearmanWork(object):
             session.commit()
 
     def _add_node(self, data):
-        self.logger.info('Adding device {0} to DB'.format(data['name']))
+        LOG.info('Adding device {0} to DB'.format(data['name']))
         device = Device()
         device.name = data['name']
         device.publicIpAddr = data['addr']
