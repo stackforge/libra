@@ -47,14 +47,7 @@ common_cli_opts = [
     cfg.BoolOpt('daemon',
                 default=True,
                 help='Run as a daemon'),
-    cfg.BoolOpt('debug',
-                short='d',
-                default=False,
-                help='Turn on debug output'),
-    cfg.BoolOpt('verbose',
-                short='v',
-                default=False,
-                help='Turn on verbose output'),
+
 ]
 
 gearman_opts = [
@@ -94,7 +87,22 @@ gearman_opts = [
 ]
 
 
-def add_common_opts():
+def add_common_opts(log_opts=True):
+    """
+    Register common opts.
+
+    :param log_opts: Register logging options like debug.
+    """
+    if log_opts:
+        CONF.register_cli_opts([
+            cfg.BoolOpt('debug',
+                        short='d',
+                        default=False,
+                        help='Turn on debug output'),
+            cfg.BoolOpt('verbose',
+                        short='v',
+                        default=False,
+                        help='Turn on verbose output')])
     CONF.register_opts(common_opts)
     CONF.register_opts(gearman_opts, group='gearman')
     CONF.register_cli_opts(common_cli_opts)

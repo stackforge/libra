@@ -20,25 +20,24 @@ import pwd
 import threading
 
 from libra import __version__
-from libra.common.options import add_common_opts, libra_logging, CONF
+from libra.common.options import add_common_opts, CONF
+from libra.openstack.common import log
 from libra.mgm.gearman_worker import worker_thread
 
 
+LOG = log.getLogger(__name__)
+
+
 class Server(object):
-    def __init__(self):
-        self.logger = None
-
     def main(self):
-        self.logger = libra_logging('libra_mgm', 'mgm')
-
-        self.logger.info(
+        LOG.info(
             'Libra Pool Manager worker started, spawning {0} threads'
             .format(CONF['mgm']['threads'])
         )
         thread_list = []
         for x in xrange(0, CONF['mgm']['threads']):
             thd = threading.Thread(
-                target=worker_thread, args=[self.logger]
+                target=worker_thread, args=[]
             )
             thd.daemon = True
             thread_list.append(thd)
@@ -48,8 +47,9 @@ class Server(object):
 
 
 def main():
-    add_common_opts()
+    add_common_opts(log_opts=False)
     CONF(project='libra', version=__version__)
+    log.setup('libra')
 
     server = Server()
 
