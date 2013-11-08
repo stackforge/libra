@@ -11,12 +11,15 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 
-import logging
 import ipaddress
+from libra.admin_api.stats.drivers.base import AlertDriver
 from libra.common.api.lbaas import Device, LoadBalancer, db_session
 from libra.common.api.lbaas import loadbalancers_devices, Vip
 from libra.common.api.gearman_client import submit_job, submit_vip_job
-from libra.admin_api.stats.drivers.base import AlertDriver
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class DbDriver(AlertDriver):
@@ -68,7 +71,6 @@ class DbDriver(AlertDriver):
             session.commit()
 
     def _rebuild_device(self, device_id):
-        logger = logging.getLogger(__name__)
         new_device_id = None
         new_device_name = None
         with db_session() as session:
@@ -81,14 +83,14 @@ class DbDriver(AlertDriver):
                 first()
             if new_device is None:
                 session.rollback()
-                logger.error(
+                LOG.error(
                     'No spare devices when trying to rebuild device {0}'
                     .format(device_id)
                 )
                 return
             new_device_id = new_device.id
             new_device_name = new_device.name
-            logger.info(
+            LOG.info(
                 "Moving device {0} to device {1}"
                 .format(device_id, new_device_id)
             )
@@ -117,7 +119,7 @@ class DbDriver(AlertDriver):
                 filter(Device.id == new_device_id).all()
             for lb in lbs:
                 lb.errmsg = "Load Balancer rebuild on new device"
-            logger.info(
+            LOG.info(
                 "Moving IP {0} and marking device {1} for deletion"
                 .format(str(ipaddress.IPv4Address(vip.ip)), device_id)
             )
