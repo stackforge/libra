@@ -18,16 +18,19 @@ from datetime import datetime, timedelta
 from oslo.config import cfg
 
 from libra.common.api.lbaas import LoadBalancer, db_session
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class ExpungeScheduler(object):
-    def __init__(self, logger):
+    def __init__(self):
         self.expunge_timer = None
         self.expire_days = cfg.CONF['admin_api']['expire_days']
         if not self.expire_days:
-            logger.info('Expunge not configured, disabled')
+            LOG.info('Expunge not configured, disabled')
             return
-        self.logger = logger
         self.server_id = cfg.CONF['admin_api']['server_id']
         self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
         self.run_expunge()
@@ -39,7 +42,7 @@ class ExpungeScheduler(object):
     def run_expunge(self):
         day = datetime.now().day
         if self.server_id != day % self.number_of_servers:
-            self.logger.info('Not our turn to run expunge check, sleeping')
+            LOG.info('Not our turn to run expunge check, sleeping')
             self.expunge_timer = threading.Timer(
                 24 * 60 * 60, self.run_expunge, ()
             )
@@ -49,7 +52,7 @@ class ExpungeScheduler(object):
                     days=int(self.expire_days)
                 )
                 exp_time = exp.strftime('%Y-%m-%d %H:%M:%S')
-                self.logger.info(
+                LOG.info(
                     'Expunging deleted loadbalancers older than {0}'
                     .format(exp_time)
                 )
@@ -58,11 +61,11 @@ class ExpungeScheduler(object):
                 ).filter(LoadBalancer.updated < exp_time).\
                     filter(LoadBalancer.status == 'DELETED').delete()
                 session.commit()
-                self.logger.info(
+                LOG.info(
                     '{0} deleted load balancers expunged'.format(count)
                 )
             except:
-                self.logger.exception('Exception occurred during expunge')
-        self.logger.info('Expunge thread sleeping for 24 hours')
+                LOG.exception('Exception occurred during expunge')
+        LOG.info('Expunge thread sleeping for 24 hours')
         self.expunge_timer = threading.Timer(
             24 * 60 * 60, self.run_expunge, ())

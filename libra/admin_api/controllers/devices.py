@@ -14,7 +14,6 @@
 # under the License.
 
 # pecan imports
-import logging
 from pecan import expose, response, abort
 from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
@@ -22,6 +21,9 @@ from wsme.exc import ClientSideError
 from libra.admin_api.model.validators import DeviceResp, DevicePost, DevicePut
 from libra.common.api.lbaas import LoadBalancer, Device, db_session
 from libra.common.api.lbaas import loadbalancers_devices
+from libra.openstack.common import log
+
+LOG = log.getLogger(__name__)
 
 
 class DevicesController(RestController):
@@ -198,8 +200,7 @@ class DevicesController(RestController):
                 session.commit()
                 return return_data
             except:
-                logger = logging.getLogger(__name__)
-                logger.exception('Error communicating with load balancer pool')
+                LOG.exception('Error communicating with load balancer pool')
                 errstr = 'Error communicating with load balancer pool'
                 session.rollback()
                 raise ClientSideError(errstr)
@@ -296,8 +297,7 @@ class DevicesController(RestController):
                 return None
             except:
                 session.rollback()
-                logger = logging.getLogger(__name__)
-                logger.exception('Error deleting device from pool')
+                LOG.exception('Error deleting device from pool')
                 response.status = 500
                 return dict(
                     faultcode="Server",

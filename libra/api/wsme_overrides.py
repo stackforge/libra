@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import logging
 import traceback
 import functools
 import inspect
@@ -32,20 +31,22 @@ from wsme.rest.json import tojson
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 
 
+LOG = log.getLogger(__name__)
+
+
 def format_exception(excinfo, debug=False):
     """Extract informations that can be sent to the client."""
     error = excinfo[1]
-    log = logging.getLogger(__name__)
     if isinstance(error, wsme.exc.ClientSideError):
         r = dict(message="Bad Request",
                  details=error.faultstring)
-        log.warning("Client-side error: %s" % r['details'])
+        LOG.warning("Client-side error: %s" % r['details'])
         return r
     else:
         faultstring = str(error)
         debuginfo = "\n".join(traceback.format_exception(*excinfo))
 
-        log.error('Server-side error: "%s". Detail: \n%s' % (
+        LOG.error('Server-side error: "%s". Detail: \n%s' % (
             faultstring, debuginfo))
 
         if isinstance(error, DetailError):
@@ -112,8 +113,7 @@ def wsexpose(*args, **kwargs):
 
                 # ResourceClosedError happens on for_update deadlock
                 except (OperationalError, ResourceClosedError):
-                    logger = logging.getLogger(__name__)
-                    logger.warning(
+                    LOG.warning(
                         "Galera deadlock, retry {0}".format(x + 1)
                     )
                     args = old_args
