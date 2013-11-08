@@ -25,9 +25,6 @@ cfg.CONF.register_opts(
                    required=True,
                    help='The az the nodes and IPs will reside in (to be '
                         'passed to the API server'),
-        cfg.StrOpt('logfile',
-                   default='/var/log/libra/libra_mgm.log',
-                   help='Log file'),
         cfg.StrOpt('pid',
                    default='/var/run/libra/libra_mgm.pid',
                    help='PID file'),
