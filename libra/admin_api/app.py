@@ -34,7 +34,12 @@ from libra.admin_api.expunge.expunge import ExpungeScheduler
 from libra.admin_api import config as api_config
 from libra.admin_api import model
 from libra.openstack.common import importutils
-from libra.common.options import add_common_opts, libra_logging, CONF
+from libra.openstack.common import log
+from libra.common.options import add_common_opts, CONF
+from libra.common.log import get_descriptors
+
+
+LOG = log.getLogger(__name__)
 
 
 def get_pecan_config():
@@ -83,18 +88,17 @@ def setup_app(pecan_config):
 
 
 class MaintThreads(object):
-    def __init__(self, logger, drivers):
+    def __init__(self, drivers):
         self.classes = []
-        self.logger = logger
         self.drivers = drivers
         signal.signal(signal.SIGINT, self.exit_handler)
         signal.signal(signal.SIGTERM, self.exit_handler)
         self.run_threads()
 
     def run_threads(self):
-        stats = Stats(self.logger, self.drivers)
-        pool = Pool(self.logger)
-        expunge = ExpungeScheduler(self.logger)
+        stats = Stats(self.drivers)
+        pool = Pool()
+        expunge = ExpungeScheduler()
         self.classes.append(stats)
         self.classes.append(pool)
         self.classes.append(expunge)
@@ -104,35 +108,42 @@ class MaintThreads(object):
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         for function in self.classes:
             function.shutdown()
-        self.logger.info("Safely shutting down")
         sys.exit()
 
 
 class LogStdout(object):
-    def __init__(self, logger):
-        self.logger = logger.info
-
     def write(self, data):
         if data.strip() != '':
-            self.logger(data)
+            LOG.info(data)
 
 
 def main():
     add_common_opts()
     CONF(project='libra', version=__version__)
+    log.setup('libra')
 
     drivers = []
 
     pc = get_pecan_config()
+
+    sock = server.make_socket(CONF['admin_api']['host'],
+                          CONF['admin_api']['port'],
+                          CONF['admin_api']['ssl_keyfile'],
+                          CONF['admin_api']['ssl_certfile'])
+
     if CONF['daemon']:
         pidfile = daemon.pidfile.TimeoutPIDLockFile(CONF['admin_api']['pid'],
                                                     10)
         if daemon.runner.is_pidfile_stale(pidfile):
             pidfile.break_lock()
+
+        descriptors = get_descriptors()
+        descriptors.append(sock.fileno())
         context = daemon.DaemonContext(
             working_directory='/',
             umask=0o022,
-            pidfile=pidfile
+            pidfile=pidfile,
+            files_preserve=descriptors
         )
         if CONF['user']:
             context.uid = pwd.getpwnam(CONF['user']).pw_uid
@@ -141,21 +152,15 @@ def main():
         context.open()
 
     # Use the root logger due to lots of services using logger
-    logger = libra_logging('', 'admin_api')
-    logger.info('Starting on {0}:{1}'.format(CONF['admin_api']['host'],
-                                             CONF['admin_api']['port']))
+    LOG.info('Starting on %s:%d', CONF.admin_api.host, CONF.admin_api.port)
     api = setup_app(pc)
 
     for driver in CONF['admin_api']['stats_driver']:
         drivers.append(importutils.import_class(known_drivers[driver]))
 
-    MaintThreads(logger, drivers)
-    sys.stderr = LogStdout(logger)
+    MaintThreads(drivers)
+    sys.stderr = LogStdout()
 
-    sock = server.make_socket(CONF['admin_api']['host'],
-                              CONF['admin_api']['port'],
-                              CONF['admin_api']['ssl_keyfile'],
-                              CONF['admin_api']['ssl_certfile'])
     wsgi.server(sock, api, keepalive=False)
 
     return 0

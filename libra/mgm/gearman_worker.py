@@ -21,19 +21,22 @@ from oslo.config import cfg
 
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.mgm.controllers.root import PoolMgmController
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 def handler(worker, job):
-    logger = worker.logger
-    logger.debug("Received JSON message: {0}".format(json.dumps(job.data)))
-    controller = PoolMgmController(logger, job.data)
+    LOG.debug("Received JSON message: {0}".format(json.dumps(job.data)))
+    controller = PoolMgmController(job.data)
     response = controller.run()
-    logger.debug("Return JSON message: {0}".format(json.dumps(response)))
+    LOG.debug("Return JSON message: {0}".format(json.dumps(response)))
     return response
 
 
-def worker_thread(logger):
-    logger.info("Registering task libra_pool_mgm")
+def worker_thread():
+    LOG.info("Registering task libra_pool_mgm")
     hostname = socket.gethostname()
 
     server_list = []
@@ -52,7 +55,7 @@ def worker_thread(logger):
 
     worker.set_client_id(hostname)
     worker.register_task('libra_pool_mgm', handler)
-    worker.logger = logger
+    worker.logger = LOG
 
     retry = True
 
@@ -62,11 +65,11 @@ def worker_thread(logger):
         except KeyboardInterrupt:
             retry = False
         except gearman.errors.ServerUnavailable:
-            logger.error("Job server(s) went away. Reconnecting.")
+            LOG.error("Job server(s) went away. Reconnecting.")
             time.sleep(cfg.CONF['gearman']['reconnect_sleep'])
             retry = True
         except Exception:
-            logger.exception("Exception in worker")
+            LOG.exception("Exception in worker")
             retry = False
 
-    logger.debug("Pool manager process terminated.")
+    LOG.debug("Pool manager process terminated.")

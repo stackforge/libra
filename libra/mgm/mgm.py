@@ -20,25 +20,27 @@ import pwd
 import threading
 
 from libra import __version__
-from libra.common.options import add_common_opts, libra_logging, CONF
+from libra.common.options import add_common_opts, CONF
+from libra.common.log import get_descriptors
+from libra.openstack.common import log
 from libra.mgm.gearman_worker import worker_thread
 
 
+LOG = log.getLogger(__name__)
+
+
 class Server(object):
-    def __init__(self):
-        self.logger = None
-
     def main(self):
-        self.logger = libra_logging('libra_mgm', 'mgm')
+        log.setup('libra')
 
-        self.logger.info(
+        LOG.info(
             'Libra Pool Manager worker started, spawning {0} threads'
             .format(CONF['mgm']['threads'])
         )
         thread_list = []
         for x in xrange(0, CONF['mgm']['threads']):
             thd = threading.Thread(
-                target=worker_thread, args=[self.logger]
+                target=worker_thread, args=[]
             )
             thd.daemon = True
             thread_list.append(thd)
@@ -59,10 +61,13 @@ def main():
         pidfile = daemon.pidfile.TimeoutPIDLockFile(CONF['mgm']['pid'], 10)
         if daemon.runner.is_pidfile_stale(pidfile):
             pidfile.break_lock()
+
+        descriptors = get_descriptors()
         context = daemon.DaemonContext(
             working_directory='/',
             umask=0o022,
-            pidfile=pidfile
+            pidfile=pidfile,
+            files_preserve=descriptors
         )
         if CONF['user']:
             context.uid = pwd.getpwnam(CONF['user']).pw_uid
