@@ -14,19 +14,21 @@
 
 import ConfigParser
 import importlib
-import logging
 
 from oslo.config import cfg
 from pecan import request
 
 from libra.api.library.exp import NotAuthorized
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 def get_limited_to_project(headers):
     """Return the tenant the request should be limited to."""
     tenant_id = headers.get('X-Tenant-Id')
-    logger = logging.getLogger(__name__)
-    logger.info(
+    LOG.info(
         'Loadbalancers {0} request {1} ({2}) from {3} tenant {4}'.format(
             request.environ.get('REQUEST_METHOD'),
             request.environ.get('PATH_INFO'),

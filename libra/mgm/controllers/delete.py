@@ -13,6 +13,10 @@
 # under the License.
 
 from libra.mgm.nova import Node, NotFound
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class DeleteController(object):
@@ -21,32 +25,31 @@ class DeleteController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, msg):
-        self.logger = logger
+    def __init__(self, msg):
         self.msg = msg
 
     def run(self):
         try:
             nova = Node()
         except Exception:
-            self.logger.exception("Error initialising Nova connection")
+            LOG.exception("Error initialising Nova connection")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
 
-        self.logger.info(
+        LOG.info(
             "Deleting a requested Nova instance {0}".format(self.msg['name'])
         )
         try:
             node_id = nova.get_node(self.msg['name'])
         except NotFound:
-            self.logger.error(
+            LOG.error(
                 "No node found for {0}".format(self.msg['name'])
             )
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg
         nova.delete(node_id)
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
-        self.logger.info(
+        LOG.info(
             'Deleted node {0}, id {1}'.format(self.msg['name'], node_id)
         )
         return self.msg

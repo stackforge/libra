@@ -15,11 +15,14 @@
 from gearman.constants import JOB_UNKNOWN
 from oslo.config import cfg
 from libra.common.json_gearman import JSONGearmanClient
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class GearJobs(object):
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
         self.poll_timeout = cfg.CONF['admin_api']['stats_poll_timeout']
         self.poll_retry = cfg.CONF['admin_api']['stats_poll_timeout_retry']
 
@@ -54,7 +57,7 @@ class GearJobs(object):
         for ping in submitted_pings:
             if ping.state == JOB_UNKNOWN:
                 # TODO: Gearman server failed, ignoring for now
-                self.logger.error('Gearman Job server fail')
+                LOG.error('Gearman Job server fail')
                 continue
             if ping.timed_out:
                 # Ping timeout
@@ -75,7 +78,7 @@ class GearJobs(object):
 
         list_of_jobs = []
         if len(retry_list) > 0:
-            self.logger.info(
+            LOG.info(
                 "{0} pings timed out, retrying".format(len(retry_list))
             )
             for node in retry_list:
@@ -87,7 +90,7 @@ class GearJobs(object):
             for ping in submitted_pings:
                 if ping.state == JOB_UNKNOWN:
                     # TODO: Gearman server failed, ignoring for now
-                    self.logger.error('Gearman Job server fail')
+                    LOG.error('Gearman Job server fail')
                     continue
                 if ping.timed_out:
                     # Ping timeout
@@ -120,7 +123,7 @@ class GearJobs(object):
         )
         for ping in submitted_pings:
             if ping.state == JOB_UNKNOWN:
-                self.logger.error(
+                LOG.error(
                     "Gearman Job server failed during OFFLINE check of {0}".
                     format(ping.job.task)
                 )
