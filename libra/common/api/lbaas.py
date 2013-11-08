@@ -14,7 +14,6 @@
 # under the License.
 
 import ConfigParser
-import logging
 import sqlalchemy.types as types
 import time
 
@@ -24,6 +23,10 @@ from sqlalchemy import Table, Column, Integer, ForeignKey, create_engine
 from sqlalchemy import INTEGER, VARCHAR, BIGINT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, Session
+
+from libra.openstack.common import log
+
+LOG = log.getLogger(__name__)
 
 
 DeclarativeBase = declarative_base()
@@ -219,7 +222,6 @@ class RoutingSession(Session):
 class db_session(object):
     def __init__(self):
         self.session = None
-        self.logger = logging.getLogger(__name__)
 
     def __enter__(self):
         for x in xrange(10):
@@ -228,7 +230,7 @@ class db_session(object):
                 self.session.execute("SELECT 1")
                 return self.session
             except:
-                self.logger.error(
+                LOG.error(
                     'Could not connect to DB server: {0}'.format(
                         RoutingSession.engines[RoutingSession.use_engine].url
                     )
@@ -237,7 +239,7 @@ class db_session(object):
                 RoutingSession.use_engine += 1
                 if RoutingSession.use_engine == RoutingSession.engines_count:
                     RoutingSession.use_engine = 0
-        self.logger.error('Could not connect to any DB server')
+        LOG.error('Could not connect to any DB server')
         return None
 
     def __exit__(self, type, value, traceback):
