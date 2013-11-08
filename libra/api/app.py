@@ -30,7 +30,10 @@ from libra.api import config as api_config
 from libra.api import model
 from libra.api import acl
 from libra.common.api import server
-from libra.common.options import add_common_opts, libra_logging, CONF
+from libra.common.options import add_common_opts, CONF
+from libra.openstack.common import log
+
+LOG = log.getLogger(__name__)
 
 
 # Gets rid of pep8 error
@@ -89,12 +92,9 @@ def setup_app(pecan_config):
 
 
 class LogStdout(object):
-    def __init__(self, logger):
-        self.logger = logger.info
-
     def write(self, data):
         if data.strip() != '':
-            self.logger(data)
+            LOG.info(data)
 
     # Gearman calls this
     def flush(self):
@@ -104,6 +104,7 @@ class LogStdout(object):
 def main():
     add_common_opts()
     CONF(project='libra', version=__version__)
+    log.setup('libra')
 
     pc = get_pecan_config()
 
@@ -130,12 +131,9 @@ def main():
             context.gid = grp.getgrnam(CONF['group']).gr_gid
         context.open()
 
-    # Use the root logger due to lots of services using logger
-    logger = libra_logging('', 'api')
-    logger.info('Starting on {0}:{1}'.format(CONF['api']['host'],
-                                             CONF['api']['port']))
+    LOG.info('Starting on %s:%d', CONF.api.host, CONF.api.port)
     api = setup_app(pc)
-    sys.stderr = LogStdout(logger)
+    sys.stderr = LogStdout()
 
     wsgi.server(sock, api, keepalive=False, debug=CONF['debug'])
 
