@@ -14,13 +14,20 @@
 
 import eventlet
 eventlet.monkey_patch()
-import logging
 import ipaddress
 from libra.common.json_gearman import JSONGearmanClient
 from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.api.lbaas import loadbalancers_devices
+<<<<<<< HEAD
+=======
+from libra.openstack.common import log
+from sqlalchemy.exc import OperationalError
+>>>>>>> 8706319... [LOGGING] Change to use oslo logging
 from pecan import conf
+
+
+LOG = log.getLogger(__name__)
 
 
 gearman_workers = [
@@ -35,14 +42,12 @@ gearman_workers = [
 
 
 def submit_job(job_type, host, data, lbid):
-    logger = logging.getLogger(__name__)
-    eventlet.spawn_n(client_job, logger, job_type, str(host), data, lbid)
+    eventlet.spawn_n(client_job, LOG, job_type, str(host), data, lbid)
 
 
 def submit_vip_job(job_type, device, vip):
-    logger = logging.getLogger(__name__)
     eventlet.spawn_n(
-        client_job, logger, job_type, "libra_pool_mgm", device, vip
+        client_job, LOG, job_type, "libra_pool_mgm", device, vip
     )
 
 
@@ -103,8 +108,7 @@ def client_job(logger, job_type, host, data, lbid):
 
 
 class GearmanClientThread(object):
-    def __init__(self, logger, host, lbid):
-        self.logger = logger
+    def __init__(self, host, lbid):
         self.host = host
         self.lbid = lbid
 
@@ -141,11 +145,12 @@ class GearmanClientThread(object):
                     first()
                 if vip is None:
                     errmsg = 'Floating IP assign failed (none available)'
-                    self.logger.error(
+                    LOG.error(
                         "Failed to assign IP to device {0} (none available)"
                         .format(data)
                     )
                     self._set_error(device.id, errmsg, session)
+<<<<<<< HEAD
                     session.commit()
                     return False
             else:
@@ -156,6 +161,23 @@ class GearmanClientThread(object):
                     self.logger.error(
                         "Failed to assign IP to device {0}"
                         .format(data)
+=======
+                    status = False
+                    break
+
+                ip_str = str(ipaddress.IPv4Address(vip.ip))
+
+                job_data = {
+                    'action': 'ASSIGN_IP',
+                    'name': data,
+                    'ip': ip_str
+                }
+                status, response = self._send_message(job_data, 'response')
+                if not status:
+                    LOG.error(
+                        "Failed to assign IP {0} to device {1} (attempt {2})"
+                        .format(ip_str, data, x)
+>>>>>>> 8706319... [LOGGING] Change to use oslo logging
                     )
                     self._set_error(device.id, errmsg, session)
                     session.commit()
@@ -164,6 +186,7 @@ class GearmanClientThread(object):
             vip_id = vip.id
             vip_ip = vip.ip
             session.commit()
+<<<<<<< HEAD
         ip_str = str(ipaddress.IPv4Address(vip_ip))
 
         job_data = {
@@ -183,6 +206,13 @@ class GearmanClientThread(object):
             self.logger.error(
                 "Failed to assign IP {0} to device {1}"
                 .format(ip_str, data)
+=======
+        for ip in bad_vips:
+                submit_vip_job('REMOVE', None, ip)
+        if not status:
+            LOG.error(
+                "Giving up vip assign for device {0}".format(data)
+>>>>>>> 8706319... [LOGGING] Change to use oslo logging
             )
             # set to device 0 to make sure it won't be used again
             with db_session() as session:
@@ -201,7 +231,7 @@ class GearmanClientThread(object):
         ip_int = int(ipaddress.IPv4Address(unicode(self.lbid)))
         with db_session() as session:
             if not status:
-                self.logger.error(
+                LOG.error(
                     "Failed to delete IP {0}"
                     .format(self.lbid)
                 )
@@ -272,7 +302,7 @@ class GearmanClientThread(object):
                 filter(LoadBalancer.id == self.lbid).\
                 first()
             if not status:
-                self.logger.error(
+                LOG.error(
                     "Failed Gearman delete for LB {0}".format(lb.id)
                 )
                 self._set_error(data, response, session)
@@ -356,7 +386,7 @@ class GearmanClientThread(object):
 
             degraded = []
             if lbs is None:
-                self.logger.error(
+                LOG.error(
                     'Attempting to send empty LB data for device {0} ({1}), '
                     'something went wrong'.format(data, self.host)
                 )
@@ -453,15 +483,15 @@ class GearmanClientThread(object):
         )
         if job_status.state == 'UNKNOWN':
             # Gearman server connection failed
-            self.logger.error('Could not talk to gearman server')
+            LOG.error('Could not talk to gearman server')
             return False, "System error communicating with load balancer"
         if job_status.timed_out:
             # Job timed out
-            self.logger.warning(
+            LOG.warning(
                 'Gearman timeout talking to {0}'.format(self.host)
             )
             return False, "Timeout error communicating with load balancer"
-        self.logger.debug(job_status.result)
+        LOG.debug(job_status.result)
         if 'badRequest' in job_status.result:
             error = job_status.result['badRequest']['validationErrors']
             return False, error['message']
@@ -471,9 +501,9 @@ class GearmanClientThread(object):
                 error = job_status.result['hpcs_error']
             else:
                 error = 'Load Balancer error'
-            self.logger.error(
+            LOG.error(
                 'Gearman error response from {0}: {1}'.format(self.host, error)
             )
             return False, error
-        self.logger.info('Gearman success from {0}'.format(self.host))
+        LOG.info('Gearman success from {0}'.format(self.host))
         return True, job_status.result

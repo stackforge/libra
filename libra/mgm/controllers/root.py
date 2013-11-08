@@ -16,6 +16,10 @@ from libra.mgm.controllers.build import BuildController
 from libra.mgm.controllers.delete import DeleteController
 from libra.mgm.controllers.vip import BuildIpController, AssignIpController
 from libra.mgm.controllers.vip import RemoveIpController, DeleteIpController
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class PoolMgmController(object):
@@ -25,13 +29,12 @@ class PoolMgmController(object):
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
 
-    def __init__(self, logger, json_msg):
-        self.logger = logger
+    def __init__(self, json_msg):
         self.msg = json_msg
 
     def run(self):
         if self.ACTION_FIELD not in self.msg:
-            self.logger.error("Missing `{0}` value".format(self.ACTION_FIELD))
+            LOG.error("Missing `{0}` value".format(self.ACTION_FIELD))
             self.msg[self.RESPONSE_FILED] = self.RESPONSE_FAILURE
             return self.msg
 
@@ -39,19 +42,19 @@ class PoolMgmController(object):
 
         try:
             if action == 'BUILD_DEVICE':
-                controller = BuildController(self.logger, self.msg)
+                controller = BuildController(self.msg)
             elif action == 'DELETE_DEVICE':
-                controller = DeleteController(self.logger, self.msg)
+                controller = DeleteController(self.msg)
             elif action == 'BUILD_IP':
-                controller = BuildIpController(self.logger, self.msg)
+                controller = BuildIpController(self.msg)
             elif action == 'ASSIGN_IP':
-                controller = AssignIpController(self.logger, self.msg)
+                controller = AssignIpController(self.msg)
             elif action == 'REMOVE_IP':
-                controller = RemoveIpController(self.logger, self.msg)
+                controller = RemoveIpController(self.msg)
             elif action == 'DELETE_IP':
-                controller = DeleteIpController(self.logger, self.msg)
+                controller = DeleteIpController(self.msg)
             else:
-                self.logger.error(
+                LOG.error(
                     "Invalid `{0}` value: {1}".format(
                         self.ACTION_FIELD, action
                     )
@@ -66,13 +69,11 @@ class PoolMgmController(object):
                 and 'name' in self.msg
             ):
                 delete_msg = {'name': self.msg['name']}
-                controller = DeleteController(
-                    self.logger, delete_msg
-                )
+                controller = DeleteController(delete_msg)
                 controller.run()
 
             return self.msg
         except Exception:
-            self.logger.exception("Controller exception")
+            LOG.exception("Controller exception")
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             return self.msg

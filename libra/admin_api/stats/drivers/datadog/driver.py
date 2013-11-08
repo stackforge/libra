@@ -15,11 +15,15 @@ from dogapi import dog_http_api as api
 from oslo.config import cfg
 
 from libra.admin_api.stats.drivers.base import AlertDriver
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class DatadogDriver(AlertDriver):
-    def __init__(self, logger):
-        super(DatadogDriver, self).__init__(logger)
+    def __init__(self):
+        super(DatadogDriver, self).__init__()
         api.api_key = cfg.CONF['admin_api']['datadog_api_key']
         api.application_key = cfg.CONF['admin_api']['datadog_app_key']
         self.dd_env = cfg.CONF['admin_api']['datadog_env']
@@ -35,7 +39,7 @@ class DatadogDriver(AlertDriver):
         resp = api.event_with_response(
             title, text, tags=tags, alert_type='error'
         )
-        self.logger.info('Datadog alert response: {0}'.format(resp))
+        LOG.info('Datadog alert response: {0}'.format(resp))
 
     def send_delete(self, message, device_id):
         title = 'Load balancer unreachable in {0}'.\
@@ -47,4 +51,4 @@ class DatadogDriver(AlertDriver):
         resp = api.event_with_response(
             title, text, tags=tags, alert_type='success'
         )
-        self.logger.info('Datadog alert response: {0}'.format(resp))
+        LOG.info('Datadog alert response: {0}'.format(resp))

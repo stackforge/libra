@@ -37,9 +37,6 @@ cfg.CONF.register_opts(
                    default='keystoneclient.middleware.auth_token:AuthProtocol',
                    help='A colon separated module and class for keystone '
                         ' middleware'),
-        cfg.StrOpt('logfile',
-                   default='/var/log/libra/libra_api.log',
-                   help='Log file'),
         cfg.StrOpt('pid',
                    default='/var/run/libra/libra_api.pid',
                    help='PID file'),
