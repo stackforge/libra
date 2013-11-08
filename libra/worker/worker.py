@@ -21,6 +21,10 @@ from oslo.config import cfg
 
 from libra.common.json_gearman import JSONGearmanWorker
 from libra.worker.controller import LBaaSController
+from libra.openstack.common import log
+
+
+LOG = log.getLogger(__name__)
 
 
 class CustomJSONGearmanWorker(JSONGearmanWorker):
@@ -45,9 +49,9 @@ def handler(worker, job):
     if LBaaSController.OBJ_STORE_TOKEN_FIELD in copy:
         copy[LBaaSController.OBJ_STORE_TOKEN_FIELD] = "*****"
 
-    logger.debug("Received JSON message: %s" % json.dumps(copy))
+    LOG.debug("Received JSON message: %s" % json.dumps(copy))
 
-    controller = LBaaSController(logger, driver, job.data)
+    controller = LBaaSController(driver, job.data)
     response = controller.run()
 
     # Hide information that should not be logged
@@ -55,15 +59,15 @@ def handler(worker, job):
     if LBaaSController.OBJ_STORE_TOKEN_FIELD in copy:
         copy[LBaaSController.OBJ_STORE_TOKEN_FIELD] = "*****"
 
-    logger.debug("Return JSON message: %s" % json.dumps(copy))
+    LOG.debug("Return JSON message: %s" % json.dumps(copy))
     return copy
 
 
-def config_thread(logger, driver):
+def config_thread(driver):
     """ Worker thread function. """
     # Hostname should be a unique value, like UUID
     hostname = socket.gethostname()
-    logger.info("[worker] Registering task %s" % hostname)
+    LOG.info("[worker] Registering task %s" % hostname)
 
     server_list = []
     for host_port in cfg.CONF['gearman']['servers']:
@@ -81,7 +85,7 @@ def config_thread(logger, driver):
     worker = CustomJSONGearmanWorker(server_list)
     worker.set_client_id(hostname)
     worker.register_task(hostname, handler)
-    worker.logger = logger
+    worker.logger = LOG
     worker.driver = driver
 
     retry = True
@@ -92,11 +96,11 @@ def config_thread(logger, driver):
         except KeyboardInterrupt:
             retry = False
         except gearman.errors.ServerUnavailable:
-            logger.error("[worker] Job server(s) went away. Reconnecting.")
+            LOG.error("[worker] Job server(s) went away. Reconnecting.")
             time.sleep(cfg.CONF['gearman']['reconnect_sleep'])
             retry = True
         except Exception as e:
-            logger.critical("[worker] Exception: %s, %s" % (e.__class__, e))
+            LOG.critical("[worker] Exception: %s, %s" % (e.__class__, e))
             retry = False
 
-    logger.debug("[worker] Worker process terminated.")
+    LOG.debug("[worker] Worker process terminated.")

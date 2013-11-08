@@ -23,10 +23,15 @@ import threading
 
 from libra import __version__
 from libra.openstack.common import importutils
-from libra.common.options import libra_logging, add_common_opts, CONF
+from libra.openstack.common import log
+from libra.common.options import add_common_opts, CONF
 from libra.worker.drivers.base import known_drivers
 from libra.worker.drivers.haproxy.services_base import haproxy_services
 from libra.worker.worker import config_thread
+
+
+
+LOG = log.getLogger(__name__)
 
 
 class EventServer(object):
@@ -44,37 +49,41 @@ class EventServer(object):
             that function's arguments.
         """
         thread_list = []
-        logger = libra_logging('libra_worker', 'worker')
 
         driver = CONF['worker']['driver']
-        logger.info("Selected driver: %s" % driver)
+        LOG.info("Selected driver: %s" % driver)
         if driver == 'haproxy':
-            logger.info("Selected HAProxy service: %s" %
+            LOG.info("Selected HAProxy service: %s" %
                         CONF['worker:haproxy']['service'])
-        logger.info("Job server list: %s" % CONF['gearman']['servers'])
+        LOG.info("Job server list: %s" % CONF['gearman']['servers'])
 
         for task, task_args in tasks:
-            task_args = (logger,) + task_args  # Make the logger the first arg
+            task_args = () + task_args  # Make the LOG the first arg
             thd = threading.Thread(target=task, args=task_args)
             thd.daemon = True
             thread_list.append(thd)
             thd.start()
 
+        LOG.debug('DEBUG TEST')
+        LOG.warn('test')
+
         while True:
             try:
                 time.sleep(600)
             except KeyboardInterrupt:
-                logger.info("Non-daemon session terminated")
+                LOG.info("Non-daemon session terminated")
                 break
 
-        logger.info("Shutting down")
+        LOG.info("Shutting down")
 
 
 def main():
     """ Main Python entry point for the worker utility. """
 
-    add_common_opts()
+    add_common_opts(log_opts=False)
     CONF(project='libra', version=__version__)
+    log.setup('libra')
+
 
     # Import the device driver we are going to use. This will be sent
     # along to the Gearman task that will use it to communicate with
