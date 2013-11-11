@@ -16,7 +16,7 @@ import os
 import subprocess
 
 from libra.common.exc import DeletedStateError
-from libra.worker.drivers.haproxy.lbstats import LBStatistics
+from libra.worker.drivers.haproxy.stats import LBStatistics
 from libra.worker.drivers.haproxy.services_base import ServicesBase
 from libra.worker.drivers.haproxy.query import HAProxyQuery
 
@@ -176,3 +176,14 @@ class UbuntuServices(ServicesBase):
             stats.add_node_status(node, status)
 
         return stats
+
+    def get_statistics(self):
+        if not os.path.exists(self._config_file):
+            raise DeletedStateError("Load balancer is deleted.")
+        if not os.path.exists(self._haproxy_pid):
+            raise Exception("HAProxy is not running.")
+
+        query = HAProxyQuery('/var/run/haproxy-stats.socket')
+        results = query.get_bytes_out()
+
+        return results
