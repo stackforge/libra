@@ -12,22 +12,57 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import datetime
 import os
 import subprocess
 
-from libra.common.exc import DeletedStateError
-from libra.worker.drivers.haproxy.lbstats import LBStatistics
-from libra.worker.drivers.haproxy.services_base import ServicesBase
-from libra.worker.drivers.haproxy.query import HAProxyQuery
+from oslo.config import cfg
+
+from libra.common import exc
+from libra.openstack.common import log
+from libra.worker.drivers.haproxy import query
+from libra.worker.drivers.haproxy import services_base
+from libra.worker.drivers.haproxy import stats
+
+LOG = log.getLogger(__name__)
 
 
-class UbuntuServices(ServicesBase):
+class UbuntuServices(services_base.ServicesBase):
     """ Ubuntu-specific service implementation. """
 
     def __init__(self):
         self._haproxy_pid = '/var/run/haproxy.pid'
         self._config_file = '/etc/haproxy/haproxy.cfg'
         self._backup_config = self._config_file + '.BKUP'
+
+    def _save_unreported(self):
+        """
+        Save current HAProxy totals for an expected restart.
+        """
+        q = query.HAProxyQuery('/var/run/haproxy-stats.socket')
+        results = q.get_bytes_out()
+
+        stats_file = cfg.CONF['worker:haproxy']['statsfile']
+        stats_mgr = stats.StatisticsManager(stats_file)
+
+        # need to carry over current values
+        start = stats_mgr.get_start()
+        end = stats_mgr.get_end()
+        tcp_bo = stats_mgr.get_last_tcp_bytes()
+        http_bo = stats_mgr.get_last_http_bytes()
+
+        curr_tcp_bo = 0
+        curr_http_bo = 0
+        if 'tcp' in results:
+            curr_tcp_bo = results['tcp']
+        if 'http' in results:
+            curr_tcp_bo = results['http']
+
+        stats_mgr.save(start, end,
+                       tcp_bytes=tcp_bo,
+                       http_bytes=http_bo,
+                       unreported_tcp_bytes=curr_tcp_bo,
+                       unreported_http_bytes=curr_http_bo)
 
     def syslog_restart(self):
         cmd = '/usr/bin/sudo -n /usr/sbin/service rsyslog restart'
@@ -38,6 +73,8 @@ class UbuntuServices(ServicesBase):
 
     def service_stop(self):
         """ Stop the HAProxy service on the local machine. """
+        self._save_unreported()
+
         cmd = '/usr/bin/sudo -n /usr/sbin/service haproxy stop'
         try:
             subprocess.check_output(cmd.split())
@@ -65,6 +102,8 @@ class UbuntuServices(ServicesBase):
         This assumes that /etc/init.d/haproxy is using the -sf option
         to the haproxy process.
         """
+        self._save_unreported()
+
         cmd = '/usr/bin/sudo -n /usr/sbin/service haproxy reload'
         try:
             subprocess.check_output(cmd.split())
@@ -155,8 +194,7 @@ class UbuntuServices(ServicesBase):
 
         This function will query the HAProxy statistics socket and pull out
         the values that it needs for the given protocol (which equates to one
-        load balancer). The values are stored in a LBStatistics object that
-        will be returned to the caller.
+        load balancer).
 
         The output of the socket query is in CSV format and defined here:
 
@@ -164,15 +202,75 @@ class UbuntuServices(ServicesBase):
         """
 
         if not os.path.exists(self._config_file):
-            raise DeletedStateError("Load balancer is deleted.")
+            raise exc.DeletedStateError("Load balancer is deleted.")
         if not os.path.exists(self._haproxy_pid):
             raise Exception("HAProxy is not running.")
 
-        stats = LBStatistics()
-        query = HAProxyQuery('/var/run/haproxy-stats.socket')
+        q = query.HAProxyQuery('/var/run/haproxy-stats.socket')
+        return q.get_server_status(protocol)
 
-        node_status_list = query.get_server_status(protocol)
-        for node, status in node_status_list:
-            stats.add_node_status(node, status)
+    def get_statistics(self):
+        if not os.path.exists(self._config_file):
+            raise exc.DeletedStateError("Load balancer is deleted.")
+        if not os.path.exists(self._haproxy_pid):
+            raise Exception("HAProxy is not running.")
 
-        return stats
+        q = query.HAProxyQuery('/var/run/haproxy-stats.socket')
+        results = q.get_bytes_out()
+
+        stats_file = cfg.CONF['worker:haproxy']['statsfile']
+        stats_mgr = stats.StatisticsManager(stats_file)
+
+        # date range for this report
+        new_start = stats_mgr.calculate_new_start()
+        new_end = datetime.datetime.utcnow()
+
+        # previously recorded totals
+        prev_tcp_bo = stats_mgr.get_last_tcp_bytes()
+        prev_http_bo = stats_mgr.get_last_http_bytes()
+        unrpt_tcp_bo = stats_mgr.get_unreported_tcp_bytes()
+        unrpt_http_bo = stats_mgr.get_unreported_http_bytes()
+
+        # current totals
+        current_tcp_bo = 0
+        current_http_bo = 0
+        if 'http' in results:
+            current_http_bo = results['http']
+        if 'tcp' in results:
+            current_tcp_bo = results['tcp']
+
+        # If our totals that we previously recorded are greater than the
+        # totals we have now, and no unreported values, then somehow HAProxy
+        # was restarted outside of the worker's control, so we have no choice
+        # but to zero the values to avoid overcharging on usage.
+        if (unrpt_tcp_bo == 0 and unrpt_http_bo == 0) and \
+           (prev_tcp_bo > current_tcp_bo) or (prev_http_bo > current_http_bo):
+            LOG.warn("Forced reset of HAProxy statistics")
+            prev_tcp_bo = 0
+            prev_http_bo = 0
+
+        # Record totals for each protocol for comparison in the next request.
+        stats_mgr.save(new_start, new_end,
+                       tcp_bytes=current_tcp_bo,
+                       http_bytes=current_http_bo)
+
+        # We are to deliver the number of bytes out since our last report,
+        # not the total, so calculate that here. Some examples:
+        #
+        #   unreported total(A) | prev total(B) | current(C) | returned value
+        #   --------------------+---------------+------------+---------------
+        #           0           |   0           |  200       |  200  A + C - B
+        #           0           |   200         |  1500      |  1300 A + C - B
+        #           2000        |   1500        |  100       |  600  A + C - B
+
+        incremental_results = []
+        if 'http' in results:
+            incremental_results.append(
+                ('http', unrpt_http_bo + current_http_bo - prev_http_bo)
+            )
+        if 'tcp' in results:
+            incremental_results.append(
+                ('tcp', unrpt_tcp_bo + current_tcp_bo - prev_tcp_bo)
+            )
+
+        return str(new_start), str(new_end), incremental_results
