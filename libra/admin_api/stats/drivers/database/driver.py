@@ -77,6 +77,7 @@ class DbDriver(AlertDriver):
                     session.query(loadbalancers_devices.c.device)
                 )).\
                 filter(Device.status == "OFFLINE").\
+                filter(Device.pingCount == 0).\
                 with_lockmode('update').\
                 first()
             if new_device is None:
@@ -122,7 +123,7 @@ class DbDriver(AlertDriver):
                 .format(str(ipaddress.IPv4Address(vip.ip)), device_id)
             )
             submit_vip_job(
-                'ASSIGN', new_device_name, str(ipaddress.IPv4Address(vip.ip))
+                'ASSIGN', new_device_name, vip.id
             )
             new_device.status = 'ONLINE'
             session.commit()
