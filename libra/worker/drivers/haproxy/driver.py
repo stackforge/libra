@@ -396,6 +396,9 @@ class HAProxyDriver(LoadBalancerDriver):
     def get_status(self, protocol=None):
         return self.ossvc.get_status(protocol)
 
+    def get_statistics(self):
+        return self.ossvc.get_statistics()
+
     def archive(self, method, params):
         """
         Implementation of the archive() API call.

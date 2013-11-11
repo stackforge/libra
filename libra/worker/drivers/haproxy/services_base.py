@@ -50,8 +50,12 @@ class ServicesBase:
         """ Remove current and saved HAProxy config files. """
         raise NotImplementedError()
 
-    def get_stats(self):
-        """ Get the stats from HAProxy. """
+    def get_status(self, protocol):
+        """ Get status from HAProxy. """
+        raise NotImplementedError()
+
+    def get_statistics(self):
+        """ Get statistics from HAProxy. """
         raise NotImplementedError()
 
     def sudo_copy(self, from_file, to_file):
