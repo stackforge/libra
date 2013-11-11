@@ -21,7 +21,7 @@ from libra import __release__ as libra_release
 from libra.common.exc import DeletedStateError
 from libra.common.faults import BadRequest
 from libra.openstack.common import log
-from libra.worker.drivers.base import LoadBalancerDriver
+from libra.worker.drivers import base
 
 LOG = log.getLogger(__name__)
 
@@ -71,8 +71,7 @@ class LBaaSController(object):
             elif action == 'ARCHIVE':
                 return self._action_archive()
             elif action == 'STATS':
-                # TODO: Implement new STATS function
-                return self._action_ping()
+                return self._action_stats()
             elif action == 'PING':
                 return self._action_ping()
             elif action == 'DIAGNOSTICS':
@@ -203,15 +202,15 @@ class LBaaSController(object):
             if 'algorithm' in current_lb:
                 algo = current_lb['algorithm'].upper()
                 if algo == 'ROUND_ROBIN':
-                    algo = LoadBalancerDriver.ROUNDROBIN
+                    algo = base.LoadBalancerDriver.ROUNDROBIN
                 elif algo == 'LEAST_CONNECTIONS':
-                    algo = LoadBalancerDriver.LEASTCONN
+                    algo = base.LoadBalancerDriver.LEASTCONN
                 else:
                     LOG.error("Invalid algorithm: %s" % algo)
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
             else:
-                algo = LoadBalancerDriver.ROUNDROBIN
+                algo = base.LoadBalancerDriver.ROUNDROBIN
 
             try:
                 self.driver.set_algorithm(current_lb['protocol'], algo)
@@ -451,26 +450,71 @@ class LBaaSController(object):
         """
 
         try:
-            stats = self.driver.get_status()
+            status = self.driver.get_status()
         except NotImplementedError:
             error = "Selected driver does not support PING action."
             LOG.error(error)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
         except DeletedStateError:
-            LOG.info("Invalid operation PING on a deleted LB")
+            error = "Invalid operation PING on a deleted LB."
+            LOG.error(error)
             self.msg['status'] = 'DELETED'
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = error
         except Exception as e:
             LOG.error("PING failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
         else:
-            node_status = stats.node_status_map()
+            node_status = status.node_status_map()
             self.msg['nodes'] = []
             for node in node_status.keys():
                 self.msg['nodes'].append({'id': node,
                                           'status': node_status[node]})
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
 
+        return self.msg
+
+    def _action_stats(self):
+        """
+        Get load balancer statistics
+
+        This type of request gets the number of bytes out for each load
+        balancer defined on the device. If both a TCP and HTTP load
+        balancer exist, we report on each in a single response.
+        """
+
+        try:
+            start, end, statistics = self.driver.get_statistics()
+        except NotImplementedError:
+            error = "Selected driver does not support STATS action."
+            LOG.error(error)
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = error
+            return self.msg
+        except DeletedStateError:
+            error = "Invalid operation STATS on a deleted LB."
+            LOG.error(error)
+            self.msg['status'] = 'DELETED'
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = error
+            return self.msg
+        except Exception as e:
+            LOG.error("STATS failed: %s, %s" % (e.__class__, e))
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            self.msg[self.ERROR_FIELD] = str(e)
+            return self.msg
+
+        self.msg['utc_start'] = start
+        self.msg['utc_end'] = end
+        self.msg['loadBalancers'] = []
+
+        # We should have a list of tuples pairing the number of bytes
+        # out with the protocol/LB.
+        for proto, bytes_out in statistics:
+            self.msg['loadBalancers'].append({'protocol': proto,
+                                              'bytes_out': bytes_out})
+
+        self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg

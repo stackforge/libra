@@ -16,7 +16,13 @@ import subprocess
 
 
 class HAProxyQuery(object):
-    """ Class used for querying the HAProxy statistics socket. """
+    """
+    Class used for querying the HAProxy statistics socket.
+
+    The CSV output is defined in the HAProxy documentation:
+
+    http://cbonte.github.io/haproxy-dconv/configuration-1.4.html#9
+    """
 
     def __init__(self, stats_socket):
         """
@@ -59,8 +65,8 @@ class HAProxyQuery(object):
         object_type
           Select the type of dumpable object. Values can be ORed.
              -1 - everything
-              1 - backends
-              2 - frontents
+              1 - frontends
+              2 - backends
               4 - servers
 
         server_id
@@ -70,6 +76,30 @@ class HAProxyQuery(object):
                               % (proxy_iid, object_type, server_id))
         list_results = results.split('\n')
         return list_results
+
+    def get_bytes_out(self, protocol=None):
+        """
+        Get bytes out for the given protocol, or all protocols if
+        not specified.
+
+        Return a list of tuples containing protocol and bytes out.
+        """
+        if protocol:
+            filter_string = protocol.lower() + "-servers"
+
+        results = self.show_stat(object_type=2)  # backends only
+
+        final_results = []
+        for line in results[1:]:
+            elements = line.split(',')
+            if protocol and elements[0] != filter_string:
+                next
+            else:
+                proto, ignore = elements[0].split('-')
+                bytes_out = int(elements[9])
+                final_results.append((proto, bytes_out))
+
+        return final_results
 
     def get_server_status(self, protocol=None):
         """

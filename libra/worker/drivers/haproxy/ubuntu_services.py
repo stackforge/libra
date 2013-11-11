@@ -12,16 +12,22 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import datetime
 import os
 import subprocess
 
-from libra.common.exc import DeletedStateError
-from libra.worker.drivers.haproxy.lbstats import LBStatistics
-from libra.worker.drivers.haproxy.services_base import ServicesBase
-from libra.worker.drivers.haproxy.query import HAProxyQuery
+from oslo.config import cfg
+
+from libra.common import exc
+from libra.openstack.common import log
+from libra.worker.drivers.haproxy import query
+from libra.worker.drivers.haproxy import services_base
+from libra.worker.drivers.haproxy import stats
+
+LOG = log.getLogger(__name__)
 
 
-class UbuntuServices(ServicesBase):
+class UbuntuServices(services_base.ServicesBase):
     """ Ubuntu-specific service implementation. """
 
     def __init__(self):
@@ -164,15 +170,75 @@ class UbuntuServices(ServicesBase):
         """
 
         if not os.path.exists(self._config_file):
-            raise DeletedStateError("Load balancer is deleted.")
+            raise exc.DeletedStateError("Load balancer is deleted.")
         if not os.path.exists(self._haproxy_pid):
             raise Exception("HAProxy is not running.")
 
-        stats = LBStatistics()
-        query = HAProxyQuery('/var/run/haproxy-stats.socket')
+        statistics = stats.LBStatistics()
+        q = query.HAProxyQuery('/var/run/haproxy-stats.socket')
 
-        node_status_list = query.get_server_status(protocol)
+        node_status_list = q.get_server_status(protocol)
         for node, status in node_status_list:
-            stats.add_node_status(node, status)
+            statistics.add_node_status(node, status)
 
-        return stats
+        return statistics
+
+    def get_statistics(self):
+        if not os.path.exists(self._config_file):
+            raise exc.DeletedStateError("Load balancer is deleted.")
+        if not os.path.exists(self._haproxy_pid):
+            raise Exception("HAProxy is not running.")
+
+        q = query.HAProxyQuery('/var/run/haproxy-stats.socket')
+        results = q.get_bytes_out()
+
+        stats_file = cfg.CONF['worker:haproxy']['statsfile']
+        stats_mgr = stats.StatisticsManager(stats_file)
+
+        # Read the contents (if any) of the existing file.
+        stats_mgr.read()
+
+        # Calculate a new start value for our reporting time range,
+        # which should be just after the last reported end value. If
+        # there is no start value, then we haven't recorded one yet
+        # (i.e., haven't reported any stats yet) so use the current time.
+        new_start = stats_mgr.get_last_end()
+        if new_start is None:
+            new_start = datetime.datetime.utcnow()
+        else:
+            new_start = new_start + datetime.timedelta(microseconds=1)
+
+        new_end = datetime.datetime.utcnow()
+        prev_tcp_bo = stats_mgr.get_last_tcp_bytes()
+        prev_http_bo = stats_mgr.get_last_http_bytes()
+        tcp_bo = 0
+        http_bo = 0
+
+        for proto, bytes_out in results:
+            if proto.lower() == 'http':
+                http_bo = bytes_out
+            elif proto.lower() == 'tcp':
+                tcp_bo = bytes_out
+
+        # If our totals that we previously recorded are greater than the
+        # totals we have now, then somehow HAProxy was restarted outside
+        # of the worker's control, so we have no choice but to zero the
+        # values to avoid overcharging on usage.
+        if (prev_tcp_bo > tcp_bo) or (prev_http_bo > http_bo):
+            LOG.warn("Forced reset of HAProxy statistics")
+            prev_tcp_bo = 0
+            prev_http_bo = 0
+
+        # Record totals for each protocol for comparison in the next request.
+        stats_mgr.save_last_queried(new_start, new_end, tcp_bo, http_bo)
+
+        # We are to deliver the number of bytes out since our last report,
+        # not the total, so calculate that here.
+        incremental_results = []
+        for proto, bytes_out in results:
+            if proto.lower() == 'http':
+                incremental_results.append((proto, http_bo - prev_http_bo))
+            elif proto.lower() == 'tcp':
+                incremental_results.append((proto, tcp_bo - prev_tcp_bo))
+
+        return str(new_start), str(new_end), incremental_results
