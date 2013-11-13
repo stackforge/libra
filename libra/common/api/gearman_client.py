@@ -436,12 +436,13 @@ class GearmanClientThread(object):
                     else:
                         lb.status = 'ACTIVE'
                         lb.errmsg = None
-                device = session.query(Device).\
-                    filter(Device.id == data).\
-                    first()
-                device_name = device.name
+            device = session.query(Device).\
+                filter(Device.id == data).\
+                first()
+            device_name = device.name
+            device_status = device.status
             session.commit()
-            if device.status == 'BUILD':
+            if device_status == 'BUILD':
                 submit_vip_job(
                     'ASSIGN', device_name, None
                 )
