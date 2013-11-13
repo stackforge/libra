@@ -11,3 +11,4 @@ Installing Libra LBaas
    ppa
    diskimage-builder
    verify
+   worker

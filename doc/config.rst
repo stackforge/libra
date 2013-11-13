@@ -48,7 +48,7 @@ Global Section
       syslog-facility = local7
       debug = true
       pid = /var/run/libra_tool.pid
-      logfile = /var/log/libra/libra_tool.log
+      log_file = /var/log/libra/libra_tool.log
       user = libra
       group = libra
 
@@ -78,7 +78,7 @@ Common Command Line Options
 
       Show the help message and quit.
 
-   .. option:: -l <FILE>, --logfile <FILE>
+   .. option:: -l <FILE>, --log_file <FILE>
 
       Name of the log file. When not in daemon mode, the logs go by
       default to STDOUT. As a daemon, the default log file is
