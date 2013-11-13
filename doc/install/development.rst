@@ -18,6 +18,9 @@ using:
 * n+ Nodes for workers that is going to run HAProxy
 * Ubuntu 12.04 as our OS of choice
 
+
+.. _install-dev-common:
+
 Common steps
 ============
 
@@ -50,7 +53,7 @@ Installing
 
 1. Do steps in :doc:`ppa`
 
-2. Do steps in 'Common steps'
+2. Do steps in :ref:`install-dev-common`
 
 3. Install dependencies
 
@@ -101,7 +104,7 @@ Installing
 
 ::
 
-    $ sudo cp etc/sample_libra.cfg /etc/libra.cfg
+    $ sudo cp etc/libra/ /etc/libra
 
 10. Change running as libra to ubuntu
 
@@ -111,13 +114,13 @@ Installing
 
 ::
 
-    $ sudo sed -r -i 's/^(group|user).*libra/\1 = ubuntu/' /etc/libra.cfg
+    $ sudo sed -r -i 's/^(group|user).*libra/\1 = ubuntu/' /etc/libra/libra.cfg
 
 11. Configure libra
 
 ::
 
-    $ sudo vi /etc/libra.cfg
+    $ sudo vi /etc/libra/libra.cfg
 
 .. note::
 
@@ -154,14 +157,14 @@ Bring up services
 
 ::
 
-    $ libra-pool-mgm -c /etc/libra.cfg
+    $ libra_pool_mgm --config-file /etc/libra/libra.cfg --log-file /var/log/libra/pool_mgm.log
 
 2. Start Admin API & API services
 
 ::
 
-    $ libra-admin-api -c /etc/libra.cfg
-    $ libra-api -c /etc/libra.cfg
+    $ libra_admin_api --config-file /etc/libra/libra.cfg --log-file /var/log/libra/admin_api.log
+    $ libra_api --config-file /etc/libra/libra.cfg --log-file /var/log/libra/api.log
 
 
 Creating a Worker Image
@@ -206,16 +209,13 @@ Creating a Worker Image
 
     $ ssh ubuntu@<ip>
 
-5. Do steps in 'Common steps'
+5. Do steps in :ref:`install-dev-common`
 
-6. Install HAProxy
+6. Do steps in ́:ref:`install-worker-haproxy`
 
-::
+7. Do steps in :ref:`install-worker-sudo`
 
-    $ apt-get install -qy haproxy socat
-
-
-7. Install python-gearman
+8. Install python-gearman
 
 .. note::
 
@@ -223,31 +223,35 @@ Creating a Worker Image
 
    sudo pip install  https://launchpad.net/~libra-core/+archive/ppa/+files/gearman_2.0.2.git2.orig.tar.gz
 
-8. Install dependencies using pip
+9. Install dependencies using pip
 
 ::
 
     $ sudo pip install -r requirements.txt -r test-requirements.txt
 
-9. Install Libra in development mode
+10. Install Libra in development mode
 
 ::
 
     $ sudo python setup.py develop
 
-10. Install a Upstart job
+11. Install a Upstart job
+
+.. note::
+
+    We provide an example one
 
 ::
 
-    $ sudo wget https://raw.github.com/pcrews/lbaas-salt/master/lbaas-haproxy-base/libra_worker.conf -O /etc/init/libra_worker.conf
+    $ sudo cp examples/dev-worker-upstart.conf /etc/init/worker.init
 
-11. Make a snapshot of the worker image
+12. Make a snapshot of the worker image
 
 ::
 
-    $ nova image-create worker libra-worker
+    $ nova image-create worker libra_worker
 
-12. At the libra-poo-mgm node change the 'nova_image' setting to the value of your newly created snapshot
+13. At the libra_pool_mgm node change the 'nova_image' setting to the value of your newly created snapshot
 
 .. note::
 
@@ -256,14 +260,14 @@ Creating a Worker Image
 
 ::
 
-    $ sudo vi /etc/libra.cfg
+    $ sudo vi /etc/libra/libra.cfg
 
-13. Restart libra-pool-mgm
+14. Restart libra_pool_mgm
 
 ::
 
     $ killall -9 libra_pool_mgm
-    $ libra_pool_mgm -c /etc/libra.cfg
+    $ libra_pool_mgm --config-file /etc/libra/libra.cfg --log-file /var/log/libra/pool_mgm.log
 
 Verifying that it works
 =======================
@@ -273,4 +277,4 @@ below command on the node that has the :ref:`libra-pool-mgm`
 
 ::
 
-    $ tail -f /var/log/libra/libra_mgm.log
+    $ tail -f /var/log/libra/pool_mgm.log

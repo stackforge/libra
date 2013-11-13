@@ -174,13 +174,15 @@ Worker image
 
 3. Do the steps in :doc:`ppa`.
 
-4. Install the :ref:`libra-worker` package and dependencies.
+4. Do steps in ́:ref:'install-worker-haproxy'
+
+5. Install the :ref:`libra-worker` package and dependencies.
 
 ::
 
     $ sudo apt-get install -qy libra-worker socat haproxy
 
-5. Configure the [worker] section in the configuration file.
+6. Configure the [worker] section in the configuration file.
 
 .. note:: See :ref:`configuration` for information about options
 
@@ -189,14 +191,14 @@ Worker image
     $ sudo cp /usr/share/libra/sample_libra.cfg /etc/libra.cfg
     $ sudo vi /etc/libra.cfg
 
-6. Make a snapshot of the image and take note of the ID (We'll be needing it later)
+7. Make a snapshot of the image and take note of the ID (We'll be needing it later)
 
 ::
 
     $ nova image-create worker libra-worker
     $ nova image-show libra-worker
 
-7. Shutdown the instance
+8. Shutdown the instance
 
     $ nova delete worker
 
