@@ -109,7 +109,8 @@ class DbDriver(AlertDriver):
             new_device = session.query(Device).\
                 filter(Device.id == new_device_id).first()
             vip = session.query(Vip).filter(Vip.device == device_id).first()
-            vip.device = new_device_id
+            if vip:
+                vip.device = new_device_id
             device = session.query(Device).\
                 filter(Device.id == device_id).first()
             device.status = 'DELETED'
@@ -118,12 +119,13 @@ class DbDriver(AlertDriver):
                 filter(Device.id == new_device_id).all()
             for lb in lbs:
                 lb.errmsg = "Load Balancer rebuild on new device"
-            logger.info(
-                "Moving IP {0} and marking device {1} for deletion"
-                .format(str(ipaddress.IPv4Address(vip.ip)), device_id)
-            )
-            submit_vip_job(
-                'ASSIGN', new_device_name, vip.id
-            )
+            if vip:
+                logger.info(
+                    "Moving IP {0} and marking device {1} for deletion"
+                    .format(str(ipaddress.IPv4Address(vip.ip)), device_id)
+                )
+                submit_vip_job(
+                    'ASSIGN', new_device_name, vip.id
+                )
             new_device.status = 'ONLINE'
             session.commit()
