@@ -33,6 +33,7 @@ from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
 from libra.common.api.gearman_client import submit_job
+from libra.common.api.mnb import update_mnb
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
 from libra.api.library.exp import ImmutableEntity, ImmutableStates
@@ -469,6 +470,9 @@ class LoadBalancersController(RestController):
                 'UPDATE', device.name, device.id, lb.id
             )
 
+            #Notify billing of the LB creation
+            update_mnb('lbaas.instance.create', lb.id, tenant_id)
+
             return return_data
 
     @wsme_pecan.wsexpose(None, body=LBPut, status_code=202)
@@ -579,6 +583,9 @@ class LoadBalancersController(RestController):
                 submit_job(
                     'DELETE', device.name, device.id, lb.id
                 )
+
+            #Notify billing of the LB deletion
+            update_mnb('lbaas.instance.delete', lb.id, tenant_id)
             return None
 
     def usage(self, load_balancer_id):
