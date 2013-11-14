@@ -72,7 +72,7 @@ CREATE TABLE monitors (
     timeout                           INT                   NOT NULL,                  # Maximum number of seconds to wait for a connection to the node before it times out.
     attemptsBeforeDeactivation        INT                   NOT NULL,                  # Number of permissible failures before removing a node from rotation. 1 to 10.
     path                              VARCHAR(2000)         NULL,                      # The HTTP path used in the request by the monitor. Begins with /
-    PRIMARY KEY (lbid)                                                                   # ids are unique accross all Nodes
+    PRIMARY KEY (lbid)                                                                 # ids are unique across all Nodes
  ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
 
 CREATE TABLE `pool_building` (
@@ -100,3 +100,24 @@ CREATE TABLE `global_limits` (
 
 INSERT INTO `global_limits` VALUES (1,'maxLoadBalancerNameLength',128),(2,'maxVIPsPerLoadBalancer',1),(3,'maxNodesPerLoadBalancer',50),(4,'maxLoadBalancers',20);
 
+# Billing
+CREATE TABLE billing (
+    id           int(11)             NOT NULL,
+    name         varchar(128)        NOT NULL,
+    last_update  DATETIME            NOT NULL DEFAULT '0000-00-00 00:00:00',    # timestamp of when the feature was last updated
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET latin1;
+
+INSERT INTO billing VALUES (1, 'stats', '0000-00-00 00:00:00'),(2, 'usage', '0000-00-00 00:00:00'),(3, 'exists', '0000-00-00 00:00:00');
+
+# Stats
+CREATE TABLE stats (
+    id             BIGINT                   NOT NULL AUTO_INCREMENT,               # unique id for this billing record
+    lbid           BIGINT                   NOT NULL REFERENCES loadblancers(id),  # fk for lbid
+    period_start   DATETIME                 NOT NULL,                              # timestamp of when this period started
+    period_end     DATETIME                 NOT NULL,                              # timestamp of when this period ended
+    bytes_out      BIGINT                   NOT NULL,                              # bytes transferred in this period
+    status         VARCHAR(50)              NOT NULL,                              # Current LB status
+    PRIMARY KEY (id)                                                               # ids are unique across all LBs
+ ) ENGINE=InnoDB DEFAULT CHARSET latin1;
+ 
