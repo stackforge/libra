@@ -20,7 +20,7 @@ import time
 from oslo.config import cfg
 from pecan import conf
 from sqlalchemy import Table, Column, Integer, ForeignKey, create_engine
-from sqlalchemy import INTEGER, VARCHAR, BIGINT
+from sqlalchemy import INTEGER, VARCHAR, BIGINT, DATETIME
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, Session
 
@@ -149,6 +149,28 @@ class HealthMonitor(DeclarativeBase):
         u'attemptsBeforeDeactivation', INTEGER(), nullable=False
     )
     path = Column(u'path', VARCHAR(length=2000))
+
+
+class Billing(DeclarativeBase):
+    __tablename__ = 'billing'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    name = Column(u'name', VARCHAR(length=128), nullable=False)
+    last_update = Column(u'last_update', DATETIME(), nullable=False)
+
+
+class Stats(DeclarativeBase):
+    """stats model"""
+    __tablename__ = 'stats'
+    #column definitions
+    id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
+    lbid = Column(
+        u'lbid', BIGINT(), ForeignKey('loadbalancers.id'), primary_key=True,
+        nullable=False
+    )
+    period_start = Column(u'period_start', DATETIME(), nullable=False)
+    period_end = Column(u'period_end', DATETIME(), nullable=False)
+    bytes_out = Column(u'bytes_out', BIGINT(), nullable=False)
+    status = Column(u'status', VARCHAR(length=50), nullable=False)
 
 
 class RoutingSession(Session):
