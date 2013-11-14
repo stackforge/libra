@@ -16,3 +16,4 @@ wsme>=0.5b2
 mysql-connector-python
 ipaddress==1.0.4
 six<1.4.0
+kombu

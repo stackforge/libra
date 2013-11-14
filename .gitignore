@@ -17,3 +17,6 @@ debian/libra.prerm.debhelper
 debian/libra.substvars
 dist
 doc/html
+.project
+.pydevproject
+.settings

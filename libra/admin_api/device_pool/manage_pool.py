@@ -31,9 +31,9 @@ LOG = log.getLogger(__name__)
 
 class Pool(object):
 
-    DELETE_SECONDS = 05
-    PROBE_SECONDS = 30
-    VIPS_SECONDS = 50
+    DELETE_SECONDS = cfg.CONF['admin_api'].delete_timer_seconds
+    PROBE_SECONDS = cfg.CONF['admin_api'].probe_timer_seconds
+    VIPS_SECONDS = cfg.CONF['admin_api'].vips_timer_seconds
 
     def __init__(self):
         self.probe_timer = None
