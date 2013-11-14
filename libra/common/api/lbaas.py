@@ -151,6 +151,34 @@ class HealthMonitor(DeclarativeBase):
     path = Column(u'path', VARCHAR(length=2000))
 
 
+class Billing(DeclarativeBase):
+    __tablename__ = 'billing'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    exists_last_sent = Column(u'exists_last_sent', FormatedDateTime(),
+                              nullable=False)
+    usage_start_from = Column(u'usage_start_from', FormatedDateTime(),
+                              nullable=False)
+    usage_last_sent = Column(u'usage_last_sent', FormatedDateTime(),
+                             nullable=False)
+    stats_updated = Column(u'stats_updated', FormatedDateTime(),
+                           nullable=False)
+
+
+class Stats(DeclarativeBase):
+    """stats model"""
+    __tablename__ = 'stats'
+    #column definitions
+    id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
+    lbid = Column(
+        u'lbid', BIGINT(), ForeignKey('loadbalancers.id'), primary_key=True,
+        nullable=False
+    )
+    period_start = Column(u'period_start', FormatedDateTime(), nullable=False)
+    period_end = Column(u'period_end', FormatedDateTime(), nullable=False)
+    bytes_out = Column(u'bytes_out', BIGINT(), nullable=False)
+    status = Column(u'status', VARCHAR(length=50), nullable=False)
+
+
 class RoutingSession(Session):
     """ Try to use the first engine provided.  If this fails use the next in
         sequence and so on.  Reset to the first after 60 seconds
