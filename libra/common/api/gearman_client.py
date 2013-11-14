@@ -33,7 +33,8 @@ gearman_workers = [
     'DELETE',  # Delete a Load Balancer.
     'DISCOVER',  # Return service discovery information.
     'ARCHIVE',  # Archive LB log files.
-    'STATS'  # Get load balancer statistics.
+    'STATS',  # Get load balancer statistics.
+    'PING'    # Ping load balancers
 ]
 
 
