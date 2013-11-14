@@ -29,7 +29,10 @@ from eventlet import wsgi
 from libra import __version__
 from libra.common.api import server
 from libra.admin_api.stats.drivers.base import known_drivers
-from libra.admin_api.stats.scheduler import Stats
+from libra.admin_api.stats.ping_sched import PingStats
+from libra.admin_api.stats.offline_sched import OfflineStats
+from libra.admin_api.stats.billing_sched import BillingStats
+from libra.admin_api.stats.stats_sched import UsageStats
 from libra.admin_api.device_pool.manage_pool import Pool
 from libra.admin_api.expunge.expunge import ExpungeScheduler
 from libra.admin_api import config as api_config
@@ -97,12 +100,21 @@ class MaintThreads(object):
         self.run_threads()
 
     def run_threads(self):
-        stats = Stats(self.drivers)
-        pool = Pool()
+        pings = PingStats(self.drivers)
+        offline = OfflineStats(self.drivers)
+        usage = UsageStats(self.drivers)
+        pool = Pool(self.logger)
         expunge = ExpungeScheduler()
-        self.classes.append(stats)
+        self.classes.append(pings)
+        self.classes.append(offline)
+        self.classes.append(usage)
         self.classes.append(pool)
         self.classes.append(expunge)
+
+        # Billing can be disabled
+        if CONF['admin_api'].billing_enable:
+            billing = BillingStats(self.logger, self.drivers)
+            self.classes.append(billing)
 
     def exit_handler(self, signum, frame):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
