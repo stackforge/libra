@@ -85,7 +85,9 @@ class CompressedTimedRotatingFileHandler(
             self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
         else:
             self.stream = open(self.baseFilename, 'w')
-        self.rolloverAt = self.rolloverAt + self.interval
+        currentTime = int(time.time())
+        while self.rolloverAt <= currentTime:
+            self.rolloverAt = self.rolloverAt + self.interval
         zfile = '{0}.gz'.format(tfn)
         if os.path.exists(zfile):
             os.remove(zfile)
