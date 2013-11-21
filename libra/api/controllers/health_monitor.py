@@ -18,6 +18,7 @@ from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
+from urllib import quote
 from libra.common.api.lbaas import LoadBalancer, db_session
 from libra.common.api.lbaas import Device, HealthMonitor
 from libra.api.acl import get_limited_to_project
@@ -136,7 +137,11 @@ class HealthMonitorController(RestController):
                     raise ClientSideError(
                         "Path argument is invalid with CONNECT type"
                     )
-                data["path"] = body.path
+                # Encode everything apart from allowed characters
+                # This ignore list in the second parameter is everything in
+                # RFC3986 section 2 that isn't already ignored by
+                # urllib.quote()
+                data["path"] = quote(body.path, "/~+*,;:!$'[]()?&=#%")
                 # If path is empty, set to /
                 if len(data["path"]) == 0 or data["path"][0] != "/":
                     session.rollback()
