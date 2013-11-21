@@ -14,84 +14,27 @@ Configuration File
 
       [worker]
       driver = haproxy
-      reconnect_sleep = 60
-      server = 10.0.0.1:8080 10.0.0.2:8080
+      pid = /var/run/libra/libra_worker.pid
 
-Command Line Options
---------------------
-   .. program:: libra_worker
+   Note that drivers supported by the worker may add additional subsections
+   to the configuration file for their configuration needs. See the
+   :doc:`haproxy driver documentation <drivers/haproxy>` for an example.
 
-   .. option:: --driver <DRIVER>
+   Options supported in this section:
+
+   .. option:: driver <DRIVER>
 
       Load balancer driver to use. Valid driver options are:
 
       * *haproxy* - `HAProxy <http://haproxy.1wt.eu>`_ software load balancer.
         This is the default driver.
 
-   .. option:: --gearman_keepalive
+   .. option:: pid <FILE>
 
-      Use TCP KEEPALIVE to the Gearman job server. Not supported on all
-      systems.
+      Location for the process PID file.
 
-   .. option:: --gearman_keepcnt <COUNT>
+Command Line Options
+--------------------
 
-      Maximum number of TCP KEEPALIVE probes to send before killing the
-      connection to the Gearman job server.
-
-   .. option:: --gearman_keepidle <SECONDS>
-
-      Seconds of idle time on the Gearman job server connection before
-      sending TCP KEEPALIVE probes.
-
-   .. option:: --gearman_keepintvl <SECONDS>
-
-      Seconds between TCP KEEPALIVE probes.
-
-   .. option:: --gearman_ssl_ca <FILE>
-
-      Full path to the file with the CA public key to use when
-      connecting to an SSL-enabled Gearman job server. This is used
-      to validate the server key.
-
-   .. option:: --gearman_ssl_cert <FILE>
-
-      Full path to the file with the SSL public key to use when
-      connecting to an SSL-enabled Gearman job server.
-
-   .. option:: --gearman_ssl_key <FILE>
-
-      Full path to the file with the SSL private key to use when
-      connecting to an SSL-enabled Gearman job server.
-
-   .. option:: -s <SECONDS>, --reconnect_sleep <SECONDS>
-
-      The number of seconds to sleep between job server reconnect attempts
-      when no specified job servers are available. Default is 60 seconds.
-
-   .. option:: --server <HOST:PORT>
-
-      Used to specify the Gearman job server hostname and port. This option
-      can be used multiple times to specify multiple job servers.
-
-   .. option:: --stats-poll <SECONDS>
-
-      The number of seconds to sleep between statistics polling of the
-      load balancer driver. Default is 300 seconds.
-
-   .. option:: --gearman-poll <SECONDS>
-
-      The number of seconds gearman will poll before re-shuffling its
-      connections. Default is 1 second.
-
-   .. option:: --syslog
-
-      Send log events to syslog.
-
-   .. option:: --syslog-socket
-
-      Socket to use for the syslog connection. Default is */dev/log*.
-
-   .. option:: --syslog-facility
-
-      Syslog logging facility. Default is *LOCAL7*.
-
+   Some options can be specified via the command line. Run with the
+   -h or --help option for a full listing.
