@@ -4,23 +4,31 @@
 HAProxy driver
 ==============
 
-Configuration
--------------
+Configuration File
+------------------
 
-.. option:: --haproxy_logfile <FILE>
+   The ``[worker:haproxy]`` section is read by the HAProxy driver.
 
-   Configure the path for where to put haproxy log.
+   .. code-block:: ini
 
-   .. note::
+      [worker:haproxy]
+      service = ubuntu
+      logfile = /var/log/haproxy.log
+
+   Options supported in this section:
+
+   .. option:: logfile
+
+      Path where haproxy will store its logs.
+
+      .. note::
 
         See :ref:`libra-worker-driver-haproxy-archiving` for information on
         archiving.
 
-.. option:: --haproxy_service <service>
+   .. option:: service
 
-   The underlying OS Service implementation to use
-
-   Default: ubuntu
+       The underlying OS Service implementation to use. Default is 'ubuntu'.
 
 .. _libra-worker-driver-haproxy-archiving:
 
