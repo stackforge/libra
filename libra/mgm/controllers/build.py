@@ -121,9 +121,8 @@ class BuildController(object):
                 return self.msg
             sleep(60)
 
-        nova.delete(node_id)
         LOG.error(
-            "Node {0} didn't come up after 10 minutes, deleted".format(node_id)
+            "Node {0} didn't come up after 10 minutes".format(node_id)
         )
         self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
         return self.msg
