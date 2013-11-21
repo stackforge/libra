@@ -197,8 +197,15 @@ class GearmanClientThread(object):
             'action': 'DELETE_IP',
             'ip': self.lbid
         }
-        status, response = self._send_message(job_data, 'response')
         ip_int = int(ipaddress.IPv4Address(unicode(self.lbid)))
+        for x in xrange(0, 5):
+            self.logger.info(
+                'Attempt to delete IP {0} #{1}'
+                .format(self.lbid, x)
+            )
+            status, response = self._send_message(job_data, 'response')
+            if status:
+                break
         with db_session() as session:
             if not status:
                 LOG.error(
