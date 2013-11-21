@@ -314,6 +314,8 @@ class GearmanWork(object):
                 continue
             if status.result['response'] == 'FAIL':
                 LOG.error('Pool manager failed to build a device')
+                if 'name' in status.result:
+                    self._add_bad_node(status.result)
                 continue
 
             built_count += 1
@@ -347,6 +349,24 @@ class GearmanWork(object):
         device.type = data['type']
         device.pingCount = 0
         device.status = 'OFFLINE'
+        device.created = None
+        with db_session() as session:
+            session.add(device)
+            session.commit()
+
+    def _add_bad_node(self, data):
+        LOG.info(
+            'Adding bad device {0} to DB to be deleted'.format(data['name'])
+        )
+        device = Device()
+        device.name = data['name']
+        device.publicIpAddr = data['addr']
+        # TODO: kill this field, make things use publicIpAddr instead
+        device.floatingIpAddr = data['addr']
+        device.az = data['az']
+        device.type = data['type']
+        device.pingCount = 0
+        device.status = 'DELETED'
         device.created = None
         with db_session() as session:
             session.add(device)
