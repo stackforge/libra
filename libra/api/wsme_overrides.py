@@ -29,7 +29,6 @@ from libra.api.library.exp import ImmutableEntity
 from libra.openstack.common import log
 from libra.common.exc import DetailError
 from wsme.rest.json import tojson
-from sqlalchemy.exc import OperationalError, ResourceClosedError
 
 
 LOG = log.getLogger(__name__)
@@ -94,63 +93,45 @@ def wsexpose(*args, **kwargs):
 
         @functools.wraps(f)
         def callfunction(self, *args, **kwargs):
-            for x in xrange(5):
-                old_args = args
-                old_kwargs = kwargs
-                try:
-                    args, kwargs = wsme.rest.args.get_args(
-                        funcdef, args, kwargs, pecan.request.params, None,
-                        pecan.request.body, pecan.request.content_type
-                    )
-                    if funcdef.pass_request:
-                        kwargs[funcdef.pass_request] = pecan.request
-                    result = f(self, *args, **kwargs)
-
-                    # NOTE: Support setting of status_code with default 201
-                    pecan.response.status = funcdef.status_code
-                    if isinstance(result, wsme.api.Response):
-                        pecan.response.status = result.status_code
-                        result = result.obj
-
-                # ResourceClosedError happens on for_update deadlock
-                except (OperationalError, ResourceClosedError):
-                    LOG.warning(
-                        "Galera deadlock, retry {0}".format(x + 1)
-                    )
-                    args = old_args
-                    kwargs = old_kwargs
-                    continue
-                except:
-                    data = wsme.api.format_exception(
-                        sys.exc_info(),
-                        pecan.conf.get('wsme', {}).get('debug', False)
-                    )
-                    e = sys.exc_info()[1]
-                    if isinstance(e, OverLimit):
-                        pecan.response.status = 413
-                    elif isinstance(e, ImmutableEntity):
-                        pecan.response.status = 422
-                    elif isinstance(e, NotFound):
-                        pecan.response.status = 404
-                    elif isinstance(e, NotAuthorized):
-                        pecan.response.status = 401
-                    elif data['message'] == 'Bad Request':
-                        pecan.response.status = 400
-                    else:
-                        pecan.response.status = 500
-                    return data
-
-                return dict(
-                    datatype=funcdef.return_type,
-                    result=result
+            try:
+                args, kwargs = wsme.rest.args.get_args(
+                    funcdef, args, kwargs, pecan.request.params, None,
+                    pecan.request.body, pecan.request.content_type
                 )
-            # After 5 retries of transaction, give up!
-            data = wsme.api.format_exception(
-                sys.exc_info(),
-                pecan.conf.get('wsme', {}).get('debug', False)
+                if funcdef.pass_request:
+                    kwargs[funcdef.pass_request] = pecan.request
+                result = f(self, *args, **kwargs)
+
+                # NOTE: Support setting of status_code with default 201
+                pecan.response.status = funcdef.status_code
+                if isinstance(result, wsme.api.Response):
+                    pecan.response.status = result.status_code
+                    result = result.obj
+
+            except:
+                data = wsme.api.format_exception(
+                    sys.exc_info(),
+                    pecan.conf.get('wsme', {}).get('debug', False)
+                )
+                e = sys.exc_info()[1]
+                if isinstance(e, OverLimit):
+                    pecan.response.status = 413
+                elif isinstance(e, ImmutableEntity):
+                    pecan.response.status = 422
+                elif isinstance(e, NotFound):
+                    pecan.response.status = 404
+                elif isinstance(e, NotAuthorized):
+                    pecan.response.status = 401
+                elif data['message'] == 'Bad Request':
+                    pecan.response.status = 400
+                else:
+                    pecan.response.status = 500
+                return data
+
+            return dict(
+                datatype=funcdef.return_type,
+                result=result
             )
-            pecan.response.status = 500
-            return data
 
         pecan_xml_decorate(callfunction)
         pecan_json_decorate(callfunction)
