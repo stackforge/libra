@@ -27,6 +27,11 @@ from libra.api.library.exp import NotFound, ImmutableEntity, ImmutableStates
 
 
 class HealthMonitorController(RestController):
+
+    TIMEOUT_LIMIT = 3600
+    DELAY_LIMIT = 3600
+    PATH_LIMIT = 2000
+
     """functions for /loadbalancers/{loadBalancerId}/healthmonitor routing"""
     def __init__(self, load_balancer_id=None):
         self.lbid = load_balancer_id
@@ -143,6 +148,12 @@ class HealthMonitorController(RestController):
                     raise ClientSideError(
                         "Path must begin with leading /"
                     )
+
+                if len(data["path"]) > self.PATH_LIMIT:
+                    raise ClientSideError(
+                        "Path must be less than {0} characters"
+                        .format(self.PATH_LIMIT)
+                    )
             else:
                 if body.type != "CONNECT":
                     session.rollback()
@@ -150,6 +161,22 @@ class HealthMonitorController(RestController):
                         "Path argument is required"
                     )
                 data["path"] = None
+
+            # Check timeout limits. Must be > 0 and limited to 1 hour
+            if data["timeout"] < 1 or data["timeout"] > self.TIMEOUT_LIMIT:
+                session.rollback()
+                raise ClientSideError(
+                    "timeout must be between 1 and {0} seconds"
+                    .format(self.TIMEOUT_LIMIT)
+                )
+
+            # Check delay limits. Must be > 0 and limited to 1 hour
+            if data["delay"] < 1 or data["delay"] > self.DELAY_LIMIT:
+                session.rollback()
+                raise ClientSideError(
+                    "delay must be between 1 and {0} seconds"
+                    .format(self.DELAY_LIMIT)
+                )
 
             if data["timeout"] > data["delay"]:
                 session.rollback()
