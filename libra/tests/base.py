@@ -52,6 +52,12 @@ options.CONF.set_override('use_stderr', False)
 options.CONF.import_group('api', 'libra.api')
 options.CONF.import_group('mgm', 'libra.mgm')
 
+# Used for notification testing.
+options.CONF.import_opt('rpc_backend', 'libra.openstack.common.rpc')
+options.CONF.import_opt(
+    'notification_driver',
+    'libra.openstack.common.notifier.api')
+
 log.setup('libra')
 
 _DB_CACHE = None
@@ -115,6 +121,13 @@ class TestCase(test.BaseTestCase):
     """
     Base test case that holds any "extras" that we use like assertX functions.
     """
+
+    def config(self, **kwargs):
+        group = kwargs.pop('group', None)
+
+        for k, v in kwargs.iteritems():
+            cfg.CONF.set_override(k, v, group)
+
     def path_get(self, project_file=None):
         root = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                             '..',
@@ -133,6 +146,16 @@ class ServiceTestCase(test.BaseTestCase):
         super(ServiceTestCase, self).setUp()
         options.add_common_opts()
         self.CONF = self.useFixture(config.Config(options.CONF)).conf
+
+        self.CONF.set_override(
+            'notification_driver',
+            ['libra.openstack.common.notifier.test_notifier']
+        )
+
+        self.CONF.set_override(
+            'rpc_backend', 'libra.openstack.common.rpc.impl_fake'
+        )
+
 
         # NOTE: Provide some fun defaults for testing
         self.CONF.set_override('az', 'default', group='mgm')
