@@ -19,12 +19,23 @@ Configuration File
 
    .. option:: logfile
 
-      Path where haproxy will store its logs.
+      Path where HAProxy will store its logs. Note that this file is not
+      created by the worker, but rather by the haproxy process itself. Its
+      contents will be delivered in response to an ARCHIVE request from the
+      API server.
 
       .. note::
 
         See :ref:`libra-worker-driver-haproxy-archiving` for information on
         archiving.
+
+   .. option:: statsfile
+
+       Location of the HAProxy statistics cache file. This file needs to be
+       placed in a location where the worker has write access and where it
+       will not be deleted by external processes (so don't place it in /tmp).
+       This is used to deliver usage reports to the API server in response to
+       a STATS requests.
 
    .. option:: service
 
