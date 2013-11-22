@@ -26,6 +26,9 @@ cfg.CONF.register_opts(
         cfg.StrOpt('logfile',
                    default='/var/log/haproxy.log',
                    help='Location of HAProxy logfile'),
+        cfg.StrOpt('statsfile',
+                   default='/var/log/haproxy.stats',
+                   help='Location of the HAProxy statistics cache file'),
     ],
     group=haproxy_group
 )

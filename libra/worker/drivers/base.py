@@ -97,7 +97,26 @@ class LoadBalancerDriver(object):
         raise NotImplementedError()
 
     def get_status(self, protocol):
-        """ Get load balancer status for specified protocol. """
+        """
+        Get load balancer status for specified protocol.
+
+        Returns a list of tuples containing (in this order):
+          - node ID
+          - node status
+        """
+        raise NotImplementedError()
+
+    def get_statistics(self):
+        """
+        Get load balancer statistics for all LBs on the device.
+
+        Returns a tuple containing (in this order):
+          - start timestamp for the reporting period as a string
+          - end timestamp for the reporting period as a string
+          - list of tuples containing (in this order):
+             - protocol for the LB ('tcp' or 'http') as a string
+             - bytes out for this LB for this reporting period as an int
+        """
         raise NotImplementedError()
 
     def archive(self, method, params):
