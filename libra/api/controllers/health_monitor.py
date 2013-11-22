@@ -116,9 +116,13 @@ class HealthMonitorController(RestController):
             # Check inputs
             if (
                 body.type == Unset or
+                body.type is None or
                 body.delay == Unset or
+                body.delay is None or
                 body.timeout == Unset or
-                body.attemptsBeforeDeactivation == Unset
+                body.timeout is None or
+                body.attemptsBeforeDeactivation == Unset or
+                body.attemptsBeforeDeactivation is None
             ):
                 session.rollback()
                 raise ClientSideError(
