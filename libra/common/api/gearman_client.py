@@ -221,6 +221,7 @@ class GearmanClientThread(object):
                 LoadBalancer
             ).join(LoadBalancer.devices).\
                 filter(Device.id == data).\
+                filter(LoadBalancer.id != self.lbid).\
                 filter(LoadBalancer.status != 'DELETED').\
                 filter(LoadBalancer.status != 'PENDING_DELETE').\
                 count()

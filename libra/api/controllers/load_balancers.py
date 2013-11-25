@@ -510,11 +510,12 @@ class LoadBalancersController(RestController):
                     filter(Node.lbid == lb.id).delete()
                 session.query(HealthMonitor).\
                     filter(HealthMonitor.lbid == lb.id).delete()
+                session.commit()
             else:
+                session.commit()
                 submit_job(
                     'DELETE', device.name, device.id, lb.id
                 )
-            session.commit()
             return None
 
     def usage(self, load_balancer_id):
