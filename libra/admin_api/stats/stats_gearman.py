@@ -161,10 +161,10 @@ class GearJobs(object):
             if stats.state == JOB_UNKNOWN:
                 # TODO: Gearman server failed, ignoring for now
                 retry_list.append(stats.job.task)
-            if stats.timed_out:
+            elif stats.timed_out:
                 # Timeout
                 retry_list.append(stats.job.task)
-            if stats.result['hpcs_response'] == 'FAIL':
+            elif stats.result['hpcs_response'] == 'FAIL':
                 # Error returned by Gearman
                 failed_list.append(stats.job.task)
             else:
@@ -190,13 +190,12 @@ class GearJobs(object):
                         format(stats.job.task)
                     )
                     failed_list.append(stats.job.task)
-                if stats.timed_out:
+                elif stats.timed_out:
                     # Timeout
                     failed_list.append(stats.job.task)
-                if stats.result['hpcs_response'] == 'FAIL':
+                elif stats.result['hpcs_response'] == 'FAIL':
                     # Error returned by Gearman
                     failed_list.append(stats.job.task)
-                    continue
                 else:
                     #Success
                     results[stats.job.task] = stats.result
