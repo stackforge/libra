@@ -249,7 +249,8 @@ class UbuntuServices(services_base.ServicesBase):
         # was restarted outside of the worker's control, so we have no choice
         # but to zero the values to avoid overcharging on usage.
         if (unrpt_tcp_bo == 0 and unrpt_http_bo == 0) and \
-           (prev_tcp_bo > current_tcp_bo) or (prev_http_bo > current_http_bo):
+           ((prev_tcp_bo > current_tcp_bo) or
+               (prev_http_bo > current_http_bo)):
             LOG.warn("Forced reset of HAProxy statistics")
             prev_tcp_bo = 0
             prev_http_bo = 0
