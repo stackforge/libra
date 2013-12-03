@@ -55,6 +55,8 @@ class UbuntuServices(services_base.ServicesBase):
 
         tcp_bo = stats_mgr.get_last_tcp_bytes()
         http_bo = stats_mgr.get_last_http_bytes()
+        unrpt_tcp_bo = stats_mgr.get_unreported_tcp_bytes()
+        unrpt_http_bo = stats_mgr.get_unreported_http_bytes()
 
         curr_tcp_bo = 0
         curr_http_bo = 0
@@ -62,6 +64,11 @@ class UbuntuServices(services_base.ServicesBase):
             curr_tcp_bo = results['tcp']
         if 'http' in results:
             curr_http_bo = results['http']
+
+        # If we have unreported totals, then we haven't received a STATS
+        # call since the last restart and we need to carry over those totals.
+        curr_tcp_bo += unrpt_tcp_bo
+        curr_http_bo += unrpt_http_bo
 
         stats_mgr.save(start, end,
                        tcp_bytes=tcp_bo,
@@ -272,12 +279,14 @@ class UbuntuServices(services_base.ServicesBase):
 
         incremental_results = []
         if 'http' in results:
-            incremental_results.append(
-                ('http', unrpt_http_bo + current_http_bo - prev_http_bo)
-            )
+            value = unrpt_http_bo + current_http_bo - prev_http_bo
+            if value < 0:
+                LOG.error("Negative statistics value: %d" % value)
+            incremental_results.append(('http', value))
         if 'tcp' in results:
-            incremental_results.append(
-                ('tcp', unrpt_tcp_bo + current_tcp_bo - prev_tcp_bo)
-            )
+            value = unrpt_tcp_bo + current_tcp_bo - prev_tcp_bo
+            if value < 0:
+                LOG.error("Negative statistics value: %d" % value)
+            incremental_results.append(('tcp', value))
 
         return str(new_start), str(new_end), incremental_results

@@ -16,6 +16,10 @@ import datetime
 import os.path
 import simplejson
 
+from libra.openstack.common import log
+
+LOG = log.getLogger(__name__)
+
 
 class StatisticsManager(object):
     """
@@ -102,6 +106,7 @@ class StatisticsManager(object):
             self.UNREPORTED_TCP_BYTES_FIELD: unreported_tcp_bytes,
             self.UNREPORTED_HTTP_BYTES_FIELD: unreported_http_bytes
         }
+        LOG.debug("Saving statistics: %s" % obj)
         self._do_save(obj)
 
     def read(self):
