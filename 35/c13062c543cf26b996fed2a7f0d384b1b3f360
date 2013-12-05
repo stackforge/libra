@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: David Shrewsbury <shrewsbury.dave@gmail.com>
+Approved+1: Marc Pilon <pilon.marc@gmail.com>
+Code-Review+2: Marc Pilon <pilon.marc@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 05 Dec 2013 14:47:05 +0000
+Reviewed-on: https://review.openstack.org/60088
+Project: stackforge/libra
+Branch: refs/heads/master
