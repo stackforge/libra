@@ -32,7 +32,9 @@ from libra.api import model
 from libra.api import acl
 from libra.common.api import server
 from libra.common.log import get_descriptors
-from libra.common.options import add_common_opts, CONF
+from libra.common.options import CONF
+from libra.common.options import add_common_opts
+from libra.common.options import check_gearman_ssl_files
 from libra.openstack.common import log as logging
 
 
@@ -141,6 +143,12 @@ def main():
         if CONF['group']:
             context.gid = grp.getgrnam(CONF['group']).gr_gid
         context.open()
+
+    try:
+        check_gearman_ssl_files()
+    except Exception as e:
+        LOG.critical(str(e))
+        return
 
     LOG.info('Starting on %s:%d', CONF.api.host, CONF.api.port)
     api = setup_app(pc)

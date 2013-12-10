@@ -39,8 +39,10 @@ from libra.admin_api import config as api_config
 from libra.admin_api import model
 from libra.openstack.common import importutils
 from libra.openstack.common import log as logging
-from libra.common.options import add_common_opts, CONF
 from libra.common.log import get_descriptors
+from libra.common.options import CONF
+from libra.common.options import add_common_opts
+from libra.common.options import check_gearman_ssl_files
 
 
 LOG = logging.getLogger(__name__)
@@ -172,6 +174,12 @@ def main():
         if CONF['group']:
             context.gid = grp.getgrnam(CONF['group']).gr_gid
         context.open()
+
+    try:
+        check_gearman_ssl_files()
+    except Exception as e:
+        LOG.critical(str(e))
+        return
 
     # Use the root logger due to lots of services using logger
     LOG.info('Starting on %s:%d', CONF.admin_api.host, CONF.admin_api.port)
