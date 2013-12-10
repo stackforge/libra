@@ -21,8 +21,10 @@ import pwd
 import threading
 
 from libra import __version__
-from libra.common.options import add_common_opts, CONF
 from libra.common.log import get_descriptors
+from libra.common.options import CONF
+from libra.common.options import add_common_opts
+from libra.common.options import check_gearman_ssl_files
 from libra.openstack.common import log as logging
 from libra.mgm.gearman_worker import worker_thread
 
@@ -32,6 +34,12 @@ LOG = logging.getLogger(__name__)
 
 class Server(object):
     def main(self):
+
+        try:
+            check_gearman_ssl_files()
+        except Exception as e:
+            LOG.critical(str(e))
+            return
 
         LOG.info(
             'Libra Pool Manager worker started, spawning {0} threads'

@@ -11,6 +11,9 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 
+import os
+import os.path
+
 from oslo.config import cfg
 
 CONF = cfg.CONF
@@ -65,3 +68,21 @@ gearman_opts = [
 def add_common_opts():
     CONF.register_opts(gearman_opts, group='gearman')
     CONF.register_cli_opts(common_cli_opts)
+
+
+def check_gearman_ssl_files():
+    """
+    If using Gearman with SSL, validate that the SSL files exist and
+    are readable by the user. It's a common problem that connections to
+    Gearman will silently fail because these files cannot be read due to
+    the private key being readable only by the file owner.
+    """
+    if 'gearman' not in CONF:
+        return
+    for key in ['ssl_ca', 'ssl_cert', 'ssl_key']:
+        if key in CONF['gearman']:
+            fname = CONF['gearman'][key]
+            if not os.path.exists(fname):
+                raise Exception("Gearman SSL file %s does not exist" % fname)
+            if not os.access(fname, os.R_OK):
+                raise Exception("Unable to read Gearman SSL file %s" % fname)

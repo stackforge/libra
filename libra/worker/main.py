@@ -25,7 +25,9 @@ import threading
 from libra import __version__
 from libra.openstack.common import importutils
 from libra.openstack.common import log as logging
-from libra.common.options import add_common_opts, CONF
+from libra.common.options import CONF
+from libra.common.options import add_common_opts
+from libra.common.options import check_gearman_ssl_files
 from libra.common.log import get_descriptors
 from libra.worker.drivers.base import known_drivers
 from libra.worker.drivers.haproxy.services_base import haproxy_services
@@ -49,6 +51,13 @@ class EventServer(object):
             A tuple with two items: a function name, and a tuple with
             that function's arguments.
         """
+
+        try:
+            check_gearman_ssl_files()
+        except Exception as e:
+            LOG.critical(str(e))
+            return
+
         thread_list = []
 
         driver = CONF['worker']['driver']
