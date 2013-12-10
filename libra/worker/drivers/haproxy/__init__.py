@@ -17,6 +17,8 @@ from libra.worker.drivers.haproxy.services_base import haproxy_services
 
 haproxy_group = cfg.OptGroup('worker:haproxy', 'Worker HAProxy options')
 
+cfg.CONF.register_group(haproxy_group)
+
 cfg.CONF.register_opts(
     [
         cfg.StrOpt('service',
