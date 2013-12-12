@@ -122,3 +122,10 @@ class LoadBalancerDriver(object):
     def archive(self, method, params):
         """ Archive the load balancer logs using the specified method. """
         raise NotImplementedError()
+
+    def set_timeouts(self, protocol, client_timeout, server_timeout,
+                     connect_timeout, connect_retries):
+        """
+        Set the various timeout values for the specified protocol.
+        """
+        raise NotImplementedError()
