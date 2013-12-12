@@ -39,7 +39,13 @@ class UbuntuServices(services_base.ServicesBase):
         """
         Save current HAProxy totals for an expected restart.
         """
-        q = query.HAProxyQuery('/var/run/haproxy-stats.socket')
+        socket_file = '/var/run/haproxy-stats.socket'
+
+        # On a new device, the socket file won't exist.
+        if not os.path.exists(socket_file):
+            return
+
+        q = query.HAProxyQuery(socket_file)
         results = q.get_bytes_out()
 
         stats_file = cfg.CONF['worker:haproxy']['statsfile']
