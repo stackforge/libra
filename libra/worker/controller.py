@@ -133,6 +133,45 @@ class LBaaSController(object):
             )
             raise
 
+    def _set_lb_options(self, protocol, options):
+        """
+        Parse load balancer options.
+
+        options
+            Dictionary of load balancer options.
+
+        Returns: True on success, False otherwise
+        """
+
+        # Default timeout values in milliseconds
+        client_val = 30000
+        server_val = 30000
+        connect_val = 30000
+        retries_val = 3
+
+        if 'client_timeout' in options:
+            client_val = options['client_timeout']
+        if 'server_timeout' in options:
+            server_val = options['server_timeout']
+        if 'connect_timeout' in options:
+            connect_val = options['connect_timeout']
+        if 'connect_retries' in options:
+            retries_val = options['connect_retries']
+
+        try:
+            self.driver.set_timeouts(protocol, client_val, server_val,
+                                     connect_val, retries_val)
+        except NotImplementedError:
+            pass
+        except Exception as e:
+            error = "Failed to set timeout values: %s" % e
+            LOG.error(error)
+            self.msg[self.ERROR_FIELD] = error
+            self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+            return False
+
+        return True
+
     def _action_discover(self):
         """
         Return service discovery information.
@@ -256,6 +295,15 @@ class LBaaSController(object):
                     )
                     self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                     return self.msg
+
+            if 'options' in current_lb:
+                lb_options = current_lb['options']
+            else:
+                lb_options = {}
+
+            # Always call _set_lb_options() since it sets sensible defaults
+            if not self._set_lb_options(current_lb['protocol'], lb_options):
+                return self.msg
 
             for lb_node in current_lb['nodes']:
                 port = None

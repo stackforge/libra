@@ -75,10 +75,6 @@ class HAProxyDriver(LoadBalancerDriver):
         output.append('    option dontlognull')
         output.append('    option redispatch')
         output.append('    maxconn 50000')
-        output.append('    retries 3')
-        output.append('    timeout connect 30000ms')
-        output.append('    timeout client 30000ms')
-        output.append('    timeout server 30000ms')
 
         for proto in self._config:
             protocfg = self._config[proto]
@@ -93,6 +89,8 @@ class HAProxyDriver(LoadBalancerDriver):
             output.append('    mode %s' % real_proto)
             output.append('    bind %s:%s' % (protocfg['bind_address'],
                                               protocfg['bind_port']))
+            output.append('    timeout client %sms' %
+                          protocfg['timeouts']['timeout_client'])
             output.append('    default_backend %s-servers' % real_proto)
 
             # HTTP specific options for the frontend
@@ -109,6 +107,11 @@ class HAProxyDriver(LoadBalancerDriver):
             output.append('backend %s-servers' % real_proto)
             output.append('    mode %s' % real_proto)
             output.append('    balance %s' % protocfg['algorithm'])
+            output.append('    timeout connect %sms' %
+                          protocfg['timeouts']['timeout_connect'])
+            output.append('    timeout server %sms' %
+                          protocfg['timeouts']['timeout_server'])
+            output.append('    retries %s' % protocfg['timeouts']['retries'])
 
             # default healthcheck if none specified
             monitor = 'check inter 30s'
@@ -420,3 +423,13 @@ class HAProxyDriver(LoadBalancerDriver):
         else:
             raise Exception("Driver does not support archive method '%s'" %
                             method)
+
+    def set_timeouts(self, protocol, client_timeout, server_timeout,
+                     connect_timeout, connect_retries):
+        protocol = protocol.lower()
+        self._config[protocol]['timeouts'] = {
+            'timeout_client': client_timeout,
+            'timeout_server': server_timeout,
+            'timeout_connect': connect_timeout,
+            'retries': connect_retries
+        }
