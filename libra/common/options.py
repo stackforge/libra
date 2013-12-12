@@ -82,6 +82,8 @@ def check_gearman_ssl_files():
     for key in ['ssl_ca', 'ssl_cert', 'ssl_key']:
         if key in CONF['gearman']:
             fname = CONF['gearman'][key]
+            if fname is None:
+                continue
             if not os.path.exists(fname):
                 raise Exception("Gearman SSL file %s does not exist" % fname)
             if not os.access(fname, os.R_OK):
