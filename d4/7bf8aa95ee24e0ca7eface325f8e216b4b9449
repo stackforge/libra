@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Marc Pilon <pilon.marc@gmail.com>
+Code-Review+2: Marc Pilon <pilon.marc@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 18 Dec 2013 14:25:38 +0000
+Reviewed-on: https://review.openstack.org/62772
+Project: stackforge/libra
+Branch: refs/heads/master
