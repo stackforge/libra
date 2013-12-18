@@ -200,7 +200,7 @@ class GearmanClientThread(object):
         }
         ip_int = int(ipaddress.IPv4Address(unicode(self.lbid)))
         for x in xrange(0, 5):
-            self.logger.info(
+            LOG.info(
                 'Attempt to delete IP {0} #{1}'
                 .format(self.lbid, x)
             )
