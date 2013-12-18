@@ -42,8 +42,8 @@ class UsageStats(object):
         self.start_stats_sched()
 
     def shutdown(self):
-        if self.billing_timer:
-            self.billing_timer.cancel()
+        if self.stats_timer:
+            self.stats_timer.cancel()
 
     def gather_stats(self):
         # Work out if it is our turn to run
