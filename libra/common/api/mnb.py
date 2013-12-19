@@ -31,10 +31,7 @@ LOG = logging.getLogger(__name__)
 
 
 def update_mnb(event_type, lbid, tenant_id):
-
-    if cfg.CONF['admin_api'].billing_enable:
-        # Start a new thread
-        eventlet.spawn_n(client_job, event_type, lbid, tenant_id)
+    eventlet.spawn_n(client_job, event_type, lbid, tenant_id)
 
 
 def client_job(event_type, lbid, tenant_id):
