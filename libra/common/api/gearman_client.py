@@ -439,9 +439,10 @@ class GearmanClientThread(object):
                         # time
                         pass
                     elif lb.status == 'BUILD':
-                        # Do nothing, stay in BUILD state until floating IP
-                        # assign finishes
-                        pass
+                        # Do nothing if a new device, stay in BUILD state until
+                        # floating IP assign finishes
+                        if len(lbs) > 1:
+                            lb.status = 'ACTIVE'
                     else:
                         lb.status = 'ACTIVE'
                         lb.errmsg = None
@@ -452,6 +453,8 @@ class GearmanClientThread(object):
                 # Shouldn't hit here, but just to be safe
                 session.commit()
                 return
+            if device.status == 'BUILD' and len(lbs) > 1:
+                device.status = 'ONLINE'
             device_name = device.name
             device_status = device.status
             session.commit()
