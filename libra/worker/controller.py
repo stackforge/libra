@@ -70,10 +70,10 @@ class LBaaSController(object):
                 return self._action_discover()
             elif action == 'ARCHIVE':
                 return self._action_archive()
+            elif action == 'METRICS':
+                return self._action_metrics()
             elif action == 'STATS':
                 return self._action_stats()
-            elif action == 'PING':
-                return self._action_ping()
             elif action == 'DIAGNOSTICS':
                 return self._action_diagnostic()
             else:
@@ -488,7 +488,7 @@ class LBaaSController(object):
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_SUCCESS
         return self.msg
 
-    def _action_ping(self):
+    def _action_stats(self):
         """
         Get load balancer and node status.
 
@@ -500,18 +500,18 @@ class LBaaSController(object):
         try:
             nodes = self.driver.get_status()
         except NotImplementedError:
-            error = "Selected driver does not support PING action."
+            error = "Selected driver does not support STATS action."
             LOG.error(error)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
         except DeletedStateError:
-            error = "Invalid operation PING on a deleted LB."
+            error = "Invalid operation STATS on a deleted LB."
             LOG.error(error)
             self.msg['status'] = 'DELETED'
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
         except Exception as e:
-            LOG.error("PING failed: %s, %s" % (e.__class__, e))
+            LOG.error("STATS failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
         else:
@@ -522,9 +522,9 @@ class LBaaSController(object):
 
         return self.msg
 
-    def _action_stats(self):
+    def _action_metrics(self):
         """
-        Get load balancer statistics
+        Get load balancer metrics
 
         This type of request gets the number of bytes out for each load
         balancer defined on the device. If both a TCP and HTTP load
@@ -534,20 +534,20 @@ class LBaaSController(object):
         try:
             start, end, statistics = self.driver.get_statistics()
         except NotImplementedError:
-            error = "Selected driver does not support STATS action."
+            error = "Selected driver does not support METRICS action."
             LOG.error(error)
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
             return self.msg
         except DeletedStateError:
-            error = "Invalid operation STATS on a deleted LB."
+            error = "Invalid operation METRICS on a deleted LB."
             LOG.error(error)
             self.msg['status'] = 'DELETED'
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = error
             return self.msg
         except Exception as e:
-            LOG.error("STATS failed: %s, %s" % (e.__class__, e))
+            LOG.error("METRICS failed: %s, %s" % (e.__class__, e))
             self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
             self.msg[self.ERROR_FIELD] = str(e)
             return self.msg

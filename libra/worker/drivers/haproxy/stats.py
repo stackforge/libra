@@ -35,7 +35,7 @@ class StatisticsManager(object):
         These are stats that we need to save because a state change in
         the HAProxy service is causing it to restart. Since HAProxy stores
         its stats in memory, they would otherwise be lost. We save them here
-        for consideration in the next STATS request.
+        for consideration in the next METRICS request.
 
       * Last queried stats
         These are total bytes out as reported from HAProxy the last time we
