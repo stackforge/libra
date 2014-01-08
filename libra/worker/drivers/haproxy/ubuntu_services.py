@@ -71,7 +71,7 @@ class UbuntuServices(services_base.ServicesBase):
         if 'http' in results:
             curr_http_bo = results['http']
 
-        # If we have unreported totals, then we haven't received a STATS
+        # If we have unreported totals, then we haven't received a METRICS
         # call since the last restart and we need to carry over those totals.
         curr_tcp_bo += unrpt_tcp_bo
         curr_http_bo += unrpt_http_bo
