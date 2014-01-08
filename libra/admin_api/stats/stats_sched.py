@@ -182,13 +182,13 @@ class UsageStats(object):
                 data = self._get_lb(device_name, session)
                 if not data:
                     LOG.error(
-                        'Device {0} has no Loadbalancer attached during STATS'.
-                        format(device_name)
+                        'Device {0} has no Loadbalancer attached during '
+                        'statistics gathering'.format(device_name)
                     )
                     continue
 
                 LOG.error(
-                    'Load balancer failed STATS request '
+                    'Load balancer failed statistics gathering request '
                     'ID: {0}\n'
                     'IP: {1}\n'
                     'tenant: {2}\n'.format(
