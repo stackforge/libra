@@ -47,7 +47,9 @@ class GearJobs(object):
         failed_list = []
         node_status = dict()
         retry_list = []
-        job_data = {"hpcs_action": "PING"}
+        # The message name is STATS for historical reasons. Real
+        # data statistics are gathered with METRICS messages.
+        job_data = {"hpcs_action": "STATS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(
@@ -150,7 +152,7 @@ class GearJobs(object):
         failed_list = []
         retry_list = []
         results = {}
-        job_data = {"hpcs_action": "STATS"}
+        job_data = {"hpcs_action": "METRICS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_stats = self.gm_client.submit_multiple_jobs(
