@@ -47,7 +47,9 @@ class GearJobs(object):
         failed_list = []
         node_status = dict()
         retry_list = []
-        job_data = {"hpcs_action": "PING"}
+        # The message name is STATS for historical reasons. Real
+        # data statistics are gathered with METRICS messages.
+        job_data = {"hpcs_action": "STATS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_pings = self.gm_client.submit_multiple_jobs(
@@ -150,7 +152,7 @@ class GearJobs(object):
         failed_list = []
         retry_list = []
         results = {}
-        job_data = {"hpcs_action": "STATS"}
+        job_data = {"hpcs_action": "METRICS"}
         for node in node_list:
             list_of_jobs.append(dict(task=str(node), data=job_data))
         submitted_stats = self.gm_client.submit_multiple_jobs(
@@ -174,7 +176,8 @@ class GearJobs(object):
         list_of_jobs = []
         if len(retry_list) > 0:
             LOG.info(
-                "{0} stats timed out, retrying".format(len(retry_list))
+                "{0} Statistics gathering timed out, retrying".
+                format(len(retry_list))
             )
             for node in retry_list:
                 list_of_jobs.append(dict(task=str(node), data=job_data))
@@ -186,8 +189,8 @@ class GearJobs(object):
                 if stats.state == JOB_UNKNOWN:
                     # TODO: Gearman server failed, ignoring for now
                     LOG.error(
-                        "Gearman Job server failed during STATS check of {0}".
-                        format(stats.job.task)
+                        "Gearman Job server failed gathering statistics "
+                        "on {0}".format(stats.job.task)
                     )
                     failed_list.append(stats.job.task)
                 elif stats.timed_out:
