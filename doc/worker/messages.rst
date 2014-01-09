@@ -31,11 +31,11 @@ Required Fields
 ^^^^^^^^^^^^^^^
 
 * hpcs_action
-* loadbalancers
-* loadbalancers.protocol
-* loadbalancers.nodes
-* loadbalancers.nodes.address
-* loadbalancers.nodes.port
+* loadBalancers
+* loadBalancers.protocol
+* loadBalancers.nodes
+* loadBalancers.nodes.address
+* loadBalancers.nodes.port
 
 Example Request
 ^^^^^^^^^^^^^^^
@@ -44,7 +44,7 @@ Example Request
 
   {
     "hpcs_action": "UPDATE",
-    "loadbalancers": [
+    "loadBalancers": [
       {
         "name": "a-new-loadbalancer",
         "protocol": "http",
@@ -66,7 +66,7 @@ Example Response
 
   {
     "hpcs_action": "UPDATE",
-    "loadbalancers": [
+    "loadBalancers": [
       {
         "name": "a-new-loadbalancer",
         "protocol": "http",
@@ -271,8 +271,8 @@ Required Fields
 * hpcs_object_store_basepath
 * hpcs_object_store_endpoint
 * hpcs_object_store_token
-* loadbalancers
-* loadbalancers.protocol
+* loadBalancers
+* loadBalancers.protocol
 
 Example Request
 ^^^^^^^^^^^^^^^
@@ -285,7 +285,7 @@ Example Request
     "hpcs_object_store_endpoint": "https://example.com/v1/100",
     "hpcs_object_store_token": "MY_AUTH_TOKEN",
     "hpcs_object_store_type": "swift",
-    "loadbalancers": [
+    "loadBalancers": [
         {
             "id": "15",
             "name": "lb #1",
@@ -305,7 +305,7 @@ Example Response
     "hpcs_object_store_endpoint": "https://example.com/v1/100",
     "hpcs_object_store_token": "MY_AUTH_TOKEN",
     "hpcs_object_store_type": "swift",
-    "loadbalancers": [
+    "loadBalancers": [
         {
             "id": "15",
             "name": "lb #1",
@@ -320,9 +320,9 @@ Example Response
 STATS Message
 -------------
 
-The STATS message queries the worker for load balancer statistics. Currently,
-this doesn't do more than verify that the HAProxy process is running and we
-can successfully query its statistics socket.
+The STATS message queries the worker for general availability (i.e., a ping)
+Currently, this doesn't do more than verify that the HAProxy process is
+running and we can successfully query its statistics socket.
 
 Required Fields
 ^^^^^^^^^^^^^^^
@@ -345,6 +345,50 @@ Example Response
 
   {
     "hpcs_action": "STATS",
+    "hpcs_response": "PASS"
+  }
+
+
+METRICS Message
+---------------
+
+The METRICS message queries the worker for load balancer usage metrics.
+The number of bytes out for each load balancer defined on the device
+is returned in the response.
+
+Required Fields
+^^^^^^^^^^^^^^^
+
+* hpcs_action
+
+Example Request
+^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+  {
+    "hpcs_action": "METRICS"
+  }
+
+Example Response
+^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+  {
+    "hpcs_action": "METRICS",
+    "utc_start": "2014-01-09 15:11.45.704754",
+    "utc_end": "2014-01-09 16:10.00.72683",
+    "loadBalancers": [
+        {
+            "protocol": "HTTP",
+            "bytes_out": "12345"
+        },
+        {
+            "protocol": "TCP",
+            "bytes_out": "5678"
+        }
+    ],
     "hpcs_response": "PASS"
   }
 
