@@ -21,6 +21,13 @@ cfg.CONF.register_group(adminapi_group)
 
 cfg.CONF.register_opts(
     [
+        cfg.BoolOpt('disable_keystone',
+                    default=False,
+                    help='Unauthenticated server, for testing only'),
+        cfg.StrOpt('keystone_module',
+                   default='keystoneclient.middleware.auth_token:AuthProtocol',
+                   help='A colon separated module and class for keystone '
+                        ' middleware'),
         cfg.StrOpt('datadog_api_key',
                    help='API key for datadog alerting'),
         cfg.StrOpt('datadog_app_key',

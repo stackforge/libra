@@ -20,7 +20,7 @@ from wsme.exc import ClientSideError
 from wsme import Unset
 from urllib import quote
 from libra.common.api.lbaas import LoadBalancer, db_session
-from libra.common.api.lbaas import Device, HealthMonitor
+from libra.common.api.lbaas import Device, HealthMonitor, Counters
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBMonitorPut, LBMonitorResp
 from libra.common.api.gearman_client import submit_job
@@ -75,6 +75,10 @@ class HealthMonitorController(RestController):
 
             if monitor.path:
                 monitor_data['path'] = monitor.path
+
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_healthmonitor_get').first()
+            counter.value += 1
 
             session.commit()
         return monitor_data
@@ -240,6 +244,9 @@ class HealthMonitorController(RestController):
             if ((data["path"] is not None) and (len(data["path"]) > 0)):
                 return_data.path = data["path"]
 
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_healthmonitor_modify').first()
+            counter.value += 1
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
@@ -289,6 +296,9 @@ class HealthMonitorController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_healthmonitor.delete').first()
+            counter.value += 1
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid

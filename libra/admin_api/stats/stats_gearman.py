@@ -146,6 +146,24 @@ class GearJobs(object):
                     failed_list.append(ping.job.task)
         return failed_list
 
+    def get_discover(self, name):
+        # Used in the v2 devices controller
+        job_data = {"hpcs_action": "DISCOVER"}
+        job = self.gm_client.submit_job(
+            str(name), job_data, background=False, wait_until_complete=True,
+            poll_timeout=10
+        )
+        if job.state == JOB_UNKNOWN:
+            # Gearman server failed
+            return None
+        elif job.timed_out:
+            # Time out is a fail
+            return None
+        elif job.result['hpcs_response'] == 'FAIL':
+            # Fail response is a fail
+            return None
+        return job.result
+
     def get_stats(self, node_list):
         # TODO: lots of duplicated code that needs cleanup
         list_of_jobs = []

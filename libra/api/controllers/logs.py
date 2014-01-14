@@ -19,7 +19,7 @@ from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
-from libra.common.api.lbaas import LoadBalancer, Device, db_session
+from libra.common.api.lbaas import LoadBalancer, Device, db_session, Counters
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBLogsPost
 from libra.common.api.gearman_client import submit_job
@@ -59,7 +59,9 @@ class LogsController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_log_archive').first()
+            counter.value += 1
             session.commit()
             data = {
                 'deviceid': device.id
