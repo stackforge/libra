@@ -14,18 +14,17 @@
 # under the License.
 
 from pecan import expose, response
-from v1.v1 import V1Controller
-from v2.v2_0 import V2Controller
+from devices import DevicesController
 from libra.admin_api.model.responses import Responses
 
 
-class RootController(object):
-    """root control object."""
+class V1Controller(object):
+    """v1 control object."""
 
     @expose('json')
     def index(self):
         response.status = 200
-        return Responses.versions
+        return Responses.versions_v1
 
     @expose('json')
     def _default(self):
@@ -34,16 +33,4 @@ class RootController(object):
         response.status = 404
         return Responses._default
 
-    @expose()
-    def _lookup(self, primary_key, *remainder):
-        if primary_key == 'v1':
-            return V1Controller(), remainder
-        if primary_key == 'v2.0':
-            return V2Controller(), remainder
-        else:
-            response.status = 404
-            return Responses._default
-
-    @expose('json')
-    def notfound(self):
-        return Responses._default
+    devices = DevicesController()

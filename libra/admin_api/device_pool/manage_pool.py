@@ -21,6 +21,7 @@ from oslo.config import cfg
 from sqlalchemy import func
 
 from libra.common.api.lbaas import Device, PoolBuilding, Vip, db_session
+from libra.common.api.lbaas import Counters
 from libra.common.json_gearman import JSONGearmanClient
 from libra.openstack.common import log
 
@@ -76,6 +77,10 @@ class Pool(object):
                         'name': device.name
                     }
                     message.append(dict(task='libra_pool_mgm', data=job_data))
+
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'devices_deleted').first()
+                counter.value += len(devices)
                 session.commit()
             if not message:
                 LOG.info("No devices to delete")
@@ -336,6 +341,9 @@ class GearmanWork(object):
         vip.ip = int(ipaddress.IPv4Address(unicode(data['ip'])))
         with db_session() as session:
             session.add(vip)
+            counter = session.query(Counters).\
+                filter(Counters.name == 'vips_built').first()
+            counter.value += 1
             session.commit()
 
     def _add_node(self, data):
@@ -352,6 +360,9 @@ class GearmanWork(object):
         device.created = None
         with db_session() as session:
             session.add(device)
+            counter = session.query(Counters).\
+                filter(Counters.name == 'devices_built').first()
+            counter.value += 1
             session.commit()
 
     def _add_bad_node(self, data):
@@ -370,4 +381,7 @@ class GearmanWork(object):
         device.created = None
         with db_session() as session:
             session.add(device)
+            counter = session.query(Counters).\
+                filter(Counters.name == 'devices_bad_built').first()
+            counter.value += 1
             session.commit()
