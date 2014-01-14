@@ -37,6 +37,7 @@ from libra.admin_api.device_pool.manage_pool import Pool
 from libra.admin_api.expunge.expunge import ExpungeScheduler
 from libra.admin_api import config as api_config
 from libra.admin_api import model
+from libra.admin_api import acl
 from libra.openstack.common import importutils
 from libra.openstack.common import log as logging
 from libra.common.log import get_descriptors
@@ -90,7 +91,9 @@ def setup_app(pecan_config):
             True)
     )
 
-    return app
+    final_app = acl.AuthDirector(app)
+
+    return final_app
 
 
 class MaintThreads(object):

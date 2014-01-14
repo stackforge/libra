@@ -27,3 +27,44 @@ class Responses(object):
 
     """service_unavailable"""
     service_unavailable = {'message': 'Service Unavailable'}
+
+    versions = {
+        "versions": [
+            {
+                "id": "v1",
+                "updated": "2014-01-13T16:55:25Z",
+                "status": "DEPRECATED"
+            },
+            {
+                "id": "v2.2",
+                "updated": "2014-01-13T16:55:25Z",
+                "status": "CURRENT"
+            }
+        ]
+    }
+
+    versions_v1 = {
+        "version": {
+            "id": "v1",
+            "updated": "2014-01-13T16:55:25Z",
+            "status": "DEPRECATED",
+            "media-types": [
+                {
+                    "base": "application/json"
+                }
+            ]
+        }
+    }
+
+    versions_v2_0 = {
+        "version": {
+            "id": "v2",
+            "updated": "2014-01-13T16:55:25Z",
+            "status": "DEPRECATED",
+            "media-types": [
+                {
+                    "base": "application/json"
+                }
+            ]
+        }
+    }
