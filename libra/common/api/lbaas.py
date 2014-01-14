@@ -57,6 +57,13 @@ class Limits(DeclarativeBase):
     value = Column(u'value', BIGINT(), nullable=False)
 
 
+class AdminAuth(DeclarativeBase):
+    __tablename__ = 'admin_auth'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    tenant_id = Column(u'tenant_id', VARCHAR(length=128), nullable=False)
+    level = Column(u'level', VARCHAR(length=10), nullable=False)
+
+
 class PoolBuilding(DeclarativeBase):
     __tablename__ = 'pool_building'
     id = Column(u'id', Integer, primary_key=True, nullable=False)
@@ -171,6 +178,13 @@ class Stats(DeclarativeBase):
     period_end = Column(u'period_end', DATETIME(), nullable=False)
     bytes_out = Column(u'bytes_out', BIGINT(), nullable=False)
     status = Column(u'status', VARCHAR(length=50), nullable=False)
+
+
+class Counters(DeclarativeBase):
+    __tablename__ = 'counters'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    name = Column(u'id', VARCHAR(length=50), nullable=False)
+    value = Column(u'id', BIGINT(), primary_key=True, nullable=False)
 
 
 class RoutingSession(Session):

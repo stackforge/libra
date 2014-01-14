@@ -17,6 +17,7 @@ import ipaddress
 from pecan import response, expose, request
 from pecan.rest import RestController
 from libra.common.api.lbaas import LoadBalancer, Vip, Device, db_session
+from libra.common.api.lbaas import Counters
 from libra.api.acl import get_limited_to_project
 
 
@@ -65,5 +66,8 @@ class VipsController(RestController):
                     "ipVersion": "IPV4"
                 }]
             }
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_vips_get').first()
+            counter.value += 1
             session.rollback()
             return resp

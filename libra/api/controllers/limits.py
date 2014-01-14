@@ -15,7 +15,7 @@
 
 from pecan import expose
 from pecan.rest import RestController
-from libra.common.api.lbaas import Limits, db_session
+from libra.common.api.lbaas import Limits, db_session, Counters
 
 
 class LimitsController(RestController):
@@ -28,5 +28,8 @@ class LimitsController(RestController):
                 resp[limit.name] = limit.value
 
             resp = {"limits": {"absolute": {"values": resp}}}
-            session.rollback()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_limits_get').first()
+            counter.value += 1
+            session.commit()
             return resp

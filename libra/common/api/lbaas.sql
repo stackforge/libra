@@ -110,6 +110,24 @@ CREATE TABLE billing (
 
 INSERT INTO billing VALUES (1, 'stats', '0000-00-00 00:00:00'),(2, 'usage', '0000-00-00 00:00:00'),(3, 'exists', '0000-00-00 00:00:00');
 
+# Admin API auth
+CREATE TABLE admin_auth (
+    id          int(11)             NOT NULL AUTO_INCREMENT,
+    tenant_id   varchar(128)        NOT NULL,
+    level       varchar(10)         NOT NULL,
+    PRIMARY KEY(id)
+) ENGINE=InnoDB DEFAULT CHARSET latin1;
+
+# Counters
+CREATE TABLE counters (
+    id          int(11)             NOT NULL AUTO_INCREMENT,
+    name        varchar(50)         NOT NULL,
+    value       BIGINT              NOT NULL,
+    PRIMARY KEY(id)
+) ENGINE=InnoDB DEFAULT CHARSET latin1;
+
+INSERT INTO counters VALUES (1, 'loadbalancers_rebuild', 0),(2, 'loadbalancers_error', 0),(3, 'devices_offline_failed', 0),(4, 'loadbalancers_expunged', 0),(5, 'devices_deleted', 0), (6, 'vips_built', 0), (7, 'devices_built', 0), (8, 'devices_bad_built', 0), (8, 'vips_deleted', 0), (9, 'loadbalancers_deleted', 0), (10, 'log_archives',0), (11, 'loadbalancers_updated', 0), (12, 'api_loadbalancers_create', 0), (13, 'api_loadbalancers_get', 0), (14, 'api_loadbalancers_modify', 0), (15, 'api_loadbalancers_delete', 0), (16, 'api_healthmonitor_get', 0), (17, 'api_healthmonitor_modify', 0), (18, 'api_healthmonitor_delete', 0), (19, 'api_limits_get', 0), (20, 'api_log_archive', 0), (21, 'api_node_get', 0), (22, 'api_node_create', 0), (23, 'api_node_modify', 0), (24, 'api_node_delete', 0), (25, 'api_vips_get', 0);
+
 # Stats
 CREATE TABLE stats (
     id             BIGINT                   NOT NULL AUTO_INCREMENT,               # unique id for this billing record

@@ -20,7 +20,7 @@ from wsme.exc import ClientSideError
 from wsme import Unset
 #default response objects
 from libra.common.api.lbaas import LoadBalancer, Node, db_session, Limits
-from libra.common.api.lbaas import Device
+from libra.common.api.lbaas import Device, Counters
 from libra.api.acl import get_limited_to_project
 from libra.api.model.validators import LBNodeResp, LBNodePost, NodeResp
 from libra.api.model.validators import LBNodePut
@@ -100,6 +100,9 @@ class NodesController(RestController):
                 del node_response['enabled']
                 if node_response['weight'] == 1:
                     del node_response['weight']
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_node_get').first()
+            counter.value += 1
             session.commit()
             response.status = 200
             return node_response
@@ -255,7 +258,9 @@ class NodesController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_node_create').first()
+            counter.value += 1
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid
@@ -335,7 +340,9 @@ class NodesController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_node_modify').first()
+            counter.value += 1
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
@@ -412,6 +419,9 @@ class NodesController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_node_delete').first()
+            counter.value += 1
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid

@@ -17,7 +17,7 @@ eventlet.monkey_patch()
 import ipaddress
 from libra.common.json_gearman import JSONGearmanClient
 from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
-from libra.common.api.lbaas import HealthMonitor
+from libra.common.api.lbaas import HealthMonitor, Counters
 from libra.common.api.lbaas import loadbalancers_devices
 from libra.openstack.common import log
 from pecan import conf
@@ -221,6 +221,9 @@ class GearmanClientThread(object):
             else:
                 session.query(Vip).\
                     filter(Vip.ip == ip_int).delete()
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'vips_deleted').first()
+                counter.value += 1
             session.commit()
 
     def send_delete(self, data):
@@ -299,6 +302,9 @@ class GearmanClientThread(object):
                 filter(Node.lbid == lb.id).delete()
             session.query(HealthMonitor).\
                 filter(HealthMonitor.lbid == lb.id).delete()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'loadbalancers_deleted').first()
+            counter.value += 1
             session.commit()
 
     def _set_error(self, device_id, errmsg, session):
@@ -347,6 +353,9 @@ class GearmanClientThread(object):
             else:
                 device.errmsg = 'Log archive failed: {0}'.format(response)
             lb.status = 'ACTIVE'
+            counter = session.query(Counters).\
+                filter(Counters.name == 'log_archives').first()
+            counter.value += 1
             session.commit()
 
     def send_update(self, data):
@@ -457,6 +466,9 @@ class GearmanClientThread(object):
                 device.status = 'ONLINE'
             device_name = device.name
             device_status = device.status
+            counter = session.query(Counters).\
+                filter(Counters.name == 'loadbalancers_updated').first()
+            counter.value += 1
             session.commit()
             if device_status == 'BUILD':
                 submit_vip_job(

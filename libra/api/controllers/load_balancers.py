@@ -28,7 +28,7 @@ from logs import LogsController
 # models
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
 from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip
-from libra.common.api.lbaas import HealthMonitor
+from libra.common.api.lbaas import HealthMonitor, Counters
 from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
 from libra.api.model.validators import LBRespNode
@@ -168,7 +168,10 @@ class LoadBalancersController(RestController):
                         del node['weight']
                     load_balancers['nodes'].append(node)
 
-            session.rollback()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_loadbalancers_get').first()
+            counter.value += 1
+            session.commit()
             response.status = 200
             return load_balancers
 
@@ -464,6 +467,9 @@ class LoadBalancersController(RestController):
                     )
 
                 return_data.nodes.append(out_node)
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_loadbalancers_create').first()
+            counter.value += 1
             session.commit()
             # trigger gearman client to create new lb
             submit_job(
@@ -519,7 +525,9 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_loadbalancers_modify').first()
+            counter.value += 1
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
@@ -567,6 +575,10 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == load_balancer_id).\
                 first()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_loadbalancers_delete').first()
+            counter.value += 1
+
             if device is None:
                 # This can happen if a device was manually deleted from the DB
                 lb.status = 'DELETED'
