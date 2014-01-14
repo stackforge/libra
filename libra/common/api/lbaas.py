@@ -64,6 +64,13 @@ class Limits(DeclarativeBase):
     value = Column(u'value', BIGINT(), nullable=False)
 
 
+class AdminAuth(DeclarativeBase):
+    __tablename__ = 'admin_auth'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    tenant_id = Column(u'tenant_id', VARCHAR(length=128), nullable=False)
+    level = Column(u'level', VARCHAR(length=10), nullable=False)
+
+
 class PoolBuilding(DeclarativeBase):
     __tablename__ = 'pool_building'
     id = Column(u'id', Integer, primary_key=True, nullable=False)
@@ -190,6 +197,13 @@ class Ports(DeclarativeBase):
     protocol = Column(u'protocol', VARCHAR(length=50), nullable=False)
     portnum = Column(u'portnum', BIGINT(), nullable=False)
     enabled = Column(u'enabled', INTEGER(), nullable=False, default=0)
+
+
+class Counters(DeclarativeBase):
+    __tablename__ = 'counters'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    name = Column(u'name', VARCHAR(length=50), nullable=False)
+    value = Column(u'value', BIGINT(), primary_key=True, nullable=False)
 
 
 class RoutingSession(Session):

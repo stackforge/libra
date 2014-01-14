@@ -17,7 +17,7 @@ import threading
 from datetime import datetime
 from oslo.config import cfg
 
-from libra.common.api.lbaas import Device, db_session
+from libra.common.api.lbaas import Counters, Device, db_session
 from libra.admin_api.stats.stats_gearman import GearJobs
 from libra.openstack.common import log as logging
 
@@ -143,6 +143,9 @@ class OfflineStats(object):
                         )
                     )
                     instance.send_delete(message, data.id)
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'devices_offline_failed').first()
+                counter.value += 1
             session.commit()
 
     def start_offline_sched(self):
