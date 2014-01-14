@@ -26,7 +26,7 @@ class V1Controller(object):
     @expose('json')
     def index(self):
         response.status = 200
-        return Responses.versions
+        return Responses.v1_1
 
     @expose('json')
     def algorithms(self):

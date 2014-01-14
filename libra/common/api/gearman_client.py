@@ -17,7 +17,7 @@ eventlet.monkey_patch()
 import ipaddress
 from libra.common.json_gearman import JSONGearmanClient
 from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
-from libra.common.api.lbaas import HealthMonitor
+from libra.common.api.lbaas import HealthMonitor, Counters
 from libra.common.api.lbaas import loadbalancers_devices
 from libra.common.api.mnb import update_mnb
 from libra.openstack.common import log
@@ -142,7 +142,7 @@ class GearmanClientThread(object):
             device = session.query(Device).\
                 filter(Device.name == data).first()
             if device is None:
-                self.LOG.error(
+                LOG.error(
                     "VIP assign have been given non existent device {0}"
                     .format(data)
                 )
@@ -167,7 +167,7 @@ class GearmanClientThread(object):
                     filter(Vip.id == self.lbid).first()
                 if vip is None:
                     errmsg = 'Cannot find existing floating IP'
-                    self.LOG.error(
+                    LOG.error(
                         "Failed to assign IP to device {0}"
                         .format(data)
                     )
@@ -189,12 +189,12 @@ class GearmanClientThread(object):
         if status:
             return True
         elif self.lbid:
-            self.LOG.error(
+            LOG.error(
                 "Failed to assign IP {0} to device {1}"
                 .format(ip_str, data)
             )
         else:
-            self.LOG.error(
+            LOG.error(
                 "Failed to assign IP {0} to device {1}"
                 .format(ip_str, data)
             )
@@ -234,6 +234,9 @@ class GearmanClientThread(object):
             else:
                 session.query(Vip).\
                     filter(Vip.ip == ip_int).delete()
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'vips_deleted').first()
+                counter.value += 1
             session.commit()
 
     def send_delete(self, data):
@@ -314,6 +317,9 @@ class GearmanClientThread(object):
                 filter(Node.lbid == lb.id).delete()
             session.query(HealthMonitor).\
                 filter(HealthMonitor.lbid == lb.id).delete()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'loadbalancers_deleted').first()
+            counter.value += 1
             session.commit()
 
             #Notify billing of the LB deletion
@@ -335,7 +341,10 @@ class GearmanClientThread(object):
             # and auto-failover
             return
         device.status = 'ERROR'
+        counter = session.query(Counters).\
+            filter(Counters.name == 'loadbalancers_error').first()
         for lb in lbs:
+            counter.value += 1
             lb.status = 'ERROR'
             lb.errmsg = errmsg
 
@@ -365,6 +374,9 @@ class GearmanClientThread(object):
             else:
                 device.errmsg = 'Log archive failed: {0}'.format(response)
             lb.status = 'ACTIVE'
+            counter = session.query(Counters).\
+                filter(Counters.name == 'log_archives').first()
+            counter.value += 1
             session.commit()
 
     def send_update(self, data):
@@ -494,6 +506,9 @@ class GearmanClientThread(object):
                 device.status = 'ONLINE'
             device_name = device.name
             device_status = device.status
+            counter = session.query(Counters).\
+                filter(Counters.name == 'loadbalancers_updated').first()
+            counter.value += 1
             session.commit()
             if device_status == 'BUILD':
                 submit_vip_job(

@@ -15,11 +15,19 @@
 
 from pecan import expose, response
 from devices import DevicesController
+from loadbalancers import LoadBalancersController
+from status import StatusController
+from user import UserController
 from libra.admin_api.model.responses import Responses
 
 
-class V1Controller(object):
-    """v1 control object."""
+class V2Controller(object):
+    """v2 control object."""
+
+    @expose('json')
+    def index(self):
+        response.status = 200
+        return Responses.versions_v2_0
 
     @expose('json')
     def _default(self):
@@ -29,3 +37,6 @@ class V1Controller(object):
         return Responses._default
 
     devices = DevicesController()
+    loadbalancers = LoadBalancersController()
+    status = StatusController()
+    user = UserController()
