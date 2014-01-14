@@ -16,7 +16,7 @@
 from pecan import expose, request
 from pecan.rest import RestController
 from libra.api.acl import get_limited_to_project
-from libra.common.api.lbaas import Limits, TenantLimits, db_session
+from libra.common.api.lbaas import Limits, Counters, TenantLimits, db_session
 
 
 class LimitsController(RestController):
@@ -40,5 +40,8 @@ class LimitsController(RestController):
                 resp['maxLoadBalancers'] = tenant_lblimit
 
             resp = {"limits": {"absolute": {"values": resp}}}
-            session.rollback()
+            counter = session.query(Counters).\
+                filter(Counters.name == 'api_limits_get').first()
+            counter.value += 1
+            session.commit()
             return resp

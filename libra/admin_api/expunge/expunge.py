@@ -17,7 +17,7 @@ import threading
 from datetime import datetime, timedelta
 from oslo.config import cfg
 
-from libra.common.api.lbaas import LoadBalancer, db_session
+from libra.common.api.lbaas import LoadBalancer, db_session, Counters
 from libra.openstack.common import log
 
 
@@ -60,6 +60,9 @@ class ExpungeScheduler(object):
                     LoadBalancer.status
                 ).filter(LoadBalancer.updated < exp_time).\
                     filter(LoadBalancer.status == 'DELETED').delete()
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'loadbalancers_expunged').first()
+                counter.value += count
                 session.commit()
                 LOG.info(
                     '{0} deleted load balancers expunged'.format(count)
