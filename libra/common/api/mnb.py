@@ -252,6 +252,7 @@ def _send_usage(event_type, start, stop):
             for lb in stats:
                 lbid, byte_count = lb
 
+                byte_count = int(byte_count)
                 if lbid not in loadbalancers:
                     LOG.error("Loadbalancer {0} not found in DB "
                               "not sending usage statistics".format(lbid))
