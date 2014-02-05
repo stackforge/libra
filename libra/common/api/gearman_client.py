@@ -19,6 +19,7 @@ from libra.common.json_gearman import JSONGearmanClient
 from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.api.lbaas import loadbalancers_devices
+from libra.common.api.mnb import update_mnb
 from libra.openstack.common import log
 from pecan import conf
 
@@ -77,7 +78,7 @@ def client_job(job_type, host, data, lbid):
                         .format(data)
                     )
                     return
-
+                mnb_data = {}
                 if not status:
                     LOG.error(
                         "Giving up vip assign for device {0}".format(data)
@@ -93,9 +94,21 @@ def client_job(job_type, host, data, lbid):
                         filter(LoadBalancer.status != 'DELETED').\
                         all()
                     for lb in lbs:
+                        if lb.status == 'BUILD':
+                            # Only send a create message to MnB if we
+                            # are going from BUILD to ACTIVE. After the
+                            # DB is updated.
+                            mnb_data["lbid"] = lb.id
+                            mnb_data["tenantid"] = lb.tenantid
                         lb.status = 'ACTIVE'
                     device.status = 'ONLINE'
                 session.commit()
+
+                # Send the MnB create if needed
+                if "lbid" in mnb_data:
+                    update_mnb('lbaas.instance.create',
+                               mnb_data["lbid"],
+                               mnb_data["tenantid"])
 
         if job_type == 'REMOVE':
             client.send_remove(data)
@@ -286,6 +299,8 @@ class GearmanClientThread(object):
                 )
                 self._set_error(data, response, session)
             lb.status = 'DELETED'
+            tenant_id = lb.tenantid
+
             if count == 0:
                 # Device should never be used again
                 device = session.query(Device).\
@@ -300,6 +315,9 @@ class GearmanClientThread(object):
             session.query(HealthMonitor).\
                 filter(HealthMonitor.lbid == lb.id).delete()
             session.commit()
+
+            #Notify billing of the LB deletion
+            update_mnb('lbaas.instance.delete', self.lbid, tenant_id)
 
     def _set_error(self, device_id, errmsg, session):
         lbs = session.query(
@@ -426,6 +444,7 @@ class GearmanClientThread(object):
                 job_data['loadBalancers'].append(lb_data)
 
             # Update the worker
+            mnb_data = {}
             status, response = self._send_message(job_data, 'hpcs_response')
             if not status:
                 self._set_error(data, response, session)
@@ -443,6 +462,13 @@ class GearmanClientThread(object):
                         # floating IP assign finishes
                         if len(lbs) > 1:
                             lb.status = 'ACTIVE'
+                            if lb.id == self.lbid:
+                                # This is the new LB being added to a device.
+                                # We don't have to assign a vip so we can
+                                # notify billing of the LB creation (once the
+                                # DB is updated)
+                                mnb_data["lbid"] = lb.id
+                                mnb_data["tenantid"] = lb.tenantid
                     else:
                         lb.status = 'ACTIVE'
                         lb.errmsg = None
@@ -462,6 +488,12 @@ class GearmanClientThread(object):
                 submit_vip_job(
                     'ASSIGN', device_name, None
                 )
+
+            # Send the MnB create if needed
+            if "lbid" in mnb_data:
+                update_mnb('lbaas.instance.create',
+                           mnb_data["lbid"],
+                           mnb_data["tenantid"])
 
     def _send_message(self, message, response_name):
         job_status = self.gearman_client.submit_job(

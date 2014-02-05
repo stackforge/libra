@@ -119,7 +119,7 @@ class MaintThreads(object):
             usage = UsageStats(self.drivers)
             self.classes.append(usage)
 
-        if CONF['admin_api'].billing_enable:
+        if CONF['billing_enable']:
             billing = BillingStats(self.drivers)
             self.classes.append(billing)
 

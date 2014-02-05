@@ -16,7 +16,7 @@ import datetime
 import eventlet
 eventlet.monkey_patch()
 
-from oslo.config import cfg
+from libra.common.options import CONF
 from libra.common.api.lbaas import LoadBalancer, db_session
 from libra.common.api.lbaas import Stats
 from libra.openstack.common.notifier import api as notifier_api
@@ -31,7 +31,8 @@ LOG = logging.getLogger(__name__)
 
 
 def update_mnb(event_type, lbid, tenant_id):
-    eventlet.spawn_n(client_job, event_type, lbid, tenant_id)
+    if CONF['billing_enable']:
+        eventlet.spawn_n(client_job, event_type, lbid, tenant_id)
 
 
 def client_job(event_type, lbid, tenant_id):
@@ -56,7 +57,7 @@ def client_job(event_type, lbid, tenant_id):
 
 
 def _notify(service, event_type, payload):
-    priority = cfg.CONF.default_notification_level
+    priority = CONF['default_notification_level']
     publisher_id = notifier_api.publisher_id(service)
     notifier_api.notify(None, publisher_id, event_type, priority, payload)
 
@@ -143,7 +144,7 @@ def _send_exists(event_type):
             return
 
         # Figure out our audit period beging/ending
-        seconds = (cfg.CONF['admin_api'].exists_freq * 60)
+        seconds = (CONF['admin_api']['exists_freq'] * 60)
         interval = datetime.timedelta(seconds=seconds)
         audit_period_ending = timeutils.utcnow()
         audit_period_beginning = audit_period_ending - interval
@@ -172,7 +173,7 @@ def _send_exists(event_type):
 def _send_usage(event_type, start, stop):
 
     LOG.info("Sending MnB {0} notifications to MnB".format(event_type))
-    N = cfg.CONF['admin_api'].usage_freq
+    N = CONF['admin_api']['usage_freq']
 
     with db_session() as session:
 
@@ -283,8 +284,8 @@ def _send_usage(event_type, start, stop):
                 count += 1
 
         # Purge old stats
-        if cfg.CONF['admin_api'].stats_purge_enable:
-            hours = cfg.CONF['admin_api'].stats_purge_days * 24
+        if CONF['admin_api']['stats_purge_enable']:
+            hours = CONF['admin_api']['stats_purge_days'] * 24
             delta = datetime.timedelta(hours=hours)
             exp = timeutils.utcnow() - delta
             exp_time = exp.strftime('%Y-%m-%d %H:%M:%S')

@@ -37,7 +37,6 @@ class UsageStats(object):
         self.server_id = cfg.CONF['admin_api']['server_id']
         self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
         self.stats_freq = cfg.CONF['admin_api'].stats_freq
-        self.billing_enable = cfg.CONF['admin_api'].billing_enable
 
         self.start_stats_sched()
 
