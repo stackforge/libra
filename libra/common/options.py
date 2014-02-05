@@ -25,7 +25,10 @@ common_cli_opts = [
     cfg.StrOpt('group',
                help='Group to use for daemon mode'),
     cfg.StrOpt('user',
-               help='User to use for daemon mode')
+               help='User to use for daemon mode'),
+    cfg.BoolOpt('billing_enable',
+                default=False,
+                help='Enable or disable MnB notifictions')
 ]
 
 gearman_opts = [
