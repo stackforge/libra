@@ -31,15 +31,21 @@ Common steps
 
 ::
 
-    $ git clone ssh://git@github.com/stackforge/libra
+    $ git clone https://github.com/stackforge/libra.git
     $ cd libra
 
-3. Create needed directories
+3. Create a libra user
+
+::
+
+    $ sudo adduser --disabled-login libra
+
+4. Create needed directories
 
 ::
 
     $ sudo mkdir -p /var/run/libra /var/log/libra
-    $ sudo chown ubuntu:ubuntu /var/run/libra /var/log/libra
+    $ sudo chown libra:libra /var/run/libra /var/log/libra
 
 
 Installing
@@ -56,7 +62,7 @@ Installing
 
 ::
 
-    $ sudo apt-get install -qy gearman-jobs-server mysql-server
+    $ sudo apt-get install -qy gearman-job-server mysql-server
 
 4. Setup a VirtualEnvironment
 
@@ -67,7 +73,7 @@ Installing
 ::
 
     $ virtualenv .venv
-    $ . .venv/bin/active
+    $ . .venv/bin/activate
 
 5. Install python-gearman
 
@@ -89,7 +95,8 @@ Installing
 7. Install python-keystoneclient
 
 ::
-    pip install python-keystoneclient
+
+    $ pip install python-keystoneclient
 
 8. Install Libra in development mode
 
@@ -103,17 +110,7 @@ Installing
 
     $ sudo cp etc/sample_libra.cfg /etc/libra.cfg
 
-10. Change running as libra to ubuntu
-
-.. note::
-
-    This is to not have to add a new user.
-
-::
-
-    $ sudo sed -r -i 's/^(group|user).*libra/\1 = ubuntu/' /etc/libra.cfg
-
-11. Configure libra
+10. Configure libra
 
 ::
 
@@ -132,7 +129,7 @@ Setup database and gearman
 
 ::
 
-    $ mysql < libra/common/api/lbaas.sql
+    $ mysql -p < libra/common/api/lbaas.sql
 
 2. Change the listening address of Gearman server
 
@@ -154,14 +151,14 @@ Bring up services
 
 ::
 
-    $ libra-pool-mgm -c /etc/libra.cfg
+    $ libra_pool_mgm --config-file /etc/libra.cfg --log-dir /var/log/libra/
 
 2. Start Admin API & API services
 
 ::
 
-    $ libra-admin-api -c /etc/libra.cfg
-    $ libra-api -c /etc/libra.cfg
+    $ libra_admin_api --config-file /etc/libra.cfg --log-dir /var/log/libra/
+    $ libra_api --config-file /etc/libra.cfg --log-dir /var/log/libra/
 
 
 Creating a Worker Image
@@ -204,7 +201,7 @@ Creating a Worker Image
 
 ::
 
-    $ ssh ubuntu@<ip>
+    $ ssh root@<ip>
 
 5. Do steps in 'Common steps'
 
@@ -220,26 +217,36 @@ Creating a Worker Image
 .. note::
 
     This is a custom version with patches commited upstream but not release yet.
+    
+::
 
-   sudo pip install  https://launchpad.net/~libra-core/+archive/ppa/+files/gearman_2.0.2.git2.orig.tar.gz
+   $ pip install  https://launchpad.net/~libra-core/+archive/ppa/+files/gearman_2.0.2.git3.orig.tar.gz
 
 8. Install dependencies using pip
 
 ::
 
-    $ sudo pip install -r requirements.txt -r test-requirements.txt
+    $ pip install -r requirements.txt -r test-requirements.txt
 
 9. Install Libra in development mode
 
 ::
 
-    $ sudo python setup.py develop
+    $ python setup.py develop
 
-10. Install a Upstart job
+10. Install an Upstart job
 
+.. note::
+
+    You will also need to copy your libra.cnf to the worker machine, and update libra-worker.conf to use it (the default is /etc/libra/libra.cnf).
+    There is also an additional logging configuration file to install. 
+    You may want to test that the service starts up appropriately before moving to the next step.
+    
 ::
 
-    $ sudo wget https://raw.github.com/pcrews/lbaas-salt/master/lbaas-haproxy-base/libra_worker.conf -O /etc/init/libra_worker.conf
+    $ mkdir /etc/libra
+    $ wget https://raw2.github.com/pcrews/lbaas-salt/master/lbaas-haproxy-base/logging_worker.cfg -O /etc/libra/logging_worker.cfg
+    $ wget https://raw2.github.com/pcrews/lbaas-salt/master/lbaas-haproxy-base/libra-worker.conf -O /etc/init/libra_worker.conf
 
 11. Make a snapshot of the worker image
 
@@ -252,18 +259,18 @@ Creating a Worker Image
 .. note::
 
     To get the ID of the snapshot do
-    glance image-show libra-worker | grep -w id | cut -d '|' -f3
+    nova image-show libra-worker | grep -w id | cut -d '|' -f3
 
 ::
 
     $ sudo vi /etc/libra.cfg
 
-13. Restart libra-pool-mgm
+13. Restart libra_pool_mgm
 
 ::
 
     $ killall -9 libra_pool_mgm
-    $ libra_pool_mgm -c /etc/libra.cfg
+    $ libra_pool_mgm --config-file /etc/libra.cfg --log-dir /var/log/libra/
 
 Verifying that it works
 =======================
@@ -273,4 +280,4 @@ below command on the node that has the :ref:`libra-pool-mgm`
 
 ::
 
-    $ tail -f /var/log/libra/libra_mgm.log
+    $ less +F /var/log/libra/libra_pool_mgm.log
