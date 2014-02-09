@@ -15,17 +15,29 @@
 
 from pecan import expose
 from pecan.rest import RestController
-from libra.common.api.lbaas import Limits, db_session
+from libra.api.acl import get_limited_to_project
+from libra.common.api.lbaas import Limits, TenantLimits, db_session
 
 
 class LimitsController(RestController):
     @expose('json')
     def get(self):
         resp = {}
+        tenant_id = get_limited_to_project(request.headers)
+
         with db_session() as session:
             limits = session.query(Limits).all()
+
+            # Get per-tenant values
+            tenant_lblimit = session.query(TenantLimits.loadbalancers).\
+                filter(TenantLimits.tenantid == tenant_id).scalar()
+
             for limit in limits:
                 resp[limit.name] = limit.value
+
+            # Set per-tenant values
+            if tenant_lblimit:
+                resp['maxLoadBalancers'] = tenant_lblimit
 
             resp = {"limits": {"absolute": {"values": resp}}}
             session.rollback()
