@@ -28,6 +28,7 @@ from logs import LogsController
 # models
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
 from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip
+from libra.common.api.lbaas import TenantLimits
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
@@ -266,6 +267,13 @@ class LoadBalancersController(RestController):
             count = session.query(LoadBalancer).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.status != 'DELETED').count()
+
+            # Allow per-tenant LB limit, defaulting to the global limit if
+            # the per-tenant value is not set.
+            tenant_lblimit = session.query(TenantLimits.loadbalancers).\
+                filter(TenantLimits.tenantid == tenant_id).scalar()
+            if tenant_lblimit:
+                lblimit = tenant_lblimit
 
             if len(body.name) > namelimit:
                 session.rollback()

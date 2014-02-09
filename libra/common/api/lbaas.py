@@ -50,6 +50,13 @@ class FormatedDateTime(types.TypeDecorator):
         return value.strftime('%Y-%m-%dT%H:%M:%S')
 
 
+class TenantLimits(DeclarativeBase):
+    __tablename__ = 'tenant_limits'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    tenantid = Column(u'tenantid', VARCHAR(length=128), nullable=False)
+    loadbalancers = Column(u'loadbalancers', INTEGER(), nullable=True)
+
+
 class Limits(DeclarativeBase):
     __tablename__ = 'global_limits'
     id = Column(u'id', Integer, primary_key=True, nullable=False)
