@@ -26,6 +26,10 @@ CREATE TABLE loadbalancers (
     created   TIMESTAMP                NOT NULL DEFAULT '0000-00-00 00:00:00',                 # timestamp of when LB was created
     updated   TIMESTAMP                NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,                 # timestamp of when LB was last updated
     errmsg    VARCHAR(128)             DEFAULT NULL,                                      # optional error message which can describe details regarding LBs state, can be blank if no error state exists
+    client_timeout INT,
+    server_timeout INT,
+    connect_timeout INT,
+    connect_retries INT,
     PRIMARY KEY (id)                                             # ids are unique accross all LBs
  ) DEFAULT CHARSET utf8 DEFAULT COLLATE utf8_general_ci;
 

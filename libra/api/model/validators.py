@@ -59,9 +59,17 @@ class LBVip(Base):
     id = wsattr(int, mandatory=True)
 
 
+class LBOptions(Base):
+    client_timeout = int
+    server_timeout = int
+    connect_timeout = int
+    connect_retries = int
+
+
 class LBPost(Base):
     name = wsattr(wtypes.text, mandatory=True)
     nodes = wsattr(['LBNode'], mandatory=True)
+    options = wsattr('LBOptions')
     protocol = wtypes.text
     algorithm = Enum(wtypes.text, 'ROUND_ROBIN', 'LEAST_CONNECTIONS')
     port = int

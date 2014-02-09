@@ -440,6 +440,18 @@ class GearmanClientThread(object):
                 if monitor.path is not None:
                     monitor_data['path'] = monitor.path
 
+                # All new LBs created since these options were supported
+                # will have default values in the DB. Pre-existing LBs will
+                # not have any values, so we need to check for that.
+                if any([lb.client_timeout, lb.server_timeout,
+                        lb.connect_timeout, lb.connect_retries]):
+                    lb_data['options'] = {
+                        'client_timeout': lb.client_timeout,
+                        'server_timeout': lb.server_timeout,
+                        'connect_timeout': lb.connect_timeout,
+                        'connect_retries': lb.connect_retries
+                    }
+
                 lb_data['monitor'] = monitor_data
                 job_data['loadBalancers'].append(lb_data)
 
