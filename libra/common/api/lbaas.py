@@ -111,6 +111,10 @@ class LoadBalancer(DeclarativeBase):
     tenantid = Column(u'tenantid', VARCHAR(length=128), nullable=False)
     updated = Column(u'updated', FormatedDateTime(), nullable=False)
     created = Column(u'created', FormatedDateTime(), nullable=False)
+    client_timeout = Column(u'client_timeout', INTEGER(), nullable=True)
+    server_timeout = Column(u'server_timeout', INTEGER(), nullable=True)
+    connect_timeout = Column(u'connect_timeout', INTEGER(), nullable=True)
+    connect_retries = Column(u'connect_retries', INTEGER(), nullable=True)
     nodes = relationship(
         'Node', backref=backref('loadbalancers', order_by='Node.id')
     )
