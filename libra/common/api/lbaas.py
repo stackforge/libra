@@ -180,6 +180,16 @@ class Stats(DeclarativeBase):
     status = Column(u'status', VARCHAR(length=50), nullable=False)
 
 
+class Ports(DeclarativeBase):
+    """ports model"""
+    __tablename__ = 'ports'
+    #column definitions
+    id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
+    protocol = Column(u'protocol', VARCHAR(length=50), nullable=False)
+    portnum = Column(u'portnum', BIGINT(), nullable=False)
+    enabled = Column(u'enabled', INTEGER(), nullable=False, default=0)
+
+
 class RoutingSession(Session):
     """ Try to use the first engine provided.  If this fails use the next in
         sequence and so on.  Reset to the first after 60 seconds
