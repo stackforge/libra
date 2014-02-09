@@ -16,6 +16,7 @@
 from pecan import expose, response
 from load_balancers import LoadBalancersController
 from limits import LimitsController
+from protocols import ProtocolsController
 from libra.api.model.responses import Responses
 
 
@@ -26,18 +27,6 @@ class V1Controller(object):
     def index(self):
         response.status = 200
         return Responses.versions
-
-    @expose('json')
-    def protocols(self):
-        """Lists all supported load balancing protocols.
-
-        Url:
-           GET /protocols
-
-        Returns: dict
-        """
-        response.status = 200
-        return Responses.protocols
 
     @expose('json')
     def algorithms(self):
@@ -54,3 +43,4 @@ class V1Controller(object):
     #pecan uses this controller class for urls that start with /loadbalancers
     loadbalancers = LoadBalancersController()
     limits = LimitsController()
+    protocols = ProtocolsController()

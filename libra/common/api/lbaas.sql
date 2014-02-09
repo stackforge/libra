@@ -128,3 +128,15 @@ CREATE TABLE stats (
     status         VARCHAR(50)              NOT NULL,                              # Current LB status
     PRIMARY KEY (id)                                                               # ids are unique across all LBs
  ) ENGINE=InnoDB DEFAULT CHARSET latin1;
+ 
+# Ports
+CREATE TABLE ports (
+    id             BIGINT                   NOT NULL AUTO_INCREMENT,               # unique id
+    protocol       VARCHAR(50)              NOT NULL,                              # Ptotocol type (HTTP, TCP, etc)
+    portnum        BIGINT                   NOT NULL,                              # port number
+    enabled        BOOLEAN                  NOT NULL DEFAULT FALSE,                # enabled/disabled
+    PRIMARY KEY (id)                                                               # ids are unique across all LBs
+ ) ENGINE=InnoDB DEFAULT CHARSET latin1;
+
+INSERT INTO ports VALUES (1, 'HTTP', 80, true),(2, 'HTTP', 8080, false),(3, 'HTTP', 8088, false),(4,'TCP', 443, true),(5, 'TCP', 8443, false),(6, 'TCP', 3306, true),(7, 'GALERA', 3306, true);
+
