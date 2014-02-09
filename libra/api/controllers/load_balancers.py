@@ -250,6 +250,21 @@ class LoadBalancersController(RestController):
             if is_galera and not is_backup:
                 num_galera_primary_nodes += 1
 
+        # Options defaults
+        client_timeout_ms = 30000
+        server_timeout_ms = 30000
+        connect_timeout_ms = 30000
+        connect_retries = 3
+        if body.options:
+            if body.options.client_timeout != Unset:
+                client_timeout_ms = body.options.client_timeout
+            if body.options.server_timeout != Unset:
+                server_timeout_ms = body.options.server_timeout
+            if body.options.connect_timeout != Unset:
+                connect_timeout_ms = body.options.connect_timeout
+            if body.options.connect_retries != Unset:
+                connect_retries = body.options.connect_retries
+
         # Galera sanity checks
         if is_galera and num_galera_primary_nodes != 1:
             raise ClientSideError(
@@ -393,6 +408,11 @@ class LoadBalancersController(RestController):
                 lb.algorithm = body.algorithm.upper()
             else:
                 lb.algorithm = 'ROUND_ROBIN'
+
+            lb.client_timeout = client_timeout_ms
+            lb.server_timeout = server_timeout_ms
+            lb.connect_timeout = connect_timeout_ms
+            lb.connect_retries = connect_retries
 
             lb.devices = [device]
             # write to database
