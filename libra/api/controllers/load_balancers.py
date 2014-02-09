@@ -27,7 +27,7 @@ from logs import LogsController
 
 # models
 from libra.common.api.lbaas import LoadBalancer, Device, Node, db_session
-from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip
+from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip, Ports
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
@@ -266,6 +266,8 @@ class LoadBalancersController(RestController):
             count = session.query(LoadBalancer).\
                 filter(LoadBalancer.tenantid == tenant_id).\
                 filter(LoadBalancer.status != 'DELETED').count()
+            ports = session.query(Ports.protocol, Ports.portnum).\
+                filter(Ports.enabled == 1).all()
 
             if len(body.name) > namelimit:
                 session.rollback()
@@ -307,7 +309,19 @@ class LoadBalancersController(RestController):
                     raise ClientSideError(
                         'Port number {0} is invalid'.format(body.port)
                     )
-                lb.port = body.port
+                # Make sure the port is valid and enabled
+                valid = False
+                for item in ports:
+                    item = item._asdict()
+                    if(lb.protocol == item["protocol"].upper() and
+                            body.port == item["portnum"]):
+                        valid = True
+                if valid:
+                    lb.port = body.port
+                else:
+                    raise ClientSideError(
+                        'Port number {0} is invalid'.format(body.port)
+                    )
             else:
                 if lb.protocol == 'HTTP':
                     lb.port = 80
