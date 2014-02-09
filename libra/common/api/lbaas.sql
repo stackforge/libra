@@ -68,7 +68,7 @@ CREATE TABLE `loadbalancers_devices` (
 CREATE TABLE monitors (
     lbid                              BIGINT                NOT NULL,                  # Loadbalancer who owns this node
     type                              VARCHAR(128)          NOT NULL,                  # Type of ping. CONNECT, HTTP, HTTPS
-    delay                             INT                   NOT NULL,                  # This is the minimum time in seconds between regular calls to a monitor 
+    delay                             INT                   NOT NULL,                  # This is the minimum time in seconds between regular calls to a monitor
     timeout                           INT                   NOT NULL,                  # Maximum number of seconds to wait for a connection to the node before it times out.
     attemptsBeforeDeactivation        INT                   NOT NULL,                  # Number of permissible failures before removing a node from rotation. 1 to 10.
     path                              VARCHAR(2000)         NULL,                      # The HTTP path used in the request by the monitor. Begins with /
@@ -89,7 +89,7 @@ CREATE TABLE `vips` (
   `device` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `device` (`device`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1; 
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `global_limits` (
   `id` int(11) NOT NULL,
@@ -99,6 +99,14 @@ CREATE TABLE `global_limits` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 INSERT INTO `global_limits` VALUES (1,'maxLoadBalancerNameLength',128),(2,'maxVIPsPerLoadBalancer',1),(3,'maxNodesPerLoadBalancer',50),(4,'maxLoadBalancers',20);
+
+CREATE TABLE `tenant_limits` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tenantid` VARCHAR(128) NOT NULL,
+  `loadbalancers` INT,                     # Max number of load balancers
+  PRIMARY KEY(id),
+  UNIQUE KEY `tenantid` (`tenantid`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 # Billing
 CREATE TABLE billing (
@@ -120,4 +128,3 @@ CREATE TABLE stats (
     status         VARCHAR(50)              NOT NULL,                              # Current LB status
     PRIMARY KEY (id)                                                               # ids are unique across all LBs
  ) ENGINE=InnoDB DEFAULT CHARSET latin1;
- 
