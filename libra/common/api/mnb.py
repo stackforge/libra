@@ -333,12 +333,12 @@ def _build_payload(begin, end, name, id, tenant, status):
 
 
 def _build_metrics(bytes):
-    return {
+    return [{
         "metric_name": "lbaas.network.outgoing.bytes",
         "metric_type": "gauge",
         "metric_units": "BYTES",
         "metric_value": bytes
-    }
+    }]
 
 
 def _rounded_down_min(ts, N):
