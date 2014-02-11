@@ -161,3 +161,59 @@ Command Line Options
       The number of days before DELETED load balancers are purged from the
       database.  The purge is run every 24 hours.  Purge is not run if no
       value is provided.
+
+   .. option:: --stats_enable <BOOL>
+
+      Enable / Disable usage statistics gathering
+
+   .. option:: --exists_freq <MINUTES>
+
+      Minutes between sending of billing exists messages
+
+   .. option:: --usage_freq <MINUTES>
+
+      Minutes between sending of billing usage messages
+
+   .. option:: --stats_freqs <MINUTES>
+
+      Minutes between collecting usage statistics
+
+   .. option:: --stats_purge_enable <BOOL>
+
+      Enable / Disable purging of usage statistics
+
+   .. option:: --stats_purge_days <DAYS>
+
+      Number of days to keep usage statistics
+
+   .. option:: --delete_timer_seconds <SECONDS>
+
+      Which second of each minute delete timer should run
+
+   .. option:: --ping_timer_seconds <SECONDS>
+
+      Which second of each minute ping timer should run
+
+   .. option:: --stats_timer_seconds <SECONDS>
+
+      Which second of each minute statistics timer should run
+
+   .. option:: --usage_timer_seconds <SECONDS>
+
+      Which second of each minute usage timer should run
+
+   .. option:: --probe_timer_seconds <SECONDS>
+
+      Which second of each minute probe timer should run
+
+   .. option:: --offline_timer_seconds <SECONDS>
+
+      Which second of each minute offline timer should run
+
+   .. option:: --vips_timer_seconds <SECONDS>
+
+      Which second of each minute vips timer should run
+
+   .. option:: --exists_timer_seconds <SECONDS>
+
+      Which second of each minute exists timer should run
