@@ -32,7 +32,7 @@ from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip, Ports
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
-from libra.api.model.validators import LBRespNode
+from libra.api.model.validators import NodeResp
 from libra.common.api.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
@@ -493,17 +493,38 @@ class LoadBalancersController(RestController):
             return_data.virtualIps = [vip_resp]
             return_data.nodes = []
             for node in body.nodes:
+                if node.condition == 'DISABLED':
+                    enabled = 0
+                    node_status = 'OFFLINE'
+                else:
+                    enabled = 1
+                    node_status = 'ONLINE'
+                weight = 1
+                if node.weight != Unset:
+                    weight = node.weight
+                new_node = Node(
+                    lbid=self.lbid, port=node.port, address=node.address,
+                    enabled=enabled, status=node_status,
+                    weight=weight
+                )
+                session.add(new_node)
+                session.flush()
+                if new_node.enabled:
+                    condition = 'ENABLED'
+                else:
+                    condition = 'DISABLED'
                 if node.weight != Unset and node.weight != 1:
-                    out_node = LBRespNode(
-                        port=str(node.port), address=node.address,
-                        condition=node.condition, weight=weight
+                    out_node = NodeResp(
+                        id=new_node.id, port=new_node.port,
+                        address=new_node.address, condition=condition,
+                        status=new_node.status
                     )
                 else:
-                    out_node = LBRespNode(
-                        port=str(node.port), address=node.address,
-                        condition=node.condition
+                    out_node = NodeResp(
+                        id=new_node.id, port=new_node.port,
+                        address=new_node.address, condition=condition,
+                        status=new_node.status, weight=weight
                     )
-
                 return_data.nodes.append(out_node)
             session.commit()
             # trigger gearman client to create new lb
