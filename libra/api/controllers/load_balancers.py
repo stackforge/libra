@@ -492,18 +492,49 @@ class LoadBalancersController(RestController):
                 )
             return_data.virtualIps = [vip_resp]
             return_data.nodes = []
-            for node in body.nodes:
+            ## this part is changed by min
+            session.flush()
+            nodes = session.query(
+                Node.id, Node.address, Node.port, Node.status,
+                Node.enabled, Node.weight
+            ).join(lb.nodes). \
+                filter(lb.tenantid == tenant_id). \
+                filter(lb.id == self.lbid). \
+                all()
+            ##end of the change
+            for node in nodes:
+                if node.condition == 'DISABLED':
+                    enabled = 0
+                    node_status = 'OFFLINE'
+                else:
+                    enabled = 1
+                    node_status = 'ONLINE'
+                weight = 1
+                if node.weight != Unset:
+                    weight = node.weight
+                new_node = Node(
+                    lbid=self.lbid, port=node.port, address=node.address,
+                    enabled=enabled, status=node_status,
+                    weight=weight
+                )
+                session.add(new_node)
+                session.flush()
+                if new_node.enabled:
+                    condition = 'ENABLED'
+                else:
+                    condition = 'DISABLED'
                 if node.weight != Unset and node.weight != 1:
                     out_node = LBRespNode(
-                        port=str(node.port), address=node.address,
-                        condition=node.condition, weight=weight
+                        id=new_node.id, port=new_node.port,
+                        address=new_node.address, condition=condition,
+                        status=new_node.status
                     )
                 else:
                     out_node = LBRespNode(
-                        port=str(node.port), address=node.address,
-                        condition=node.condition
+                        id=new_node.id, port=new_node.port,
+                        address=new_node.address, condition=condition,
+                        status=new_node.status, weight=weight
                     )
-
                 return_data.nodes.append(out_node)
             session.commit()
             # trigger gearman client to create new lb

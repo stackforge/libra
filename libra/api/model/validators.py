@@ -31,6 +31,9 @@ class LBRespNode(Base):
     address = wtypes.text
     condition = wtypes.text
     weight = int
+    condition = wtypes.text
+    status = wtypes.text
+    id = int
 
 
 class LBNodePut(Base):
@@ -105,7 +108,7 @@ class LBResp(Base):
     created = wtypes.text
     updated = wtypes.text
     virtualIps = wsattr(['LBVipResp'])
-    nodes = wsattr(['LBRespNode'])
+    lnodes = wsattr(['LBRespNode'])
 
 
 class LBMonitorPut(Base):
