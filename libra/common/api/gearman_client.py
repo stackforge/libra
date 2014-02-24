@@ -443,13 +443,12 @@ class GearmanClientThread(object):
                 # All new LBs created since these options were supported
                 # will have default values in the DB. Pre-existing LBs will
                 # not have any values, so we need to check for that.
-                if any([lb.client_timeout, lb.server_timeout,
-                        lb.connect_timeout, lb.connect_retries]):
+                if any([lb.timeout, lb.retries]):
                     lb_data['options'] = {
-                        'client_timeout': lb.client_timeout,
-                        'server_timeout': lb.server_timeout,
-                        'connect_timeout': lb.connect_timeout,
-                        'connect_retries': lb.connect_retries
+                        'client_timeout': lb.timeout,
+                        'server_timeout': lb.timeout,
+                        'connect_timeout': lb.timeout,
+                        'connect_retries': lb.retries
                     }
 
                 lb_data['monitor'] = monitor_data

@@ -32,7 +32,7 @@ from libra.common.api.lbaas import loadbalancers_devices, Limits, Vip, Ports
 from libra.common.api.lbaas import HealthMonitor
 from libra.common.exc import ExhaustedError
 from libra.api.model.validators import LBPut, LBPost, LBResp, LBVipResp
-from libra.api.model.validators import LBRespNode
+from libra.api.model.validators import LBRespNode, LBOptions
 from libra.common.api.gearman_client import submit_job
 from libra.api.acl import get_limited_to_project
 from libra.api.library.exp import OverLimit, IPOutOfRange, NotFound
@@ -44,6 +44,12 @@ from wsme import types as wtypes
 
 
 class LoadBalancersController(RestController):
+
+    LB_TIMEOUT_MS = 30000
+    LB_TIMEOUT_MAX = 1000000
+    LB_RETRIES = 3
+    LB_RETRIES_MAX = 256
+
     def __init__(self, lbid=None):
         self.lbid = lbid
 
@@ -77,7 +83,8 @@ class LoadBalancersController(RestController):
                         LoadBalancer.protocol,
                         LoadBalancer.port, LoadBalancer.algorithm,
                         LoadBalancer.status, LoadBalancer.created,
-                        LoadBalancer.updated
+                        LoadBalancer.updated, LoadBalancer.timeout,
+                        LoadBalancer.retries
                     ).filter(LoadBalancer.tenantid == tenant_id).\
                         filter(LoadBalancer.status == 'DELETED').all()
                 else:
@@ -86,7 +93,8 @@ class LoadBalancersController(RestController):
                         LoadBalancer.protocol,
                         LoadBalancer.port, LoadBalancer.algorithm,
                         LoadBalancer.status, LoadBalancer.created,
-                        LoadBalancer.updated
+                        LoadBalancer.updated, LoadBalancer.timeout,
+                        LoadBalancer.retries
                     ).filter(LoadBalancer.tenantid == tenant_id).\
                         filter(LoadBalancer.status != 'DELETED').all()
                 load_balancers = {'loadBalancers': []}
@@ -96,6 +104,20 @@ class LoadBalancersController(RestController):
                     lb['nodeCount'] = session.query(Node).\
                         filter(Node.lbid == lb['id']).count()
                     lb['id'] = str(lb['id'])
+
+                    # Unset options get set to default values
+                    lb['options'] = {}
+                    if lb['timeout']:
+                        lb['options']['timeout'] = lb['timeout']
+                    else:
+                        lb['options']['timeout'] = self.LB_TIMEOUT_MS
+                    if lb['retries']:
+                        lb['options']['retries'] = lb['retries']
+                    else:
+                        lb['options']['retries'] = self.LB_RETRIES
+                    del(lb['timeout'])
+                    del(lb['retries'])
+
                     load_balancers['loadBalancers'].append(lb)
             else:
                 load_balancers = session.query(
@@ -103,6 +125,7 @@ class LoadBalancersController(RestController):
                     LoadBalancer.port, LoadBalancer.algorithm,
                     LoadBalancer.status, LoadBalancer.created,
                     LoadBalancer.updated, LoadBalancer.errmsg,
+                    LoadBalancer.timeout, LoadBalancer.retries,
                     Vip.id.label('vipid'), Vip.ip
                 ).join(LoadBalancer.devices).\
                     outerjoin(Device.vip).\
@@ -167,6 +190,21 @@ class LoadBalancersController(RestController):
                     if node['weight'] == 1:
                         del node['weight']
                     load_balancers['nodes'].append(node)
+
+                # Unset options get set to default values
+                load_balancers['options'] = {}
+                if load_balancers['timeout']:
+                    load_balancers['options']['timeout'] =\
+                        load_balancers['timeout']
+                else:
+                    load_balancers['options']['timeout'] = self.LB_TIMEOUT_MS
+                if load_balancers['retries']:
+                    load_balancers['options']['retries'] =\
+                        load_balancers['retries']
+                else:
+                    load_balancers['options']['retries'] = self.LB_RETRIES
+                del(load_balancers['timeout'])
+                del(load_balancers['retries'])
 
             session.rollback()
             response.status = 200
@@ -252,19 +290,33 @@ class LoadBalancersController(RestController):
                 num_galera_primary_nodes += 1
 
         # Options defaults
-        client_timeout_ms = 30000
-        server_timeout_ms = 30000
-        connect_timeout_ms = 30000
-        connect_retries = 3
+        timeout_ms = self.LB_TIMEOUT_MS
+        retries = self.LB_RETRIES
         if body.options:
-            if body.options.client_timeout != Unset:
-                client_timeout_ms = body.options.client_timeout
-            if body.options.server_timeout != Unset:
-                server_timeout_ms = body.options.server_timeout
-            if body.options.connect_timeout != Unset:
-                connect_timeout_ms = body.options.connect_timeout
-            if body.options.connect_retries != Unset:
-                connect_retries = body.options.connect_retries
+            if body.options.timeout != Unset:
+                try:
+                    timeout_ms = int(body.options.timeout)
+                    if timeout_ms < 0 or timeout_ms > self.LB_TIMEOUT_MAX:
+                        raise ClientSideError(
+                            'timeout must be between 0 and {0} ms'
+                            .format(self.LB_TIMEOUT_MAX)
+                        )
+                except ValueError:
+                    raise ClientSideError(
+                        'timeout must be an integer'
+                    )
+            if body.options.retries != Unset:
+                try:
+                    retries = int(body.options.retries)
+                    if retries < 0 or retries > self.LB_RETRIES_MAX:
+                        raise ClientSideError(
+                            'retries must be between 0 and {0}'
+                            .format(self.LB_RETRIES_MAX)
+                        )
+                except ValueError:
+                    raise ClientSideError(
+                        'retries must be an integer'
+                    )
 
         # Galera sanity checks
         if is_galera and num_galera_primary_nodes != 1:
@@ -431,10 +483,8 @@ class LoadBalancersController(RestController):
             else:
                 lb.algorithm = 'ROUND_ROBIN'
 
-            lb.client_timeout = client_timeout_ms
-            lb.server_timeout = server_timeout_ms
-            lb.connect_timeout = connect_timeout_ms
-            lb.connect_retries = connect_retries
+            lb.timeout = timeout_ms
+            lb.retries = retries
 
             lb.devices = [device]
             # write to database
@@ -505,6 +555,10 @@ class LoadBalancersController(RestController):
                     )
 
                 return_data.nodes.append(out_node)
+
+            return_data.options = LBOptions(timeout=timeout_ms,
+                                            retries=retries)
+
             session.commit()
             # trigger gearman client to create new lb
             submit_job(
@@ -550,6 +604,34 @@ class LoadBalancersController(RestController):
 
             if body.algorithm != Unset:
                 lb.algorithm = body.algorithm
+
+            if body.options:
+                if body.options.timeout != Unset:
+                    try:
+                        timeout_ms = int(body.options.timeout)
+                        if timeout_ms < 0 or timeout_ms > self.LB_TIMEOUT_MAX:
+                            raise ClientSideError(
+                                'timeout must be between 0 and {0} ms'
+                                .format(self.LB_TIMEOUT_MAX)
+                            )
+                        lb.timeout = timeout_ms
+                    except ValueError:
+                        raise ClientSideError(
+                            'timeout must be an integer'
+                        )
+                if body.options.retries != Unset:
+                    try:
+                        retries = int(body.options.retries)
+                        if retries < 0 or retries > self.LB_RETRIES_MAX:
+                            raise ClientSideError(
+                                'retries must be between 0 and {0}'
+                                .format(self.LB_RETRIES_MAX)
+                            )
+                        lb.retries = retries
+                    except ValueError:
+                        raise ClientSideError(
+                            'retries must be an integer'
+                        )
 
             lb.status = 'PENDING_UPDATE'
             device = session.query(
