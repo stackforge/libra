@@ -27,10 +27,12 @@ class LBNode(Base):
 
 
 class LBRespNode(Base):
+    id = wtypes.text
     port = wtypes.text
     address = wtypes.text
     condition = wtypes.text
-    weight = int
+    status = wtypes.text
+    weight = wtypes.text
 
 
 class LBNodePut(Base):
@@ -60,10 +62,8 @@ class LBVip(Base):
 
 
 class LBOptions(Base):
-    client_timeout = int
-    server_timeout = int
-    connect_timeout = int
-    connect_retries = int
+    timeout = int
+    retries = int
 
 
 class LBPost(Base):
@@ -79,6 +79,7 @@ class LBPost(Base):
 class LBPut(Base):
     name = wtypes.text
     algorithm = Enum(wtypes.text, 'ROUND_ROBIN', 'LEAST_CONNECTIONS')
+    options = wsattr('LBOptions')
 
 
 class LBVipResp(Base):
@@ -106,6 +107,7 @@ class LBResp(Base):
     updated = wtypes.text
     virtualIps = wsattr(['LBVipResp'])
     nodes = wsattr(['LBRespNode'])
+    options = wsattr('LBOptions')
 
 
 class LBMonitorPut(Base):
