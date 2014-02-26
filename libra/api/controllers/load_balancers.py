@@ -395,7 +395,8 @@ class LoadBalancersController(RestController):
                     lb.port = body.port
                 else:
                     raise ClientSideError(
-                        'Port number {0} is invalid'.format(body.port)
+                        'Port number {0} is not allowed for {1} protocol'
+                        .format(body.port, lb.protocol)
                     )
             else:
                 if lb.protocol == 'HTTP':
@@ -473,9 +474,38 @@ class LoadBalancersController(RestController):
                     count()
                 if old_count:
                     session.rollback()
-                    # Error here, can have only one LB per port on a device
+                    # Error, can have only one LB per port on a device
                     raise ClientSideError(
                         'Only one load balancer per port allowed per device'
+                    )
+
+                if lb.protocol == 'HTTP':
+                    protocol_count = session.query(
+                        LoadBalancer
+                    ).join(LoadBalancer.devices).\
+                        join(Device.vip).\
+                        filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(Vip.id == virtual_id).\
+                        filter(LoadBalancer.protocol == lb.protocol).\
+                        count()
+                else:
+                    # TCP or GALERA. Both are TCP really
+                    protocol_count = session.query(
+                        LoadBalancer
+                    ).join(LoadBalancer.devices).\
+                        join(Device.vip).\
+                        filter(LoadBalancer.tenantid == tenant_id).\
+                        filter(Vip.id == virtual_id).\
+                        filter((LoadBalancer.protocol == 'TCP') |
+                               (LoadBalancer.protocol == 'GALERA')).\
+                        count()
+
+                if protocol_count:
+                    session.rollback()
+                    # Error, can have only one LB per protocol on a device
+                    raise ClientSideError(
+                        'Only one load balancer per protocol'
+                        ' allowed per device'
                     )
 
             if body.algorithm:
