@@ -17,6 +17,7 @@ Configuration File
       ssl_certfile=/opt/server.crt
       ssl_keyfile=/opt/server.key
       gearman=127.0.0.1:4730
+      keystone_module=keystoneclient.middleware.auth_token:AuthProtocol
 
       [mysql1]
       host=localhost
@@ -39,6 +40,10 @@ Command Line Options
    .. option:: --port <PORT NUMBER>
 
       The port number to listen on, default is 8889
+
+   .. option:: --disable_keystone
+
+      Do not use keystone authentication, for testing purposes only
 
    .. option:: --db_sections <SECTIONNAME>
 
@@ -90,6 +95,12 @@ Command Line Options
 
       Used to specify the Gearman job server hostname and port. This option
       can be used multiple times to specify multiple job servers
+
+   .. option:: --keystone_module <MODULE:CLASS>
+
+      A colon separated module and class to use as the keystone authentication
+      module.  The class should be compatible with keystone's AuthProtocol
+      class.
 
    .. option:: --stats_driver <DRIVER LIST>
 
