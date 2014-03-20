@@ -46,6 +46,10 @@ load balancer create
 
 **updated :** When the load balancer was last updated
 
+**nodeCount :** The number of backend servers attached to this load balancer
+
+**options :** Current options are timeout (30 sec) and retries (3) for each load balancer
+
 Request Data
 ~~~~~~~~~~~~
 
@@ -121,7 +125,8 @@ Example
                 "algorithm":"LEAST_CONNECTIONS",
                 "status":"ACTIVE",
                 "created":"2010-11-30T03:23:42Z",
-                "updated":"2010-11-30T03:23:44Z"
+                "updated":"2010-11-30T03:23:44Z",
+                "options": {"timeout": 30000, "retries": 3}
             },
             {
                 "name":"lb-site2",
@@ -131,7 +136,8 @@ Example
                 "algorithm":"ROUND_ROBIN",
                 "status":"ACTIVE",
                 "created":"2010-11-30T03:23:42Z",
-                "updated":"2010-11-30T03:23:44Z"
+                "updated":"2010-11-30T03:23:44Z",
+                "options": {"timeout": 30000, "retries": 3}
             }
             ]
     }
@@ -232,6 +238,7 @@ Example
             "status":"ACTIVE",
             "created":"2010-11-30T03:23:42Z",
             "updated":"2010-11-30T03:23:44Z",
+            "options": {"timeout": 30000, "retries": 3},
             "virtualIps":[
                         {
                             "id": "1000",
@@ -322,6 +329,11 @@ protocol "GALERA" that can be used to choose a primary write node when
 the load balancer is being used to deliver data to a Galera database
 cluster. The default load balancing algorithm used is set to ROUND\_ROBIN.
 
+The load balancer options consist of a 30 second timeout for client 
+connections (30,000ms) and 3 retries. Valid timeout values range from 
+0 to 1000 seconds (1,000,000 ms) with 0 indicating no timeout. retries can
+range from 0 to 256. 
+
 A load balancer name has a max length that can be determined by querying
 limits.
 
@@ -408,8 +420,9 @@ balancer virtual IP**
 
     {
         "name":"a-new-loadbalancer",
-        "port":"83",
+        "port":"80",
         "protocol":"HTTP",
+        "options": {"timeout": 30000, "retries": 3},
         "virtualIps": [
                    {
                       "id":"39"
@@ -433,6 +446,7 @@ single primary write node for a Galera cluster**
         "name":"a-new-loadbalancer",
         "port":"83",
         "protocol":"GALERA",
+        "options": {"timeout": 30000, "retries": 3},
         "virtualIps": [
                    {
                       "id":"39"
@@ -481,6 +495,7 @@ JSON**
             "status": "BUILD",
             "created": "2011-04-13T14:18:07Z",
             "updated":"2011-04-13T14:18:07Z",
+            "options": {"timeout": 30000, "retries": 3},
             "virtualIps": [
                     {
                         "address": "3ffe:1900:4545:3:200:f8ff:fe21:67cf",
@@ -585,7 +600,8 @@ Example
                 "type":"PUBLIC"
             }
         ],
-        "algorithm":"ROUND_ROBIN"
+        "algorithm":"ROUND_ROBIN",
+        "options": {"timeout": 30000, "retries": 3},
     }
 
 .. _api-lb-modify:
@@ -621,6 +637,8 @@ attributes:
 
 \*algorithm
 
+\*options
+
 This operation does not return a response body.
 
 .. note::
@@ -652,7 +670,8 @@ Request Body
 
     {
         "name": "newname-loadbalancer",
-        "algorithm": "LEAST_CONNECTIONS"
+        "algorithm": "LEAST_CONNECTIONS",
+        "options": {"timeout": 30000, "retries": 3}
     }
 
 Normal Response Code
@@ -695,7 +714,8 @@ Example
 
     {
         "name": "newname-loadbalancer",
-        "algorithm": "LEAST_CONNECTIONS"
+        "algorithm": "LEAST_CONNECTIONS",
+        "options": {"timeout": 30000, "retries": 3}
     }
 
 **Curl Request**
@@ -794,3 +814,4 @@ Example
 **Response**
 
 status with no response body.
+
