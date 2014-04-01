@@ -74,8 +74,7 @@ class DevicesController(RestController):
                         lbids = session.query(
                             loadbalancers_devices.c.loadbalancer).\
                             filter(
-                                loadbalancers_devices.c.device == dev['id']
-                            ).\
+                                loadbalancers_devices.c.device == dev['id']).\
                             all()
 
                         lblist = [i[0] for i in lbids]
@@ -118,8 +117,7 @@ class DevicesController(RestController):
                     lbids = session.query(
                         loadbalancers_devices.c.loadbalancer).\
                         filter(
-                            loadbalancers_devices.c.device == device['id']
-                        ).\
+                            loadbalancers_devices.c.device == device['id']).\
                         all()
 
                     lblist = [i[0] for i in lbids]
@@ -182,7 +180,7 @@ class DevicesController(RestController):
             session.add(device)
             session.flush()
 
-            #refresh the device record so we get the id back
+            # refresh the device record so we get the id back
             session.refresh(device)
 
             try:

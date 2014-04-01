@@ -193,8 +193,7 @@ class PingStats(object):
                             format(
                                 node_data.lbid,
                                 data.floatingIpAddr,
-                                data.tenantid
-                            )
+                                data.tenantid)
 
                     # Change the node status in the node table
                     session.query(Node).\

@@ -188,7 +188,7 @@ class GearJobs(object):
                 # Error returned by Gearman
                 failed_list.append(stats.job.task)
             else:
-                #Success
+                # Success
                 results[stats.job.task] = stats.result
 
         list_of_jobs = []
@@ -218,7 +218,7 @@ class GearJobs(object):
                     # Error returned by Gearman
                     failed_list.append(stats.job.task)
                 else:
-                    #Success
+                    # Success
                     results[stats.job.task] = stats.result
 
         return failed_list, results
