@@ -523,7 +523,7 @@ class LoadBalancersController(RestController):
             # write to database
             session.add(lb)
             session.flush()
-            #refresh the lb record so we get the id back
+            # refresh the lb record so we get the id back
             session.refresh(lb)
             for node in body.nodes:
                 if node.condition == 'DISABLED':

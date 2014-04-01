@@ -82,9 +82,9 @@ class HAProxyDriver(LoadBalancerDriver):
             if proto == 'galera':
                 real_proto = 'tcp'
 
-            #------------------------
+            # ------------------------
             # Frontend configuration
-            #------------------------
+            # ------------------------
             output.append('frontend %s-in' % real_proto)
             output.append('    mode %s' % real_proto)
             output.append('    bind %s:%s' % (protocfg['bind_address'],
@@ -100,9 +100,9 @@ class HAProxyDriver(LoadBalancerDriver):
             elif real_proto == 'tcp':
                 output.append('    option tcplog')
 
-            #------------------------
+            # ------------------------
             # Backend configuration
-            #------------------------
+            # ------------------------
 
             output.append('backend %s-servers' % real_proto)
             output.append('    mode %s' % real_proto)
