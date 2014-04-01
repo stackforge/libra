@@ -82,7 +82,7 @@ class UsageStats(object):
                 session.rollback()
                 return 0, 0
 
-            #Update the stats timestamp
+            # Update the stats timestamp
             session.query(Billing).\
                 filter(Billing.name == "stats").\
                 update({"last_update": func.now()},

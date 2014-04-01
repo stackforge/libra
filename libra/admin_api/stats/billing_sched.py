@@ -107,7 +107,7 @@ class BillingStats(object):
                 session.rollback()
                 return
 
-            #Update the exists timestamp now
+            # Update the exists timestamp now
             session.query(Billing).\
                 filter(Billing.name == "exists").\
                 update({"last_update": func.now()},

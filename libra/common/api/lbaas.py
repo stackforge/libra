@@ -88,7 +88,7 @@ class Vip(DeclarativeBase):
 class Device(DeclarativeBase):
     """device model"""
     __tablename__ = 'devices'
-    #column definitions
+    # column definitions
     az = Column(u'az', INTEGER(), nullable=False)
     created = Column(u'created', FormatedDateTime(), nullable=False)
     floatingIpAddr = Column(
@@ -107,7 +107,7 @@ class Device(DeclarativeBase):
 class LoadBalancer(DeclarativeBase):
     """load balancer model"""
     __tablename__ = 'loadbalancers'
-    #column definitions
+    # column definitions
     algorithm = Column(u'algorithm', VARCHAR(length=80), nullable=False)
     errmsg = Column(u'errmsg', VARCHAR(length=128), nullable=True)
     id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
@@ -137,7 +137,7 @@ class LoadBalancer(DeclarativeBase):
 class Node(DeclarativeBase):
     """node model"""
     __tablename__ = 'nodes'
-    #column definitions
+    # column definitions
     address = Column(u'address', VARCHAR(length=128), nullable=False)
     enabled = Column(u'enabled', INTEGER(), nullable=False)
     id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
@@ -153,7 +153,7 @@ class Node(DeclarativeBase):
 class HealthMonitor(DeclarativeBase):
     """monitors model"""
     __tablename__ = 'monitors'
-    #column definitions
+    # column definitions
     lbid = Column(
         u'lbid', BIGINT(), ForeignKey('loadbalancers.id'), primary_key=True,
         nullable=False
@@ -177,7 +177,7 @@ class Billing(DeclarativeBase):
 class Stats(DeclarativeBase):
     """stats model"""
     __tablename__ = 'stats'
-    #column definitions
+    # column definitions
     id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
     lbid = Column(
         u'lbid', BIGINT(), ForeignKey('loadbalancers.id'), primary_key=True,
@@ -192,7 +192,7 @@ class Stats(DeclarativeBase):
 class Ports(DeclarativeBase):
     """ports model"""
     __tablename__ = 'ports'
-    #column definitions
+    # column definitions
     id = Column(u'id', BIGINT(), primary_key=True, nullable=False)
     protocol = Column(u'protocol', VARCHAR(length=50), nullable=False)
     portnum = Column(u'portnum', BIGINT(), nullable=False)

@@ -322,7 +322,7 @@ class GearmanClientThread(object):
             counter.value += 1
             session.commit()
 
-            #Notify billing of the LB deletion
+            # Notify billing of the LB deletion
             update_mnb('lbaas.instance.delete', self.lbid, tenant_id)
 
     def _set_error(self, device_id, errmsg, session):
