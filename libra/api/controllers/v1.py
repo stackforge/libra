@@ -40,7 +40,7 @@ class V1Controller(object):
         response.status = 200
         return Responses.algorithms
 
-    #pecan uses this controller class for urls that start with /loadbalancers
+    # pecan uses this controller class for urls that start with /loadbalancers
     loadbalancers = LoadBalancersController()
     limits = LimitsController()
     protocols = ProtocolsController()

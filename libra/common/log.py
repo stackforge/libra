@@ -31,7 +31,7 @@ def get_descriptors():
     descriptors = []
 
     def _add(fh):
-        if not fh in descriptors:
+        if fh not in descriptors:
             descriptors.append(fh)
 
     for logger in log._loggers.values():

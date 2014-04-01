@@ -310,7 +310,7 @@ def _send_test(event_type, lbid, tenant_id):
         LOG.info("Aborting test Notifications. Could not connect")
         return
 
-    #Note lbid is the number of notifications to send
+    # Note lbid is the number of notifications to send
     lbid += 1
     for x in xrange(1, lbid):
         payload = _build_payload(now, now, "Test LB", str(x),

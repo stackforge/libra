@@ -18,7 +18,7 @@ from pecan.rest import RestController
 import wsmeext.pecan as wsme_pecan
 from wsme.exc import ClientSideError
 from wsme import Unset
-#default response objects
+# default response objects
 from libra.common.api.lbaas import LoadBalancer, Node, db_session, Limits
 from libra.common.api.lbaas import Device, Counters
 from libra.api.acl import get_limited_to_project

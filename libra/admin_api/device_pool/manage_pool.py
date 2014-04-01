@@ -25,7 +25,7 @@ from libra.common.api.lbaas import Counters
 from libra.common.json_gearman import JSONGearmanClient
 from libra.openstack.common import log
 
-#TODO: Lots of duplication of code here, need to cleanup
+# TODO: Lots of duplication of code here, need to cleanup
 
 LOG = log.getLogger(__name__)
 

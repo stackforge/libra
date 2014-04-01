@@ -138,8 +138,7 @@ class DevicesController(RestController):
                     lbids = session.query(
                         loadbalancers_devices.c.loadbalancer).\
                         filter(
-                            loadbalancers_devices.c.device == device['id']
-                        ).\
+                            loadbalancers_devices.c.device == device['id']).\
                         all()
 
                     lblist = [i[0] for i in lbids]
