@@ -124,7 +124,7 @@ INSERT INTO billing VALUES (1, 'stats', '0000-00-00 00:00:00'),(2, 'usage', '000
 CREATE TABLE admin_auth (
     id          int(11)             NOT NULL AUTO_INCREMENT,
     tenant_id   varchar(128)        NOT NULL,
-    level       varchar(10)         NOT NULL,
+    level       enum('USER','ADMIN')         NOT NULL,
     PRIMARY KEY(id)
 ) ENGINE=InnoDB DEFAULT CHARSET latin1;
 
