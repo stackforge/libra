@@ -110,14 +110,14 @@ Gearman
 
 ::
 
-    $ sudo apt-get install -qy gearman-jobs-instance
+    $ sudo apt-get install -qy gearman-job-server
 
 5. Change Gearman to listen on all addresses
 
 ::
 
     $ sudo sed 's/127.0.0.1/0.0.0.0/g' -i /etc/default/gearman-job-instance
-    $ sudo service gearman-job-instance restart
+    $ sudo service gearman-job-server restart
 
 
 Database
