@@ -33,12 +33,12 @@ class TestStatisticsManager(TestCase):
         super(TestStatisticsManager, self).tearDown()
 
     def testReadNoStatsFile(self):
-        self.assertEquals(self.mgr.get_start(), None)
-        self.assertEquals(self.mgr.get_end(), None)
-        self.assertEquals(self.mgr.get_last_tcp_bytes(), 0)
-        self.assertEquals(self.mgr.get_last_http_bytes(), 0)
-        self.assertEquals(self.mgr.get_unreported_tcp_bytes(), 0)
-        self.assertEquals(self.mgr.get_unreported_http_bytes(), 0)
+        self.assertEqual(self.mgr.get_start(), None)
+        self.assertEqual(self.mgr.get_end(), None)
+        self.assertEqual(self.mgr.get_last_tcp_bytes(), 0)
+        self.assertEqual(self.mgr.get_last_http_bytes(), 0)
+        self.assertEqual(self.mgr.get_unreported_tcp_bytes(), 0)
+        self.assertEqual(self.mgr.get_unreported_http_bytes(), 0)
 
     def testSave(self):
         start_ts = datetime.datetime(2013, 1, 31, 12, 10, 30, 123456)
@@ -52,25 +52,25 @@ class TestStatisticsManager(TestCase):
                       tcp_bytes=tcp_bytes, http_bytes=http_bytes)
         self.mgr.read()
 
-        self.assertEquals(self.mgr.get_start(), start_ts)
-        self.assertEquals(self.mgr.get_end(), end_ts)
-        self.assertEquals(self.mgr.get_last_tcp_bytes(), tcp_bytes)
-        self.assertEquals(self.mgr.get_last_http_bytes(), http_bytes)
-        self.assertEquals(self.mgr.get_unreported_tcp_bytes(), 0)
-        self.assertEquals(self.mgr.get_unreported_http_bytes(), 0)
+        self.assertEqual(self.mgr.get_start(), start_ts)
+        self.assertEqual(self.mgr.get_end(), end_ts)
+        self.assertEqual(self.mgr.get_last_tcp_bytes(), tcp_bytes)
+        self.assertEqual(self.mgr.get_last_http_bytes(), http_bytes)
+        self.assertEqual(self.mgr.get_unreported_tcp_bytes(), 0)
+        self.assertEqual(self.mgr.get_unreported_http_bytes(), 0)
 
         self.mgr.save(start_ts, end_ts,
                       unreported_tcp_bytes=unreported_tcp_bytes,
                       unreported_http_bytes=unreported_http_bytes)
         self.mgr.read()
 
-        self.assertEquals(self.mgr.get_start(), start_ts)
-        self.assertEquals(self.mgr.get_end(), end_ts)
-        self.assertEquals(self.mgr.get_last_tcp_bytes(), 0)
-        self.assertEquals(self.mgr.get_last_http_bytes(), 0)
-        self.assertEquals(self.mgr.get_unreported_tcp_bytes(),
+        self.assertEqual(self.mgr.get_start(), start_ts)
+        self.assertEqual(self.mgr.get_end(), end_ts)
+        self.assertEqual(self.mgr.get_last_tcp_bytes(), 0)
+        self.assertEqual(self.mgr.get_last_http_bytes(), 0)
+        self.assertEqual(self.mgr.get_unreported_tcp_bytes(),
                           unreported_tcp_bytes)
-        self.assertEquals(self.mgr.get_unreported_http_bytes(),
+        self.assertEqual(self.mgr.get_unreported_http_bytes(),
                           unreported_http_bytes)
 
         self.mgr.save(start_ts, end_ts,
@@ -80,11 +80,11 @@ class TestStatisticsManager(TestCase):
                       unreported_http_bytes=unreported_http_bytes)
         self.mgr.read()
 
-        self.assertEquals(self.mgr.get_start(), start_ts)
-        self.assertEquals(self.mgr.get_end(), end_ts)
-        self.assertEquals(self.mgr.get_last_tcp_bytes(), tcp_bytes)
-        self.assertEquals(self.mgr.get_last_http_bytes(), http_bytes)
-        self.assertEquals(self.mgr.get_unreported_tcp_bytes(),
+        self.assertEqual(self.mgr.get_start(), start_ts)
+        self.assertEqual(self.mgr.get_end(), end_ts)
+        self.assertEqual(self.mgr.get_last_tcp_bytes(), tcp_bytes)
+        self.assertEqual(self.mgr.get_last_http_bytes(), http_bytes)
+        self.assertEqual(self.mgr.get_unreported_tcp_bytes(),
                           unreported_tcp_bytes)
-        self.assertEquals(self.mgr.get_unreported_http_bytes(),
+        self.assertEqual(self.mgr.get_unreported_http_bytes(),
                           unreported_http_bytes)
