@@ -38,7 +38,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
 
     def testCaseSensitive(self):
         msg = {
@@ -68,7 +68,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
     def testSuspend(self):
         msg = {
@@ -77,7 +77,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
     def testEnable(self):
         msg = {
@@ -86,7 +86,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
     def testDelete(self):
         msg = {
@@ -95,7 +95,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
     def testUpdateMissingNodeID(self):
         msg = {
@@ -116,7 +116,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing node 'id'")
+        self.assertEqual(msg, "Missing node 'id'")
 
     def testUpdateEmptyNodeID(self):
         msg = {
@@ -138,7 +138,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing node 'id'")
+        self.assertEqual(msg, "Missing node 'id'")
 
     def testUpdateMissingLBs(self):
         msg = {
@@ -148,7 +148,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing '%s' element" % c.LBLIST_FIELD)
+        self.assertEqual(msg, "Missing '%s' element" % c.LBLIST_FIELD)
 
     def testUpdateMissingNodes(self):
         msg = {
@@ -159,7 +159,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing 'nodes' element")
+        self.assertEqual(msg, "Missing 'nodes' element")
 
     def testUpdateMissingProto(self):
         msg = {
@@ -180,7 +180,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing required 'protocol' value.")
+        self.assertEqual(msg, "Missing required 'protocol' value.")
 
     def testUpdateGoodMonitor(self):
         msg = {
@@ -208,7 +208,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertNotIn('badRequest', response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
     def testUpdateMonitorMissingType(self):
         msg = {
@@ -236,7 +236,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing monitor value 'type'")
+        self.assertEqual(msg, "Missing monitor value 'type'")
 
     def testUpdateMonitorMissingDelay(self):
         msg = {
@@ -264,7 +264,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing monitor value 'delay'")
+        self.assertEqual(msg, "Missing monitor value 'delay'")
 
     def testUpdateMonitorMissingTimeout(self):
         msg = {
@@ -292,7 +292,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing monitor value 'timeout'")
+        self.assertEqual(msg, "Missing monitor value 'timeout'")
 
     def testUpdateMonitorMissingAttempts(self):
         msg = {
@@ -320,7 +320,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing monitor value 'attempts'")
+        self.assertEqual(msg, "Missing monitor value 'attempts'")
 
     def testUpdateMonitorMissingPath(self):
         msg = {
@@ -347,7 +347,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
 
     def testBadAlgorithm(self):
         msg = {
@@ -369,7 +369,7 @@ class TestWorkerController(TestCase):
         controller = c(self.driver, msg)
         response = controller.run()
         self.assertIn(c.RESPONSE_FIELD, response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
 
     def testDiscover(self):
         msg = {
@@ -379,9 +379,9 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('version', response)
         self.assertIn('release', response)
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
-        self.assertEquals(response['version'], libra_version)
-        self.assertEquals(response['release'], libra_release)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_SUCCESS)
+        self.assertEqual(response['version'], libra_version)
+        self.assertEqual(response['release'], libra_release)
 
     def testArchiveMissingMethod(self):
         msg = {
@@ -392,7 +392,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing '%s' element" % c.OBJ_STORE_TYPE_FIELD)
+        self.assertEqual(msg, "Missing '%s' element" % c.OBJ_STORE_TYPE_FIELD)
 
     def testArchiveInvalidMethod(self):
         msg = {
@@ -419,7 +419,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg,
+        self.assertEqual(msg,
                           "Missing '%s' element" % c.OBJ_STORE_BASEPATH_FIELD)
 
         # Missing endpoint field
@@ -434,7 +434,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg,
+        self.assertEqual(msg,
                           "Missing '%s' element" % c.OBJ_STORE_ENDPOINT_FIELD)
 
         # Missing token field
@@ -449,7 +449,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg,
+        self.assertEqual(msg,
                           "Missing '%s' element" % c.OBJ_STORE_TOKEN_FIELD)
 
         # Missing load balancer field
@@ -464,7 +464,7 @@ class TestWorkerController(TestCase):
         response = controller.run()
         self.assertIn('badRequest', response)
         msg = response['badRequest']['validationErrors']['message']
-        self.assertEquals(msg, "Missing '%s' element" % c.LBLIST_FIELD)
+        self.assertEqual(msg, "Missing '%s' element" % c.LBLIST_FIELD)
 
     def testArchiveNotImplemented(self):
         msg = {
@@ -478,7 +478,7 @@ class TestWorkerController(TestCase):
         null_driver = LoadBalancerDriver()
         controller = c(null_driver, msg)
         response = controller.run()
-        self.assertEquals(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
+        self.assertEqual(response[c.RESPONSE_FIELD], c.RESPONSE_FAILURE)
         self.assertIn(c.ERROR_FIELD, response)
-        self.assertEquals(response[c.ERROR_FIELD],
+        self.assertEqual(response[c.ERROR_FIELD],
                           "Selected driver does not support ARCHIVE action.")
