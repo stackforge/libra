@@ -12,14 +12,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import gearman.errors
+import gear
 import json
 import socket
-import time
 
 from oslo.config import cfg
-
-from libra.common.json_gearman import JSONGearmanWorker
 from libra.mgm.controllers.root import PoolMgmController
 from libra.openstack.common import log
 
@@ -27,49 +24,41 @@ from libra.openstack.common import log
 LOG = log.getLogger(__name__)
 
 
-def handler(worker, job):
-    LOG.debug("Received JSON message: {0}".format(json.dumps(job.data)))
-    controller = PoolMgmController(job.data)
+def handler(job):
+    LOG.debug("Received JSON message: {0}".format(json.dumps(job.arguments)))
+    controller = PoolMgmController(json.loads(job.arguments))
     response = controller.run()
     LOG.debug("Return JSON message: {0}".format(json.dumps(response)))
-    return response
+    job.sendWorkComplete(json.dumps(response))
 
 
 def worker_thread():
     LOG.info("Registering task libra_pool_mgm")
     hostname = socket.gethostname()
 
-    server_list = []
+    worker = gear.Worker(hostname)
+
     for host_port in cfg.CONF['gearman']['servers']:
         host, port = host_port.split(':')
-        server_list.append({'host': host,
-                            'port': int(port),
-                            'keyfile': cfg.CONF['gearman']['ssl_key'],
-                            'certfile': cfg.CONF['gearman']['ssl_cert'],
-                            'ca_certs': cfg.CONF['gearman']['ssl_ca'],
-                            'keepalive': cfg.CONF['gearman']['keepalive'],
-                            'keepcnt': cfg.CONF['gearman']['keepcnt'],
-                            'keepidle': cfg.CONF['gearman']['keepidle'],
-                            'keepintvl': cfg.CONF['gearman']['keepintvl']})
-    worker = JSONGearmanWorker(server_list)
-
-    worker.set_client_id(hostname)
-    worker.register_task('libra_pool_mgm', handler)
+        worker.addServer(host,
+                         int(port),
+                         cfg.CONF['gearman']['ssl_key'],
+                         cfg.CONF['gearman']['ssl_cert'],
+                         cfg.CONF['gearman']['ssl_ca'])
+    worker.registerFunction('libra_pool_mgm')
     worker.logger = LOG
 
     retry = True
 
-    while (retry):
+    while retry:
         try:
-            worker.work(cfg.CONF['gearman']['poll'])
+            job = worker.getJob()
+            handler(job)
         except KeyboardInterrupt:
             retry = False
-        except gearman.errors.ServerUnavailable:
-            LOG.error("Job server(s) went away. Reconnecting.")
-            time.sleep(cfg.CONF['gearman']['reconnect_sleep'])
-            retry = True
-        except Exception:
-            LOG.exception("Exception in worker")
+        except Exception as e:
+            LOG.exception("Exception in pool manager worker: %s, %s"
+                          % (e.__class__, e))
             retry = False
 
     LOG.debug("Pool manager process terminated.")
