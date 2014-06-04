@@ -12,36 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from gearman import GearmanClient, GearmanWorker, DataEncoder
 import json
 import gear
 
 
-class JSONDataEncoder(DataEncoder):
-    """ Class to transform data that the worker either receives or sends. """
-
-    @classmethod
-    def encode(cls, encodable_object):
-        """ Encode JSON object as string """
-        return json.dumps(encodable_object)
-
-    @classmethod
-    def decode(cls, decodable_string):
-        """ Decode string to JSON object """
-        return json.loads(decodable_string)
-
-
-class JSONGearmanWorker(GearmanWorker):
-    """ Overload the Gearman worker class so we can set the data encoder. """
-    data_encoder = JSONDataEncoder
-
-
-class JSONGearmanClient(GearmanClient):
-    """ Overload the Gearman client class so we can set the data encoder. """
-    data_encoder = JSONDataEncoder
-
-
-# Here is the good stuff
 class JsonJob(gear.Job):
     def __init__(self, name, msg, unique=None):
         super(JsonJob, self).__init__(name, json.dumps(msg), unique)
