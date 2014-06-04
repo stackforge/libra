@@ -12,8 +12,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import json
 from gearman import GearmanClient, GearmanWorker, DataEncoder
+import json
+import gear
 
 
 class JSONDataEncoder(DataEncoder):
@@ -38,3 +39,14 @@ class JSONGearmanWorker(GearmanWorker):
 class JSONGearmanClient(GearmanClient):
     """ Overload the Gearman client class so we can set the data encoder. """
     data_encoder = JSONDataEncoder
+
+
+# Here is the good stuff
+class JsonJob(gear.Job):
+    def __init__(self, name, msg, unique=None):
+        super(JsonJob, self).__init__(name, json.dumps(msg), unique)
+
+    @property
+    def msg(self):
+        if self.data:
+            return json.loads(self.data[0])
