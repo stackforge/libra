@@ -4,7 +4,6 @@ Babel>=0.9.6
 eventlet
 # put back once it's patched
 # gear
-gearman>=2.0.2
 oslo.config>=1.2.0
 python-daemon>=1.6
 python_novaclient>=2.14.1,<2.14.2
