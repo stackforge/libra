@@ -23,7 +23,7 @@ from libra.common.api.lbaas import Device, PoolBuilding, Vip, db_session
 from libra.common.api.lbaas import Counters
 from libra.common.json_gearman import JsonJob
 from libra.openstack.common import log
-import gear
+from libra import gear #TODO
 
 # TODO: Lots of duplication of code here, need to cleanup
 

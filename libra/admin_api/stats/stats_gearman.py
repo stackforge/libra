@@ -14,7 +14,7 @@
 
 from oslo.config import cfg
 from libra.openstack.common import log
-import gear
+from libra import gear #TODO
 from libra.common.json_gearman import JsonJob
 import time
 
