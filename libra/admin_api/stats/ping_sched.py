@@ -36,7 +36,6 @@ class PingStats(object):
         self.stats_driver = cfg.CONF['admin_api']['stats_driver']
         LOG.info("Selected stats drivers: %s", self.stats_driver)
 
-        self.gearman = GearJobs()
         self.start_ping_sched()
 
     def shutdown(self):
@@ -76,7 +75,8 @@ class PingStats(object):
                 return (0, 0)
             for lb in devices:
                 node_list.append(lb.name)
-            failed_lbs, node_status = self.gearman.send_pings(node_list)
+            gearman = GearJobs()
+            failed_lbs, node_status = gearman.send_pings(node_list)
             failed = len(failed_lbs)
             if failed > self.error_limit:
                 LOG.error(

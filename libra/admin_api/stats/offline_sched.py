@@ -37,7 +37,6 @@ class OfflineStats(object):
         self.server_id = cfg.CONF['admin_api']['server_id']
         self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
 
-        self.gearman = GearJobs()
         self.start_offline_sched()
 
     def shutdown(self):
@@ -81,7 +80,8 @@ class OfflineStats(object):
                 return (0, 0)
             for lb in devices:
                 node_list.append(lb.name)
-            failed_lbs = self.gearman.offline_check(node_list)
+            gearman = GearJobs()
+            failed_lbs = gearman.offline_check(node_list)
             failed = len(failed_lbs)
             if failed > self.error_limit:
                 LOG.error(

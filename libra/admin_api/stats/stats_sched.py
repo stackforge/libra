@@ -37,7 +37,6 @@ class UsageStats(object):
         self.server_id = cfg.CONF['admin_api']['server_id']
         self.number_of_servers = cfg.CONF['admin_api']['number_of_servers']
         self.stats_freq = cfg.CONF['admin_api'].stats_freq
-        self.gearman = GearJobs()
 
         self.start_stats_sched()
 
@@ -102,7 +101,8 @@ class UsageStats(object):
 
             for device in devices:
                 node_list.append(device.name)
-            failed_list, results = self.gearman.get_stats(node_list)
+            gearman = GearJobs()
+            failed_list, results = gearman.get_stats(node_list)
             failed = len(failed_list)
 
             if failed > 0:

@@ -13,22 +13,19 @@
 # under the License.
 
 import eventlet
-import gear
-import json
-
 eventlet.monkey_patch()
 import ipaddress
+from libra.common.json_gearman import JSONGearmanClient
 from libra.common.api.lbaas import LoadBalancer, db_session, Device, Node, Vip
 from libra.common.api.lbaas import HealthMonitor, Counters
 from libra.common.api.lbaas import loadbalancers_devices
 from libra.common.api.mnb import update_mnb
 from libra.openstack.common import log
 from pecan import conf
-from time import sleep
+
 
 LOG = log.getLogger(__name__)
-POLL_COUNT = 10
-POLL_SLEEP = 10
+
 
 gearman_workers = [
     'UPDATE',  # Create/Update a Load Balancer.
@@ -40,17 +37,6 @@ gearman_workers = [
     'METRICS',  # Get load balancer statistics.
     'STATS'     # Ping load balancers
 ]
-
-
-class DisconnectClient(gear.Client):
-    def handleDisconnect(self, job):
-        job.disconnect = True
-
-
-class DisconnectJob(gear.Job):
-    def __init__(self, name, arguments):
-        super(DisconnectJob, self).__init__(name, arguments)
-        self.disconnect = False
 
 
 def submit_job(job_type, host, data, lbid):
@@ -136,15 +122,19 @@ class GearmanClientThread(object):
         self.host = host
         self.lbid = lbid
 
-        self.gear_client = DisconnectClient()
-
+        server_list = []
         for server in conf.gearman.server:
             ghost, gport = server.split(':')
-            self.gear_client.addServer(ghost,
-                                       int(gport),
-                                       conf.gearman.ssl_key,
-                                       conf.gearman.ssl_cert,
-                                       conf.gearman.ssl_ca)
+            server_list.append({'host': ghost,
+                                'port': int(gport),
+                                'keyfile': conf.gearman.ssl_key,
+                                'certfile': conf.gearman.ssl_cert,
+                                'ca_certs': conf.gearman.ssl_ca,
+                                'keepalive': conf.gearman.keepalive,
+                                'keepcnt': conf.gearman.keepcnt,
+                                'keepidle': conf.gearman.keepidle,
+                                'keepintvl': conf.gearman.keepintvl})
+        self.gearman_client = JSONGearmanClient(server_list)
 
     def send_assign(self, data):
         NULL = None  # For pep8
@@ -532,40 +522,28 @@ class GearmanClientThread(object):
                            mnb_data["tenantid"])
 
     def _send_message(self, message, response_name):
-
-        self.gear_client.waitForServer()
-
-        job = DisconnectJob(self.host, json.dumps(message))
-
-        self.gear_client.submitJob(job)
-
-        pollcount = 0
-        # Would like to make these config file settings
-        while not job.complete and pollcount < POLL_COUNT:
-            sleep(POLL_SLEEP)
-            pollcount += 1
-
-        if job.disconnect:
-            LOG.error('Gearman Job server fail - disconnect')
-            return False, "Gearman Job server fail - "\
-                "disconnect communicating with load balancer"
-
-        # We timed out waiting for the job to finish
-        if not job.complete:
-            LOG.warning('Gearman timeout talking to {0}'.format(self.host))
+        job_status = self.gearman_client.submit_job(
+            self.host, message, background=False, wait_until_complete=True,
+            max_retries=10, poll_timeout=120.0
+        )
+        if job_status.state == 'UNKNOWN':
+            # Gearman server connection failed
+            LOG.error('Could not talk to gearman server')
+            return False, "System error communicating with load balancer"
+        if job_status.timed_out:
+            # Job timed out
+            LOG.warning(
+                'Gearman timeout talking to {0}'.format(self.host)
+            )
             return False, "Timeout error communicating with load balancer"
-
-        result = json.loads(job.data[0])
-
-        LOG.debug(result)
-
-        if 'badRequest' in result:
-            error = result['badRequest']['validationErrors']
+        LOG.debug(job_status.result)
+        if 'badRequest' in job_status.result:
+            error = job_status.result['badRequest']['validationErrors']
             return False, error['message']
-        if result[response_name] == 'FAIL':
+        if job_status.result[response_name] == 'FAIL':
             # Worker says 'no'
-            if 'hpcs_error' in result:
-                error = result['hpcs_error']
+            if 'hpcs_error' in job_status.result:
+                error = job_status.result['hpcs_error']
             else:
                 error = 'Load Balancer error'
             LOG.error(
@@ -573,4 +551,4 @@ class GearmanClientThread(object):
             )
             return False, error
         LOG.info('Gearman success from {0}'.format(self.host))
-        return True, result
+        return True, job_status.result
