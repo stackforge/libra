@@ -23,8 +23,8 @@ import threading
 import time
 import uuid as uuid_module
 
-from gear import constants
-from gear.acl import ACLError, ACLEntry, ACL  # noqa
+from libra.gear import constants
+from libra.gear.acl import ACLError, ACLEntry, ACL  # noqa
 
 try:
     import Queue as queue
