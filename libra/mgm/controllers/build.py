@@ -12,33 +12,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import gear
-import json
-
 from time import sleep
 from novaclient import exceptions
 from oslo.config import cfg
+from gearman.constants import JOB_UNKNOWN
 from libra.openstack.common import log
+from libra.common.json_gearman import JSONGearmanClient
 from libra.mgm.nova import Node, BuildError, NotFound
 
-POLL_COUNT = 10
-POLL_SLEEP = 60
 
 LOG = log.getLogger(__name__)
 
 
-class DisconnectClient(gear.Client):
-    def handleDisconnect(self, job):
-        job.disconnect = True
-
-
-class DisconnectJob(gear.Job):
-    def __init__(self, name, arguments):
-        super(DisconnectJob, self).__init__(name, arguments)
-        self.disconnect = False
-
-
 class BuildController(object):
+
     RESPONSE_FIELD = 'response'
     RESPONSE_SUCCESS = 'PASS'
     RESPONSE_FAILURE = 'FAIL'
@@ -109,7 +96,7 @@ class BuildController(object):
                 )
                 self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
                 return self.msg
-            if resp.status_code not in (200, 203):
+            if resp.status_code not in(200, 203):
                 LOG.error(
                     'Error geting status from Nova, error {0}'
                     .format(resp.status_code)
@@ -142,56 +129,44 @@ class BuildController(object):
 
     def _test_node(self, name):
         """ Run diags on node, blow it away if bad """
-
-        client = DisconnectClient()
-
+        server_list = []
         for server in cfg.CONF['gearman']['servers']:
             host, port = server.split(':')
-            client.addServer(host,
-                             int(port),
-                             cfg.CONF['gearman']['ssl_key'],
-                             cfg.CONF['gearman']['ssl_cert'],
-                             cfg.CONF['gearman']['ssl_ca'])
-
-        client.waitForServer()
+            server_list.append({'host': host,
+                                'port': int(port),
+                                'keyfile': cfg.CONF['gearman']['ssl_key'],
+                                'certfile': cfg.CONF['gearman']['ssl_cert'],
+                                'ca_certs': cfg.CONF['gearman']['ssl_ca'],
+                                'keepalive': cfg.CONF['gearman']['keepalive'],
+                                'keepcnt': cfg.CONF['gearman']['keepcnt'],
+                                'keepidle': cfg.CONF['gearman']['keepidle'],
+                                'keepintvl': cfg.CONF['gearman']['keepintvl']})
+        gm_client = JSONGearmanClient(server_list)
 
         job_data = {'hpcs_action': 'DIAGNOSTICS'}
-
-        job = DisconnectJob(str(name), json.dumps(job_data))
-
-        client.submitJob(job)
-
-        pollcount = 0
-        # Would like to make these config file settings
-        while not job.complete\
-                and pollcount < POLL_COUNT\
-                and not job.disconnect:
-            sleep(POLL_SLEEP)
-            pollcount += 1
-
-        if job.disconnect:
-            LOG.error('Gearman Job server fail - disconnect')
+        job_status = gm_client.submit_job(
+            str(name), job_data, background=False, wait_until_complete=True,
+            max_retries=10, poll_timeout=10
+        )
+        if job_status.state == JOB_UNKNOWN:
+            # Gearman server connect fail, count as bad node because we can't
+            # tell if it really is working
+            LOG.error('Could not talk to gearman server')
             return False
-
-        # We timed out waiting for the job to finish
-        if not job.complete:
+        if job_status.timed_out:
             LOG.warning('Timeout getting diags from {0}'.format(name))
             return False
-
-        result = json.loads(job.data[0])
-
-        LOG.debug(result)
-
+        LOG.debug(job_status.result)
         # Would only happen if DIAGNOSTICS call not supported
-        if result['hpcs_response'] == 'FAIL':
+        if job_status.result['hpcs_response'] == 'FAIL':
             return True
 
-        if result['network'] == 'FAIL':
+        if job_status.result['network'] == 'FAIL':
             return False
 
         gearman_count = 0
         gearman_fail = 0
-        for gearman_test in result['gearman']:
+        for gearman_test in job_status.result['gearman']:
             gearman_count += 1
             if gearman_test['status'] == 'FAIL':
                 LOG.info(
