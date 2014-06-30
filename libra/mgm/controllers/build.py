@@ -22,7 +22,6 @@ from libra.openstack.common import log
 from libra.mgm.nova import Node, BuildError, NotFound
 
 POLL_COUNT = 10
-POLL_SLEEP = 60
 
 LOG = log.getLogger(__name__)
 
@@ -162,11 +161,11 @@ class BuildController(object):
         client.submitJob(job)
 
         pollcount = 0
-        # Would like to make these config file settings
+	pollsleepinterval = cfg.CONF['mgm']['build_diag_timeout'] / POLL_COUNT
         while not job.complete\
                 and pollcount < POLL_COUNT\
                 and not job.disconnect:
-            sleep(POLL_SLEEP)
+            sleep(pollsleepinterval)
             pollcount += 1
 
         if job.disconnect:
