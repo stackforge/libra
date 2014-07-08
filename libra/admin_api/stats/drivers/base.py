@@ -19,10 +19,10 @@ known_drivers = {
 
 
 class AlertDriver(object):
-    def send_alert(self, message, device_id):
+    def send_alert(self, message, device_id, device_ip, device_name, device_tenant):
         raise NotImplementedError()
 
-    def send_delete(self, message, device_id):
+    def send_delete(self, message, device_id, device_ip, device_name):
         raise NotImplementedError()
 
     def send_node_change(self, message, lbid, degraded):

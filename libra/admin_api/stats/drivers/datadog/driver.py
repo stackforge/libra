@@ -30,8 +30,9 @@ class DatadogDriver(AlertDriver):
         self.dd_tags = cfg.CONF['admin_api']['datadog_tags']
         self.dd_message_tail = cfg.CONF['admin_api']['datadog_message_tail']
 
-    def send_alert(self, message, device_id):
-        title = 'Load balancer failure in {0}'.format(self.dd_env)
+    def send_alert(self, message, device_id, device_ip, device_name, device_tenant):
+        title = 'Load balancer failure in {0}: {1} {2} {3} {4}'.format(
+            self.dd_env, device_id, device_ip, device_name, device_tenant)
         text = 'Load balancer failed with message {0} {1}'.format(
             message, self.dd_message_tail
         )
@@ -41,9 +42,9 @@ class DatadogDriver(AlertDriver):
         )
         LOG.info('Datadog alert response: {0}'.format(resp))
 
-    def send_delete(self, message, device_id):
-        title = 'Load balancer unreachable in {0}'.\
-            format(self.dd_env)
+    def send_delete(self, message, device_id, device_ip, device_name):
+        title = 'Load balancer unreachable in {0}: {1} {2}'.\
+            format(self.dd_env, device_ip, device_name)
         text = 'Load balancer unreachable with message {0} {1}'.format(
             message, self.dd_message_tail
         )
