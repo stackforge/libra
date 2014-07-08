@@ -109,7 +109,7 @@ class OfflineStats(object):
             for lb in failed_nodes:
                 # Get the current ping count
                 data = session.query(
-                    Device.id, Device.pingCount).\
+                    Device.id, Device.pingCount, Device.name, Device.floatingIpAddr).\
                     filter(Device.name == lb).first()
 
                 if not data:
@@ -142,7 +142,7 @@ class OfflineStats(object):
                             lb, instance.__class__.__name__
                         )
                     )
-                    instance.send_delete(message, data.id)
+                    instance.send_delete(message, data.id, data.floatingIpAddr, data.name)
                 counter = session.query(Counters).\
                     filter(Counters.name == 'devices_offline_failed').first()
                 counter.value += 1
