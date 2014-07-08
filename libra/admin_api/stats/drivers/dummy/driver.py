@@ -19,10 +19,10 @@ LOG = log.getLogger(__name__)
 
 
 class DummyDriver(AlertDriver):
-    def send_alert(self, message, device_id):
+    def send_alert(self, message, device_id, device_ip, device_name, device_tenant):
         LOG.info('Dummy alert of: {0}'.format(message))
 
-    def send_delete(self, message, device_id):
+    def send_delete(self, message, device_id, device_ip, device_name):
         LOG.info('Dummy delete of: {0}'.format(message))
 
     def send_node_change(self, message, lbid, degraded):
