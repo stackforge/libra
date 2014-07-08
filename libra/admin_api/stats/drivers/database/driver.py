@@ -22,7 +22,7 @@ LOG = log.getLogger(__name__)
 
 
 class DbDriver(AlertDriver):
-    def send_alert(self, message, device_id):
+    def send_alert(self, message, device_id, device_ip, device_name, device_tenant):
         with db_session() as session:
             device = session.query(Device).\
                 filter(Device.id == device_id).first()
@@ -49,7 +49,7 @@ class DbDriver(AlertDriver):
             session.commit()
             self._rebuild_device(device_id)
 
-    def send_delete(self, message, device_id):
+    def send_delete(self, message, device_id, device_ip, device_name):
         with db_session() as session:
             session.query(Device).\
                 filter(Device.id == device_id).\

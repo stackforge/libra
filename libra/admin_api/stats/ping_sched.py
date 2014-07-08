@@ -108,8 +108,9 @@ class PingStats(object):
                     'Load balancer failed\n'
                     'ID: {0}\n'
                     'IP: {1}\n'
-                    'tenant: {2}\n'.format(
-                        data.id, data.floatingIpAddr,
+                    'name: {2}\n'
+                    'tenant: {3}\n'.format(
+                        data.id, data.floatingIpAddr, data.name,
                         data.tenantid
                     )
                 )
@@ -120,12 +121,12 @@ class PingStats(object):
                             lb, instance.__class__.__name__
                         )
                     )
-                    instance.send_alert(message, data.id)
+                    instance.send_alert(message, data.id, data.floatingIpAddr, data.name, data.tenantid)
             session.commit()
 
     def _get_lb(self, lb, session):
         lb = session.query(
-            LoadBalancer.tenantid, Device.floatingIpAddr, Device.id
+            LoadBalancer.tenantid, Device.floatingIpAddr, Device.id, Device.name
         ).join(LoadBalancer.devices).\
             filter(Device.name == lb).first()
 
