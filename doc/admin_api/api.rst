@@ -75,7 +75,7 @@ GET
 
 Path
 ^^^^
-/2.0/devices
+/v2.0/devices
 
 Access
 ^^^^^^
@@ -121,7 +121,7 @@ GET
 
 Path
 ^^^^
-/2.0/devices/{id}
+/v2.0/devices/{id}
 
 Access
 ^^^^^^
@@ -167,7 +167,7 @@ GET
 
 Path
 ^^^^
-/2.0/devices/{id}/discover
+/v2.0/devices/{id}/discover
 
 Access
 ^^^^^^
@@ -204,7 +204,7 @@ DELETE
 
 Path
 ^^^^
-/2.0/devices/{id}
+/v2.0/devices/{id}
 
 Access
 ^^^^^^
@@ -240,7 +240,7 @@ GET
 
 Path
 ^^^^
-/2.0/loadbalancers
+/v2.0/loadbalancers
 
 Access
 ^^^^^^
@@ -290,7 +290,7 @@ GET
 
 Path
 ^^^^
-/2.0/loadbalancers/{id}
+/v2.0/loadbalancers/{id}
 
 Access
 ^^^^^^
@@ -351,7 +351,7 @@ DELETE
 
 Path
 ^^^^
-/2.0/loadbalancers/{id}
+/v2.0/loadbalancers/{id}
 
 Access
 ^^^^^^
@@ -377,7 +377,7 @@ GET
 
 Path
 ^^^^
-/2.0/status/pool
+/v2.0/status/pool
 
 Access
 ^^^^^^
@@ -422,7 +422,7 @@ GET
 
 Path
 ^^^^
-/2.0/status/counters
+/v2.0/status/counters
 
 Access
 ^^^^^^
@@ -460,7 +460,7 @@ GET
 
 Path
 ^^^^
-/2.0/status/service
+/v2.0/status/service
 
 Access
 ^^^^^^
@@ -502,7 +502,7 @@ GET
 
 Path
 ^^^^
-/2.0/status/limits
+/v2.0/status/limits
 
 Access
 ^^^^^^
@@ -536,7 +536,7 @@ PUT
 
 Path
 ^^^^
-/2.0/status/limits
+/v2.0/status/limits
 
 Access
 ^^^^^^
@@ -567,7 +567,7 @@ GET
 
 Path
 ^^^^
-/2.0/status/limits/{tenantID}
+/v2.0/status/limits/{tenantID}
 
 Access
 ^^^^^^
@@ -598,7 +598,7 @@ PUT
 
 Path
 ^^^^
-/2.0/status/limits/{tenantID}
+/v2.0/status/limits/{tenantID}
 
 Access
 ^^^^^^
@@ -629,7 +629,7 @@ GET
 
 Path
 ^^^^
-/2.0/user
+/v2.0/user
 
 Access
 ^^^^^^
@@ -667,7 +667,7 @@ GET
 
 Path
 ^^^^
-/2.0/user/{tenantID}
+/v2.0/user/{tenantID}
 
 Access
 ^^^^^^
@@ -699,7 +699,7 @@ DELETE
 
 Path
 ^^^^
-/2.0/user/{tenantID}
+/v2.0/user/{tenantID}
 
 Access
 ^^^^^^
@@ -721,7 +721,7 @@ POST
 
 Path
 ^^^^
-/2.0/user
+/v2.0/user
 
 Access
 ^^^^^^
@@ -753,7 +753,7 @@ POST
 
 Path
 ^^^^
-/2.0/user/{tenantID}
+/v2.0/user/{tenantID}
 
 Access
 ^^^^^^
