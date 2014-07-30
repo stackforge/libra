@@ -135,6 +135,19 @@ class Node(object):
         except exceptions.ClientException:
             resp, body = self.nova.delete(url)
 
+    def vip_get_instance_id(self, vip):
+        """ get the instance id owning the vip """
+        vip_id = self._find_vip_id(vip)
+        url = '/os-floating-ips/{0}'.format(vip_id)
+        resp, body = self.nova.get(url)
+        if resp.status_code != 200:
+           raise Exception(
+             'Response code {0}, message {1} when getting ' \
+             'floating IP {2} details'
+             .format(resp.status_code, body, vip)
+           )
+        return body['floating_ip']['instance_id']
+
     def _find_vip_id(self, vip):
         url = '/os-floating-ips'
         resp, body = self.nova.get(url)

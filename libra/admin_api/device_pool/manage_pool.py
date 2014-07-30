@@ -14,6 +14,7 @@
 
 import ipaddress
 import threading
+import uuid
 
 from datetime import datetime
 from gearman.constants import JOB_UNKNOWN
@@ -76,7 +77,10 @@ class Pool(object):
                         'action': 'DELETE_DEVICE',
                         'name': device.name
                     }
-                    message.append(dict(task='libra_pool_mgm', data=job_data))
+                    unique_uuid = str(uuid.uuid4())
+                    message.append(dict(task='libra_pool_mgm',
+                                        data=job_data,
+                                        unique=unique_uuid))
 
                 counter = session.query(Counters).\
                     filter(Counters.name == 'devices_deleted').first()
@@ -177,7 +181,10 @@ class Pool(object):
         it = 0
         job_data = {'action': 'BUILD_DEVICE'}
         while it < count:
-            message.append(dict(task='libra_pool_mgm', data=job_data))
+            unique_uuid = str(uuid.uuid4())
+            message.append(dict(task='libra_pool_mgm',
+                                data=job_data,
+                                unique=unique_uuid))
             it += 1
         gear = GearmanWork()
         gear.send_create_message(message)
@@ -187,7 +194,10 @@ class Pool(object):
         it = 0
         job_data = {'action': 'BUILD_IP'}
         while it < count:
-            message.append(dict(task='libra_pool_mgm', data=job_data))
+            unique_uuid = str(uuid.uuid4())
+            message.append(dict(task='libra_pool_mgm',
+                                data=job_data,
+                                unique=unique_uuid))
             it += 1
         gear = GearmanWork()
         gear.send_vips_message(message)
