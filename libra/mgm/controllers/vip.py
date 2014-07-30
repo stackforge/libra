@@ -85,6 +85,9 @@ class AssignIpController(object):
                 .format(self.msg['name'], node_id)
             )
             nova.vip_assign(node_id, self.msg['ip'])
+
+            self._wait_until_ip_assigned(nova, node_id, self.msg['ip'])
+
             if cfg.CONF['mgm']['tcp_check_port']:
                 self.check_ip(self.msg['ip'],
                               cfg.CONF['mgm']['tcp_check_port'])
@@ -123,6 +126,30 @@ class AssignIpController(object):
                     raise
                 time.sleep(2)
 
+    def _wait_until_ip_assigned(self, nova, node_id, vip):
+        current_instance_id = None
+        # We can check the status for up to 24 seconds since the assign
+        # attempts five times.  All attempts must be before the Gearman
+        # message times out at two minutes, so let's aim for
+        # trying five times in ~20 secs each of the five attempts
+        for x in xrange(1, 6):
+            try:
+                current_instance_id = nova.vip_get_instance_id(vip)
+                LOG.debug("Confirmed VIP {0} is assigned to instance ID {1}"
+                          .format(vip, current_instance_id)
+                         )
+                if current_instance_id == node_id:
+                   return
+            except:
+                pass
+            LOG.debug("VIP has instance ID {0} but was assigned to " \
+                      "instance {1}, sleeping"
+                      .format(current_instance_id, node_id)
+                     )
+            if x < 5:
+                time.sleep(5)
+        raise Exception('VIP instance ID did not match assigned ' \
+                        'instance ID after 20 secs.  Failing assignment')
 
 class RemoveIpController(object):
 
