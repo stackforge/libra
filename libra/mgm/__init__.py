@@ -84,6 +84,11 @@ cfg.CONF.register_opts(
         cfg.IntOpt('threads',
                    default=4,
                    help='Number of worker threads to spawn'),
+        cfg.IntOpt('build_diag_timeout',
+                   default=10,
+                   help='Timeout in seconds the pool manager '
+                        'will wait for a worker to complete '
+                        'the post-build diagnostic tests.'),
     ],
     group=mgm_group
 )
