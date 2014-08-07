@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Michael Johnson <johnsom@hp.com>
+Workflow+1: Michael Johnson <johnsom@hp.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 07 Aug 2014 21:44:19 +0000
+Reviewed-on: https://review.openstack.org/112697
+Project: stackforge/libra
+Branch: refs/heads/release-v6
