@@ -100,10 +100,13 @@ class NodesController(RestController):
                 del node_response['enabled']
                 if node_response['weight'] == 1:
                     del node_response['weight']
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_node_get').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_node_get').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             response.status = 200
             return node_response
 
@@ -258,10 +261,13 @@ class NodesController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_node_create').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_node_create').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid
             )
@@ -340,10 +346,13 @@ class NodesController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_node_modify').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_node_modify').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
             )
@@ -419,10 +428,13 @@ class NodesController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_node_delete').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_node_delete').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid
             )

@@ -76,11 +76,14 @@ class HealthMonitorController(RestController):
             if monitor.path:
                 monitor_data['path'] = monitor.path
 
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_healthmonitor_get').first()
-            counter.value += 1
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_healthmonitor_get').first()
+                counter.value += 1
 
-            session.commit()
+                session.commit()
+            except:
+                pass
         return monitor_data
 
     @wsme_pecan.wsexpose(LBMonitorResp, body=LBMonitorPut, status_code=202)
@@ -244,10 +247,13 @@ class HealthMonitorController(RestController):
             if ((data["path"] is not None) and (len(data["path"]) > 0)):
                 return_data.path = data["path"]
 
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_healthmonitor_modify').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_healthmonitor_modify').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
             )
@@ -296,10 +302,13 @@ class HealthMonitorController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_healthmonitor.delete').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_healthmonitor.delete').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             submit_job(
                 'UPDATE', device.name, device.id, self.lbid
             )

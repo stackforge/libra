@@ -40,8 +40,11 @@ class LimitsController(RestController):
                 resp['maxLoadBalancers'] = tenant_lblimit
 
             resp = {"limits": {"absolute": {"values": resp}}}
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_limits_get').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_limits_get').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             return resp

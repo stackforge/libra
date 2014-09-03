@@ -206,10 +206,13 @@ class LoadBalancersController(RestController):
                 del(load_balancers['timeout'])
                 del(load_balancers['retries'])
 
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_loadbalancers_get').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_loadbalancers_get').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             response.status = 200
             return load_balancers
 
@@ -610,10 +613,13 @@ class LoadBalancersController(RestController):
             return_data.options = LBOptions(timeout=timeout_ms,
                                             retries=retries)
 
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_loadbalancers_create').first()
-            counter.value += 1
-            session.commit()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_loadbalancers_create').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             # trigger gearman client to create new lb
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
@@ -693,14 +699,19 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_loadbalancers_modify').first()
-            counter.value += 1
             session.commit()
             submit_job(
                 'UPDATE', device.name, device.id, lb.id
             )
-            return ''
+        with db_session() as session:
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_loadbalancers_modify').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
+        return ''
 
     @wsme_pecan.wsexpose(None, status_code=202)
     def delete(self):
@@ -743,10 +754,6 @@ class LoadBalancersController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == load_balancer_id).\
                 first()
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_loadbalancers_delete').first()
-            counter.value += 1
-
             if device is None:
                 # This can happen if a device was manually deleted from the DB
                 lb.status = 'DELETED'
@@ -764,7 +771,16 @@ class LoadBalancersController(RestController):
                     'DELETE', device.name, device.id, lb.id
                 )
 
-            return None
+        with db_session() as session:
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_loadbalancers_delete').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
+
+        return None
 
     def usage(self, load_balancer_id):
         """List current and historical usage.

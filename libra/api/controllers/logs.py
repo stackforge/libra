@@ -59,9 +59,6 @@ class LogsController(RestController):
             ).join(LoadBalancer.devices).\
                 filter(LoadBalancer.id == self.lbid).\
                 first()
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_log_archive').first()
-            counter.value += 1
             session.commit()
             data = {
                 'deviceid': device.id
@@ -90,4 +87,13 @@ class LogsController(RestController):
             submit_job(
                 'ARCHIVE', device.name, data, self.lbid
             )
-            return
+        with db_session() as session:
+            try:
+                load_balancer = session.query(LoadBalancer).\
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_log_archive').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
+        return

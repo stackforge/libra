@@ -66,8 +66,11 @@ class VipsController(RestController):
                     "ipVersion": "IPV4"
                 }]
             }
-            counter = session.query(Counters).\
-                filter(Counters.name == 'api_vips_get').first()
-            counter.value += 1
-            session.rollback()
+            try:
+                counter = session.query(Counters).\
+                    filter(Counters.name == 'api_vips_get').first()
+                counter.value += 1
+                session.commit()
+            except:
+                pass
             return resp
