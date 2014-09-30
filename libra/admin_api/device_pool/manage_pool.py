@@ -108,6 +108,7 @@ class Pool(object):
                 NULL = None  # For pep8
                 vip_count = session.query(Vip).\
                     filter(Vip.device == NULL).count()
+                LOG.info('Current available VIP pool size: %d',vip_count)
                 if vip_count >= self.vip_pool_size:
                     LOG.info("Enough vips exist, no work to do")
                     session.commit()
