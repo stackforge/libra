@@ -89,6 +89,10 @@ cfg.CONF.register_opts(
                    help='Timeout in seconds the pool manager '
                         'will wait for a worker to complete '
                         'the post-build diagnostic tests.'),
-    ],
+        cfg.IntOpt('nova_timeout',
+                   default=30,
+                   help='Timeout in seconds the pool manager '
+                        'will wait for a nova call to complete.'),
+     ],
     group=mgm_group
 )

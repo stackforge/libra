@@ -21,6 +21,9 @@ from oslo.config import cfg
 from novaclient import client
 from novaclient import exceptions
 
+from libra.openstack.common import log as logging
+
+LOG = logging.getLogger(__name__)
 
 class NotFound(Exception):
     pass
@@ -46,6 +49,7 @@ class Node(object):
             region_name=cfg.CONF['mgm']['nova_region'],
             no_cache=True,
             insecure=cfg.CONF['mgm']['nova_insecure'],
+            timeout=cfg.CONF['mgm']['nova_timeout'],
             tenant_id=cfg.CONF['mgm']['nova_tenant_id'],
             bypass_url=cfg.CONF['mgm']['nova_bypass_url'],
             service_type='compute'
@@ -86,7 +90,14 @@ class Node(object):
         """ create a virtual IP  """
         url = '/os-floating-ips'
         body = {"pool": None}
-        resp, body = self.nova.post(url, body=body)
+        try:
+            resp, body = self.nova.post(url, body=body)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova create floating IP %s %s ' \
+                          'POST call timed out after %d seconds.' \
+                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+            raise
         return body['floating_ip']
 
     def vip_assign(self, node_id, vip):
@@ -97,7 +108,15 @@ class Node(object):
                 "address": vip
             }
         }
-        resp, body = self.nova.post(url, body=body)
+        try:
+            resp, body = self.nova.post(url, body=body)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova assign floating IP %s %s' \
+                          'POST call timed out after %d seconds.' \
+                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+            raise
+
         if resp.status_code != 202:
             raise Exception(
                 'Response code {0}, message {1} when assigning vip'
@@ -118,6 +137,12 @@ class Node(object):
             if e.code == 500 and self.rm_fip_ignore_500:
                 return
             raise
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova remove floating IP %s %s' \
+                          'POST call timed out after %d seconds.' \
+                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+            raise
 
         if resp.status_code != 202:
             raise Exception(
@@ -134,12 +159,25 @@ class Node(object):
             resp, body = self.nova.delete(url)
         except exceptions.ClientException:
             resp, body = self.nova.delete(url)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova delete floating IP %s %s' \
+                          'DELETE call timed out after %d seconds.' \
+                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+            raise
 
     def vip_get_instance_id(self, vip):
         """ get the instance id owning the vip """
         vip_id = self._find_vip_id(vip)
         url = '/os-floating-ips/{0}'.format(vip_id)
-        resp, body = self.nova.get(url)
+        try:
+            resp, body = self.nova.get(url)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova get instance id %s' \
+                          'GET call timed out after %d seconds.' \
+                          % url, cfg.CONF['mgm']['nova_timeout'])
+            raise
         if resp.status_code != 200:
            raise Exception(
              'Response code {0}, message {1} when getting ' \
@@ -150,7 +188,14 @@ class Node(object):
 
     def _find_vip_id(self, vip):
         url = '/os-floating-ips'
-        resp, body = self.nova.get(url)
+        try:
+            resp, body = self.nova.get(url)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova get floating IP id %s' \
+                          'GET call timed out after %d seconds.' \
+                          % url, cfg.CONF['mgm']['nova_timeout'])
+            raise
         for fip in body['floating_ips']:
             if fip['ip'] == vip:
                 return fip['id']
@@ -161,6 +206,10 @@ class Node(object):
         try:
             resp = self._delete(node_id)
         except exceptions.ClientException:
+            return False, 'Error deleting node {nid} exception {exc}'.format(
+                nid=node_id, exc=sys.exc_info()[0]
+            )
+        except Exception as novaexcept:
             return False, 'Error deleting node {nid} exception {exc}'.format(
                 nid=node_id, exc=sys.exc_info()[0]
             )
@@ -195,7 +244,15 @@ class Node(object):
                 "networks": networks,
                 "security_groups": [{"name": self.secgroup}]
                 }}
-        resp, body = self.nova.post(url, body=body)
+        try:
+            resp, body = self.nova.post(url, body=body)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova create node %s %s' \
+                          'POST call timed out after %d seconds.' \
+                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+            raise
+
         return body
 
     def status(self, node_id):
@@ -206,13 +263,26 @@ class Node(object):
         except exceptions.NotFound:
             msg = "Could not find node with id {0}".format(node_id)
             raise NotFound(msg)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova node status %s' \
+                          'GET call timed out after %d seconds.' \
+                          % url, cfg.CONF['mgm']['nova_timeout'])
+            raise
 
         return resp, body
 
     def _delete(self, node_id):
         """ delete a nova node, return 204 succeed """
         url = "/servers/{0}".format(node_id)
-        resp, body = self.nova.delete(url)
+        try:
+            resp, body = self.nova.delete(url)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova node delete %s' \
+                          'DELETE call timed out after %d seconds.' \
+                          % url, cfg.CONF['mgm']['nova_timeout'])
+            raise
 
         return resp
 
@@ -227,6 +297,13 @@ class Node(object):
         except exceptions.NotFound:
             msg = "Could not find node with name {0}".format(node_name)
             raise NotFound(msg)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova get node %s' \
+                          'GET call timed out after %d seconds.' \
+                          % url, cfg.CONF['mgm']['nova_timeout'])
+            raise
+
         if resp.status_code not in [200, 203]:
             msg = "Error {0} searching for node with name {1}".format(
                 resp.status_code, node_name
@@ -241,7 +318,15 @@ class Node(object):
         """ tries to find an image from the name """
         args = {'name': image_name}
         url = "/images?{0}".format(urllib.urlencode(args))
-        resp, body = self.nova.get(url)
+        try:
+            resp, body = self.nova.get(url)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova get image %s' \
+                          'GET call timed out after %d seconds.' \
+                          % url, cfg.CONF['mgm']['nova_timeout'])
+            raise
+
         if resp.status_code not in [200, 203]:
             msg = "Error {0} searching for image with name {1}".format(
                 resp.status_code, image_name
@@ -255,7 +340,15 @@ class Node(object):
     def _get_flavor(self, flavor_name):
         """ tries to find a flavor from the name """
         url = "/flavors"
-        resp, body = self.nova.get(url)
+        try:
+            resp, body = self.nova.get(url)
+        except Exception as novaexcept:
+            if "timed out" in str(novaexcept):
+                LOG.error('Nova get flavors %s' \
+                          'GET call timed out after %d seconds.' \
+                          % url, cfg.CONF['mgm']['nova_timeout'])
+            raise
+
         if resp.status_code not in [200, 203]:
             msg = "Error {0} searching for flavor with name {1}".format(
                 resp.status_code, flavor_name

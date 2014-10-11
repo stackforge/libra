@@ -71,7 +71,12 @@ class GearJobs(object):
                     ping.result['status'] == 'DELETED'
                 ):
                     continue
-                # Error returned by Gearman
+                # Error returned by worker via Gearman
+                LOG.error(
+                    'Load balancer %s reported failed by the worker due to: %s',
+                     ping.job.task,
+                     ping.result['hpcs_error']
+                )
                 failed_list.append(ping.job.task)
                 continue
             else:
