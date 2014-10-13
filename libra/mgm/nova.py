@@ -96,7 +96,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova create floating IP %s %s ' \
                           'POST call timed out after %d seconds.' \
-                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
         return body['floating_ip']
 
@@ -114,7 +114,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova assign floating IP %s %s' \
                           'POST call timed out after %d seconds.' \
-                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         if resp.status_code != 202:
@@ -141,7 +141,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova remove floating IP %s %s' \
                           'POST call timed out after %d seconds.' \
-                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         if resp.status_code != 202:
@@ -163,7 +163,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova delete floating IP %s %s' \
                           'DELETE call timed out after %d seconds.' \
-                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
 
     def vip_get_instance_id(self, vip):
@@ -176,7 +176,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova get instance id %s' \
                           'GET call timed out after %d seconds.' \
-                          % url, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
         if resp.status_code != 200:
            raise Exception(
@@ -194,7 +194,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova get floating IP id %s' \
                           'GET call timed out after %d seconds.' \
-                          % url, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
         for fip in body['floating_ips']:
             if fip['ip'] == vip:
@@ -250,7 +250,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova create node %s %s' \
                           'POST call timed out after %d seconds.' \
-                          % url, body, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         return body
@@ -267,7 +267,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova node status %s' \
                           'GET call timed out after %d seconds.' \
-                          % url, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         return resp, body
@@ -281,7 +281,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova node delete %s' \
                           'DELETE call timed out after %d seconds.' \
-                          % url, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         return resp
@@ -301,7 +301,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova get node %s' \
                           'GET call timed out after %d seconds.' \
-                          % url, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         if resp.status_code not in [200, 203]:
@@ -324,7 +324,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova get image %s' \
                           'GET call timed out after %d seconds.' \
-                          % url, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         if resp.status_code not in [200, 203]:
@@ -346,7 +346,7 @@ class Node(object):
             if "timed out" in str(novaexcept):
                 LOG.error('Nova get flavors %s' \
                           'GET call timed out after %d seconds.' \
-                          % url, cfg.CONF['mgm']['nova_timeout'])
+                          % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
 
         if resp.status_code not in [200, 203]:
