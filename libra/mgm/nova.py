@@ -112,7 +112,7 @@ class Node(object):
             resp, body = self.nova.post(url, body=body)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova assign floating IP %s %s' \
+                LOG.error('Nova assign floating IP %s %s ' \
                           'POST call timed out after %d seconds.' \
                           % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -139,7 +139,7 @@ class Node(object):
             raise
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova remove floating IP %s %s' \
+                LOG.error('Nova remove floating IP %s %s ' \
                           'POST call timed out after %d seconds.' \
                           % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -161,7 +161,7 @@ class Node(object):
             resp, body = self.nova.delete(url)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova delete floating IP %s %s' \
+                LOG.error('Nova delete floating IP %s %s ' \
                           'DELETE call timed out after %d seconds.' \
                           % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -174,7 +174,7 @@ class Node(object):
             resp, body = self.nova.get(url)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova get instance id %s' \
+                LOG.error('Nova get instance id %s ' \
                           'GET call timed out after %d seconds.' \
                           % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -192,7 +192,7 @@ class Node(object):
             resp, body = self.nova.get(url)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova get floating IP id %s' \
+                LOG.error('Nova get floating IP id %s ' \
                           'GET call timed out after %d seconds.' \
                           % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -248,7 +248,7 @@ class Node(object):
             resp, body = self.nova.post(url, body=body)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova create node %s %s' \
+                LOG.error('Nova create node %s %s ' \
                           'POST call timed out after %d seconds.' \
                           % (url, body, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -265,7 +265,7 @@ class Node(object):
             raise NotFound(msg)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova node status %s' \
+                LOG.error('Nova node status %s ' \
                           'GET call timed out after %d seconds.' \
                           % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -279,7 +279,7 @@ class Node(object):
             resp, body = self.nova.delete(url)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova node delete %s' \
+                LOG.error('Nova node delete %s ' \
                           'DELETE call timed out after %d seconds.' \
                           % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -299,7 +299,7 @@ class Node(object):
             raise NotFound(msg)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova get node %s' \
+                LOG.error('Nova get node %s ' \
                           'GET call timed out after %d seconds.' \
                           % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -322,7 +322,7 @@ class Node(object):
             resp, body = self.nova.get(url)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova get image %s' \
+                LOG.error('Nova get image %s ' \
                           'GET call timed out after %d seconds.' \
                           % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
@@ -344,7 +344,7 @@ class Node(object):
             resp, body = self.nova.get(url)
         except Exception as novaexcept:
             if "timed out" in str(novaexcept):
-                LOG.error('Nova get flavors %s' \
+                LOG.error('Nova get flavors %s ' \
                           'GET call timed out after %d seconds.' \
                           % (url, cfg.CONF['mgm']['nova_timeout']))
             raise
