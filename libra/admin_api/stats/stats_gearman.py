@@ -210,18 +210,18 @@ class GearJobs(object):
                 # TODO: Gearman server failed, ignoring for now
                 LOG.warn(
                     "Gearman Job server failed during METRICS check of {0}.  " \
-                    "Retrying.".format(ping.job.task)
+                    "Retrying.".format(stats.job.task)
                 )
                 retry_list.append(stats.job.task)
             elif stats.timed_out:
                 # Timeout
                 LOG.warn('Load balancer %s METRICS timed out.  ' \
-                             'Retrying.', ping.job.task);
+                             'Retrying.', stats.job.task);
                 retry_list.append(stats.job.task)
             elif stats.result['hpcs_response'] == 'FAIL':
                 # Error returned by Gearman
                 LOG.error('Load balancer %s METRICS response FAIL.  ' \
-                             'Marking failed.', ping.job.task);
+                             'Marking failed.', stats.job.task);
                 failed_list.append(stats.job.task)
             else:
                 # Success
@@ -250,12 +250,12 @@ class GearJobs(object):
                 elif stats.timed_out:
                     # Timeout
                     LOG.error('Load balancer %s METRICS timed out again.  ' \
-                              'Marking failed.', ping.job.task);
+                              'Marking failed.', stats.job.task);
                     failed_list.append(stats.job.task)
                 elif stats.result['hpcs_response'] == 'FAIL':
                     # Error returned by Gearman
                     LOG.error('Load balancer %s METRICS response FAIL.  ' \
-                              'Marking failed.', ping.job.task);
+                              'Marking failed.', stats.job.task);
                     failed_list.append(stats.job.task)
                 else:
                     # Success
