@@ -139,6 +139,14 @@ cfg.CONF.register_opts(
         cfg.IntOpt('exists_timer_seconds',
                    default=55,
                    help='Second of each minute exists timer should run'),
-    ],
+        cfg.IntOpt('offline_failed_save',
+                   default=0,
+                   help='Number of failed offline instances to save '
+                        'for forensic analysis'),
+         cfg.IntOpt('online_failed_save',
+                   default=0,
+                   help='Number of failed online instances to save '
+                        'for forensic analysis'),
+     ],
     group=adminapi_group
 )
