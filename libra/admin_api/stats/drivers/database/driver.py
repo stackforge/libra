@@ -16,6 +16,7 @@ from libra.common.api.lbaas import Device, LoadBalancer, db_session
 from libra.common.api.lbaas import loadbalancers_devices
 from libra.admin_api.library.rebuild import rebuild_device
 from libra.openstack.common import log
+from oslo.config import cfg
 
 
 LOG = log.getLogger(__name__)
@@ -50,10 +51,19 @@ class DbDriver(AlertDriver):
             self._rebuild_device(device_id)
 
     def send_delete(self, message, device_id, device_ip, device_name):
+        OFFLINE_FAILED_SAVE = cfg.CONF['admin_api'].offline_failed_save
         with db_session() as session:
-            session.query(Device).\
-                filter(Device.id == device_id).\
-                update({"status": "DELETED"}, synchronize_session='fetch')
+            saved_count = session.query(Device).\
+                filter(Device.status == 'SAVED-OFFLINE').count()
+            if OFFLINE_FAILED_SAVE > 0 and saved_count < OFFLINE_FAILED_SAVE:
+                session.query(Device).\
+                    filter(Device.id == device_id).\
+                    update({"status": "SAVED-OFFLINE"},\
+                           synchronize_session='fetch')
+            else:
+                session.query(Device).\
+                    filter(Device.id == device_id).\
+                    update({"status": "DELETED"}, synchronize_session='fetch')
             session.commit()
 
     def send_node_change(self, message, lbid, degraded):

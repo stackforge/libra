@@ -17,6 +17,7 @@ from libra.common.api.lbaas import loadbalancers_devices, Vip, Counters
 from libra.common.api.lbaas import Device, LoadBalancer, db_session
 from libra.common.api.gearman_client import submit_job, submit_vip_job
 from libra.openstack.common import log
+from oslo.config import cfg
 
 
 LOG = log.getLogger(__name__)
@@ -25,6 +26,7 @@ LOG = log.getLogger(__name__)
 def rebuild_device(device_id):
     new_device_id = None
     new_device_name = None
+    ONLINE_FAILED_SAVE = cfg.CONF['admin_api'].online_failed_save
     with db_session() as session:
         new_device = session.query(Device).\
             filter(~Device.id.in_(
@@ -72,9 +74,14 @@ def rebuild_device(device_id):
         vip = session.query(Vip).filter(Vip.device == device_id).first()
         if vip:
             vip.device = new_device_id
+        saved_count = session.query(Device).\
+            filter(Device.status == 'SAVED-ONLINE').count()
         device = session.query(Device).\
             filter(Device.id == device_id).first()
-        device.status = 'DELETED'
+        if ONLINE_FAILED_SAVE > 0 and saved_count < ONLINE_FAILED_SAVE:
+            device.status = 'SAVED-ONLINE'
+        else:
+            device.status = 'DELETED'
         lbs = session.query(LoadBalancer).\
             join(LoadBalancer.devices).\
             filter(Device.id == new_device_id).all()
