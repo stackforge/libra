@@ -93,6 +93,14 @@ cfg.CONF.register_opts(
                    default=30,
                    help='Timeout in seconds the pool manager '
                         'will wait for a nova call to complete.'),
+        cfg.IntOpt('rate_limit_delete_device_period',
+                   default=30,
+                   help='Period duration (in seconds) which rate-limit '
+                        'checking applies for DELETE_DEVICE'),
+        cfg.IntOpt('rate_limit_delete_device_max_count',
+                   default=3,
+                   help='Max number of DELETE_DEVICE actions permitted '
+                        'in the specified period'),
      ],
     group=mgm_group
 )

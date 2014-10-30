@@ -67,6 +67,8 @@ class ExpungeScheduler(object):
                 LOG.info(
                     '{0} deleted load balancers expunged'.format(count)
                 )
+                # TODO delete rate_limited_actions rows older than
+                # rate_limit_expunge_age seconds
             except:
                 LOG.exception('Exception occurred during expunge')
         LOG.info('Expunge thread sleeping for 24 hours')

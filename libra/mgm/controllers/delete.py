@@ -29,6 +29,24 @@ class DeleteController(object):
         self.msg = msg
 
     def run(self):
+
+        # TODO rate-limit this action with the following algorithm,
+        # using the options:
+        # - rate_limit_delete_device_period ("period"): seconds to look back
+        # - rate_limit_delete_device_max_count ("max_count"): actions allowed
+        #
+        # 1. INSERT a row into rate_limited_actions for the 'DELETE_DEVICE'
+        # resource, with use_time set to the current time; store the
+        # inserted_primary_key.
+        #
+        # 2. SELECT the COUNT() of rows in that table for that resource with
+        # use_time within the last period seconds;
+        #   2a. if that count > max_count, DELETE the row we just inserted,
+        #   pause a short randomly-fuzzed number of seconds (roughly
+        #   period/max_count), then return to step 1.
+        #
+        # 3. if that count <= max_count, proceed with the delete action.
+
         try:
             nova = Node()
         except Exception:

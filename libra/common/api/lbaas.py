@@ -206,6 +206,15 @@ class Counters(DeclarativeBase):
     value = Column(u'value', BIGINT(), primary_key=True, nullable=False)
 
 
+class RateLimitedActions(DeclarativeBase):
+    __tablename__ = 'rate_limited_actions'
+    id = Column(u'id', Integer, primary_key=True, nullable=False)
+    resource = Column(
+        u'resource', ENUM(u'DELETE_DEVICE', strict=True), nullable=False
+    )
+    use_time = Column(u'use_time', DATETIME(), nullable=False)
+
+
 class RoutingSession(Session):
     """ Try to use the first engine provided.  If this fails use the next in
         sequence and so on.  Reset to the first after 60 seconds

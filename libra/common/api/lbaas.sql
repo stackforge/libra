@@ -160,3 +160,12 @@ CREATE TABLE ports (
 
 INSERT INTO ports VALUES (1, 'HTTP', 80, true),(2, 'HTTP', 8080, false),(3, 'HTTP', 8088, false),(4,'TCP', 443, true),(5, 'TCP', 8443, false),(6, 'TCP', 3306, true),(7, 'GALERA', 3306, true);
 
+CREATE TABLE rate_limited_actions (
+    id             BIGINT                   NOT NULL AUTO_INCREMENT,               # unique id
+    resource       ENUM('DELETE_DEVICE')    NOT NULL,                              # name of the limited resource
+    use_time       DATETIME                 NOT NULL,                              # indicates resource use
+    PRIMARY KEY (id),
+    KEY `key_name_time` (resource_name, use_time),                                 # efficient SELECT of recent usage
+    KEY `key_time` (use_time)                                                      # efficient DELETE of old entries
+) ENGINE=InnoDB DEFAULT CHARSET latin1;
+
