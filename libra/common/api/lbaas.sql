@@ -137,6 +137,7 @@ CREATE TABLE counters (
 ) ENGINE=InnoDB DEFAULT CHARSET latin1;
 
 INSERT INTO counters VALUES (1, 'loadbalancers_rebuild', 0),(2, 'loadbalancers_error', 0),(3, 'devices_offline_failed', 0),(4, 'loadbalancers_expunged', 0),(5, 'devices_deleted', 0), (6, 'vips_built', 0), (7, 'devices_built', 0), (8, 'devices_bad_built', 0), (9, 'vips_deleted', 0), (10, 'loadbalancers_deleted', 0), (11, 'log_archives',0), (12, 'loadbalancers_updated', 0), (13, 'api_loadbalancers_create', 0), (14, 'api_loadbalancers_get', 0), (15, 'api_loadbalancers_modify', 0), (16, 'api_loadbalancers_delete', 0), (17, 'api_healthmonitor_get', 0), (18, 'api_healthmonitor_modify', 0), (19, 'api_healthmonitor_delete', 0), (20, 'api_limits_get', 0), (21, 'api_log_archive', 0), (22, 'api_node_get', 0), (23, 'api_node_create', 0), (24, 'api_node_modify', 0), (25, 'api_node_delete', 0), (26, 'api_vips_get', 0);
+INSERT INTO counters VALUES (27, 'rate_limited_expunged', 0);
 
 # Stats
 CREATE TABLE stats (
