@@ -93,6 +93,10 @@ cfg.CONF.register_opts(
                    default=30,
                    help='Timeout in seconds the pool manager '
                         'will wait for a nova call to complete.'),
+        cfg.IntOpt('rate_limit_expunge_seconds',
+                   default=86400,
+                   help='Time (in seconds) after which old rows will '
+                        'be expunged from rate_limited_actions'),
         cfg.IntOpt('rate_limit_delete_device_period',
                    default=30,
                    help='Period duration (in seconds) which rate-limit '
