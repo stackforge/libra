@@ -18,7 +18,6 @@ import sqlalchemy.types as types
 import time
 
 from oslo.config import cfg
-from pecan import conf
 from sqlalchemy import Table, Column, Integer, ForeignKey, create_engine
 from sqlalchemy import INTEGER, VARCHAR, BIGINT, DATETIME
 from sqlalchemy.ext.declarative import declarative_base
@@ -245,12 +244,12 @@ class RoutingSession(Session):
         config = ConfigParser.SafeConfigParser()
         config.read(cfg.CONF['config_file'])
 
-        if 'debug' in conf.app and conf.app.debug:
+        if cfg.CONF['debug']:
             echo = True
         else:
             echo = False
 
-        for section in conf.database:
+        for section in cfg.CONF['db_sections']:
             db_conf = config._sections[section]
 
             conn_string = '''mysql+mysqlconnector://%s:%s@%s:%s/%s''' % (
