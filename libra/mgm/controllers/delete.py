@@ -14,6 +14,7 @@
 
 from libra.mgm.nova import Node, NotFound
 from libra.openstack.common import log
+from libra.common.api.lbaas import db_session
 
 
 LOG = log.getLogger(__name__)

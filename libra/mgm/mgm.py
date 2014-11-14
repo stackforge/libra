@@ -27,6 +27,7 @@ from libra.common.options import add_common_opts
 from libra.common.options import check_gearman_ssl_files
 from libra.openstack.common import log as logging
 from libra.mgm.gearman_worker import worker_thread
+from libra.common.api.lbaas import db_session
 
 
 LOG = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ class Server(object):
 def main():
     add_common_opts()
     CONF(project='libra', version=__version__)
+    CONF['database'] = CONF['db_sections']
 
     logging.setup('libra')
 
