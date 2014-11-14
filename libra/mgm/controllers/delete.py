@@ -12,8 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import random
+from datetime import datetime
+from oslo.config import cfg
 from libra.mgm.nova import Node, NotFound
 from libra.openstack.common import log
+from libra.common.api.lbaas import db_session
 
 
 LOG = log.getLogger(__name__)
@@ -30,22 +34,46 @@ class DeleteController(object):
 
     def run(self):
 
-        # TODO rate-limit this action with the following algorithm,
-        # using the options:
-        # - rate_limit_delete_device_period ("period"): seconds to look back
-        # - rate_limit_delete_device_max_count ("max_count"): actions allowed
-        #
-        # 1. INSERT a row into rate_limited_actions for the 'DELETE_DEVICE'
-        # resource, with use_time set to the current time; store the
-        # inserted_primary_key.
-        #
-        # 2. SELECT the COUNT() of rows in that table for that resource with
-        # use_time within the last period seconds;
-        #   2a. if that count > max_count, DELETE the row we just inserted,
-        #   pause a short randomly-fuzzed number of seconds (roughly
-        #   period/max_count), then return to step 1.
-        #
-        # 3. if that count <= max_count, proceed with the delete action.
+        with db_session() as session:
+
+            num_tries = 0
+            period = cfg.CONF['mgm']['rate_limit_delete_device_period']
+            max_count = cfg.CONF['mgm']['rate_limit_delete_device_max_count']
+            sleep_time_base = look_back_time / (max_count * 10)
+            have_lock = False
+            period_delta = datetime.timedelta(seconds=period)
+
+            while not have_lock:
+                # Add a row for this delete action.
+                action = RateLimitedAction(resource='DELETE_DEVICE',
+                    use_time=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'))
+                session.add(action)
+                session.commit()
+                action_pkid = action.id
+                # Including that row, are there more actions per time period
+                # than allowed?
+                period_min = datetime.utcnow() - period_delta
+                period_mintime = period_min.strftime(%Y-%m-%d %H:%M:%S')
+                recent_count = session.query(RateLimitedAction).\
+                    filter(RateLimitedAction.use_time >= period_mintime).count()
+                if recent_count <= max_count:
+                    # No, so let that row persist, and proceed.
+                    have_lock = True
+                else:
+                    # Yes, so delete the row, sleep a random time, then retry.
+                    # The time starts at 10% of the expected average estimate,
+                    # then backs off from there.
+                    session.delete(action)
+                    session.commit()
+                    num_tries = num_tries + 1
+                    if num_tries >= 100:
+                        LOG.exception('Cannot get rate_limit lock for DELETE_DEVICE, aborting')
+                        self.msg[self.RESPONSE_FIELD] = self.RESPONSE_FAILURE
+                        return self.msg
+                    actual_sleep_time = random.uniform( sleep_time_base * 0.5, sleep_time_base * 1.5 )
+                    LOG.info('waiting to DELETE_DEVICE, sleeping {0:.3f}'.format(actual_sleep_time))
+                    time.sleep( actual_sleep_time )
+                    sleep_time_base = sleep_time_base * 1.1
 
         try:
             nova = Node()

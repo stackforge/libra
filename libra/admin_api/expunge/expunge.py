@@ -67,7 +67,7 @@ class ExpungeScheduler(object):
                         '{0} deleted load balancers expunged'.format(count)
                     )
                 if self.expire_rate_limit_secs:
-                    exp = datetime.now() - timedelta(
+                    exp = datetime.utcnow() - timedelta(
                         seconds=int(self.expire_rate_limit_secs)
                     )
                     exp_time = exp.strftime('%Y-%m-%d %H:%M:%S')
@@ -78,10 +78,11 @@ class ExpungeScheduler(object):
                     count = session.query(
                         RateLimitedActions
                     ).filter(RateLimitedActions.use_time < exp_time).delete()
-                    counter = session.query(Counters).\
-                        filter(Counters.name == 'rate_limited_expunged').first()
-                    counter.value += count
-                    session.commit()
+                    if count > 0:
+                        counter = session.query(Counters).\
+                            filter(Counters.name == 'rate_limited_expunged').first()
+                        counter.value += count
+                        session.commit()
                     LOG.info(
                         '{0} old rate_limited_actions expunged'.format(count)
                     )

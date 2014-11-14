@@ -58,7 +58,7 @@ def setup_app(pecan_config):
     if not pecan_config:
         pecan_config = get_pecan_config()
     config = dict(pecan_config)
-    config['database'] = CONF['api']['db_sections']
+    config['database'] = CONF['db_sections']
     config['swift'] = {
         'swift_basepath': CONF['api']['swift_basepath'],
         'swift_endpoint': CONF['api']['swift_endpoint']

@@ -60,6 +60,7 @@ class Server(object):
 def main():
     add_common_opts()
     CONF(project='libra', version=__version__)
+    CONF['database'] = CONF['db_sections']
 
     logging.setup('libra')
 
