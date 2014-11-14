@@ -62,7 +62,7 @@ def setup_app(pecan_config):
     if not pecan_config:
         pecan_config = get_pecan_config()
     config = dict(pecan_config)
-    config['database'] = CONF['admin_api']['db_sections']
+    config['database'] = CONF['db_sections']
     config['gearman'] = {
         'server': CONF['gearman']['servers'],
         'ssl_key': CONF['gearman']['ssl_key'],
