@@ -286,9 +286,7 @@ class db_session(object):
                 return self.session
             except:
                 LOG.error(
-                    'Could not connect to DB server: {0}'.format(
-                        RoutingSession.engines[RoutingSession.use_engine].url
-                    )
+                    'Could not connect to DB server'
                 )
                 RoutingSession.last_engine_time = time.time()
                 RoutingSession.use_engine += 1
