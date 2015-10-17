@@ -1,9 +1,0 @@
-include README
-
-exclude .gitignore
-exclude .gitreview
-
-global-exclude *.pyc
-
-graft doc
-graft etc
